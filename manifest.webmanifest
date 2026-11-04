@@ -5,5 +5,13 @@
   "display": "standalone",
   "background_color": "#edf1f7",
   "theme_color": "#edf1f7",
-  "description": "Personal timetable, routine and study planner."
+  "description": "Personal timetable, routine and study planner.",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
