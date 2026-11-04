@@ -60,7 +60,36 @@ function renderSubjectManager(){$("#subjectList").innerHTML=data.subjects.map((s
 $("#addSubject").onclick=e=>{e.preventDefault();const v=$("#newSubject").value.trim();if(!v)return;if(data.subjects.some(s=>s.toLowerCase()===v.toLowerCase())){toast("Subject already exists");return}data.subjects.push(v);$("#newSubject").value="";persist();renderSubjectManager();render();toast("Subject added")};
 $("#goalEdit").onclick=()=>{$("#goalInput").value=data.goal;$("#goalDialog").showModal()};$("#goalForm").onsubmit=e=>{e.preventDefault();data.goal=Math.min(100,Math.max(1,Number($("#goalInput").value)));$("#goalDialog").close();save("Weekly goal updated")};$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());
 $("#exportBtn").onclick=()=>{persist();const blob=new Blob([JSON.stringify({app:"Daybook",version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="daybook-backup-"+iso(today)+".json";a.click();URL.revokeObjectURL(a.href);toast("Backup exported")};
-$("#importBtn").onclick=()=>$("#importFile").click();$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const parsed=JSON.parse(await file.text());const incoming=parsed.data||parsed;if(!confirm("Import this backup and replace the data currently stored in this browser?"))return;["subjects","classes","routine","tasks","sessions","reminders"].forEach(k=>{if(Array.isArray(incoming[k]))data[k]=incoming[k]});if(Number(incoming.goal)>0)data.goal=Number(incoming.goal);if(incoming.settings)data.settings=incoming.settings;save("Backup imported")}catch{toast("That backup file is not valid")}e.target.value=""};
+function validateBackup(parsed){
+ if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid backup structure");
+ const incoming=parsed.data&&typeof parsed.data==="object"?parsed.data:parsed;
+ const keys=["subjects","classes","routine","tasks","sessions","reminders"];
+ if(!keys.some(k=>Object.prototype.hasOwnProperty.call(incoming,k)))throw new Error("No Daybook data found");
+ const result={};
+ for(const key of keys){
+  if(!Object.prototype.hasOwnProperty.call(incoming,key))continue;
+  if(!Array.isArray(incoming[key]))throw new Error("Invalid "+key+" data");
+  result[key]=incoming[key].map((item,index)=>{
+   if(!item||typeof item!=="object"||Array.isArray(item))throw new Error("Invalid "+key+" entry "+(index+1));
+   const copy={...item};
+   if(key==="subjects"){if(typeof item!=="string"||!item.trim())throw new Error("Invalid subject");return item.trim()}
+   if(!copy.id)copy.id=uid();
+   if(typeof copy.id!=="string"&&typeof copy.id!=="number")throw new Error("Invalid record ID");
+   if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
+   if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.start||"")||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
+   if(key==="routine"&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
+   if(["sessions","reminders"].includes(key)&&(!/^\\d{4}-\\d{2}-\\d{2}$/.test(copy.date||"")||iso(new Date(copy.date+"T12:00:00"))!==copy.date))throw new Error("Invalid date in "+key);
+   if(key==="sessions"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.minutes))||Number(copy.minutes)<1||Number(copy.minutes)>1440))throw new Error("Invalid study session");
+   if(key==="reminders"&&(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.time||"")||!["none","daily","weekly",undefined].includes(copy.repeat)))throw new Error("Invalid reminder");
+   if(key==="tasks"&&copy.due&&(!/^\\d{4}-\\d{2}-\\d{2}$/.test(copy.due)||iso(new Date(copy.due+"T12:00:00"))!==copy.due))throw new Error("Invalid task due date");
+   return copy;
+  });
+ }
+ if(parsed.goal!==undefined&&(!Number.isFinite(Number(parsed.goal))||Number(parsed.goal)<1||Number(parsed.goal)>100))throw new Error("Invalid weekly goal");
+ if(parsed.settings!==undefined&&(!parsed.settings||typeof parsed.settings!=="object"||!["12h","24h"].includes(parsed.settings.timeFormat)))throw new Error("Invalid settings");
+ return {incoming,result};
+}
+$("#importBtn").onclick=()=>$("#importFile").click();$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5*1024*1024)throw new Error("Backup file is larger than 5 MB");const parsed=JSON.parse(await file.text());const {incoming,result}=validateBackup(parsed);if(!confirm("Import this backup and replace matching Daybook data currently stored on this device?"))return;Object.assign(data,result);if(incoming.goal!==undefined)data.goal=Number(incoming.goal);if(incoming.settings)data.settings={...data.settings,...incoming.settings};save("Backup imported")}catch(err){toast(err.message==="Backup file is larger than 5 MB"?err.message:"Backup rejected: "+(err.message||"invalid data"))}finally{e.target.value=""}};
 $("#notify").onclick=async()=>{if(window.DaybookNative?.isNative()){const p=await window.DaybookNative.requestPermission();$("#notifyStatus").textContent="Android notification permission: "+p;return}if(!("Notification"in window)){$("#notifyStatus").textContent="Notifications are not supported by this browser.";return}const p=await Notification.requestPermission();$("#notifyStatus").textContent="Notification permission: "+p};
 function checkReminders(){if(window.DaybookNative?.isNative())return;if(!("Notification"in window)||Notification.permission!=="granted")return;const now=new Date();data.reminders.forEach(r=>{const due=new Date(r.date+"T"+r.time+":00");const stamp=r.date+"T"+r.time;if(Math.abs(due-now)<30000&&r.lastFired!==stamp){new Notification("Daybook reminder",{body:r.title});r.lastFired=stamp;if(r.repeat==="daily"||r.repeat==="weekly"){const next=new Date(due);next.setDate(next.getDate()+(r.repeat==="daily"?1:7));r.date=iso(next)}persist();renderReminders()}})}
 setInterval(checkReminders,15000);
