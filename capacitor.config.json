@@ -1,0 +1,14 @@
+{
+  "appId": "com.mashalweb.daybook",
+  "appName": "Daybook",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#526f9d"
+    }
+  }
+}
