@@ -1,0 +1,9 @@
+{
+  "name": "Daybook — Study Planner",
+  "short_name": "Daybook",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#edf1f7",
+  "theme_color": "#edf1f7",
+  "description": "Personal timetable, routine and study planner."
+}
