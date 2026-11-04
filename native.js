@@ -25,9 +25,14 @@ async function syncReminders(reminders) {
   const notifications = [];
   for (const item of reminders) {
     if (!item.title || !item.date || !item.time) continue;
-    const at = new Date(item.date + "T" + item.time + ":00");
-    if (Number.isNaN(at.getTime()) || at <= now) continue;
+    let at = new Date(item.date + "T" + item.time + ":00");
+    if (Number.isNaN(at.getTime())) continue;
     const repeat = item.repeat === "daily" ? "day" : item.repeat === "weekly" ? "week" : null;
+    if (repeat && at <= now) {
+      const step = repeat === "day" ? 1 : 7;
+      while (at <= now) at.setDate(at.getDate() + step);
+    }
+    if (at <= now) continue;
     notifications.push({
       id: notificationId(String(item.id)),
       title: "Daybook reminder",
@@ -47,3 +52,5 @@ window.DaybookNative = {
   requestPermission: permission,
   syncReminders
 };
+
+window.dispatchEvent(new Event("daybook-native-ready"));
