@@ -7,6 +7,8 @@ fs.mkdirSync(out, { recursive: true });
 for (const file of ["index.html", "app.js", "styles.css", "manifest.webmanifest", "icon.svg"]) {
   fs.copyFileSync(path.join(root, file), path.join(out, file));
 }
+const bundledIndex = fs.readFileSync(path.join(out, "index.html"), "utf8").replace('<script src="app.js"></script>', '<script type="module" src="native.js"></script><script src="app.js"></script>');
+fs.writeFileSync(path.join(out, "index.html"), bundledIndex);
 require("esbuild").buildSync({
   entryPoints: [path.join(root, "native.js")],
   bundle: true,
