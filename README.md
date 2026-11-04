@@ -1,17 +1,24 @@
-# Daybook — Personal Timetable
+# Daybook — Personal Study & Routine Manager
 
-A responsive, light-neumorphic timetable and study planner built with plain HTML, CSS and JavaScript.
+A responsive, light-neumorphic personal planner built with plain HTML, CSS and JavaScript. No framework, build step, or account is required.
 
 ## Features
-- Weekly class timetable with editable days, times and rooms
-- Daily routine planner
-- Study planner with seven course subjects preloaded
-- Task manager with categories, due dates and completion tracking
-- Progress analytics based on completed tasks and study sessions
-- Reminders with optional browser notification permission
-- Local browser storage; no framework, build step or external runtime dependency
+- Weekly university timetable with previous/next week navigation
+- Add, edit and delete classes; overlap warning and optional room/location
+- Seven-day daily routine with separate activities for each weekday
+- Add, edit and delete routine activities
+- Study planner with the user's seven course subjects preloaded
+- Study sessions with date, topic, duration and completion tracking
+- Subject manager to add or remove courses
+- Task manager with search, filters, priorities, categories, deadlines and notes
+- Progress analytics for completed tasks, study time, subject breakdown and weekly study goal
+- Reminders with one-time, daily and weekly repeat options
+- Browser notification permission support
+- JSON export and import for backups and device transfers
+- Local browser storage and installable/offline-capable PWA support
+- Responsive layout for desktop, tablet and mobile
 
-## Course subjects preloaded
+## Preloaded subjects
 - Applied Physics & Engineering Mechanics
 - Engineering Mathematics
 - Islamiat
@@ -20,8 +27,23 @@ A responsive, light-neumorphic timetable and study planner built with plain HTML
 - Engineering Drawing
 - Foundation Mathematics
 
-## Run
-Open `index.html` in a modern browser. Add your real class timings; none are assumed.
+## Preloaded weekly campus blocks
+These are editable starting points based on the schedule previously provided:
+- Monday: 8:05 AM–3:30 PM
+- Tuesday: no campus block
+- Wednesday: 8:00–10:30 AM
+- Thursday: 8:00 AM–1:00 PM
+- Friday: 8:00 AM–1:00 PM
+- Saturday: 9:40–11:00 AM (no commute)
+- Sunday: no campus block
 
-## Data and notifications
-Entries are saved in the current browser using localStorage. They do not automatically sync between devices. Browser notifications require permission and may only fire reliably while the page is open.
+The routine is also prefilled across all seven days. Edit it to match changes in prayer times, travel, classes and personal commitments.
+
+## Run / publish
+Open `index.html` in a modern browser, or publish the repository with GitHub Pages. Service-worker/offline and install features require HTTPS (GitHub Pages provides HTTPS).
+
+## Data, backups and notifications
+- Planner data is saved in the current browser using localStorage. It does not automatically sync between browsers or devices.
+- Use the download/export button to save a JSON backup. Import it on another device/browser to transfer your data.
+- Browser notifications require permission. They are checked while the app is open; the browser or operating system may suspend background tabs, so they are not a guaranteed alarm replacement.
+- Clearing browser site data may erase locally saved planner data. Keep a backup.
