@@ -47,3 +47,9 @@ Open `index.html` in a modern browser, or publish the repository with GitHub Pag
 - Use the download/export button to save a JSON backup. Import it on another device/browser to transfer your data.
 - Browser notifications require permission. They are checked while the app is open; the browser or operating system may suspend background tabs, so they are not a guaranteed alarm replacement.
 - Clearing browser site data may erase locally saved planner data. Keep a backup.
+
+## Android app build
+
+Daybook is packaged for Android with Capacitor. Every push to `main` that changes the app or Android build files triggers the **Build Daybook Android APK** GitHub Actions workflow. You can also run it manually from the repository's Actions tab. When it succeeds, open the workflow run, then download the `daybook-android-debug` artifact. Install the APK on an Android device (you may need to allow installation from that source). The APK is a debug build for personal testing, not a Play Store release; a signed release AAB/APK requires a private signing key and release configuration.
+
+Android reminders use the native local-notifications plugin. Grant notification permission in Android settings or from the Reminders screen. Android battery restrictions and device settings can still affect delivery. App data remains on that device; export a JSON backup before changing phones or reinstalling.
