@@ -9,15 +9,19 @@ const notificationId = (value) => {
   return (Math.abs(hash) % 2000000000) + 1;
 };
 
-async function permission() {
+async function permission(request = false) {
   if (!native) return "web";
   let result = await LocalNotifications.checkPermissions();
-  if (result.display !== "granted") result = await LocalNotifications.requestPermissions();
+  if (request && result.display !== "granted") {
+    result = await LocalNotifications.requestPermissions();
+  }
   return result.display;
 }
 
 async function syncReminders(reminders) {
   if (!native) return;
+  const granted = await permission(false);
+  if (granted !== "granted") return;
   const pending = await LocalNotifications.getPending();
   if (pending.notifications.length) {
     await LocalNotifications.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
@@ -38,19 +42,16 @@ async function syncReminders(reminders) {
       id: notificationId(String(item.id)),
       title: "Daybook reminder",
       body: item.title,
-      schedule: repeat ? { at, repeats: true, every: repeat } : { at },
+      schedule: repeat ? { at, repeats: true, every: repeat, allowWhileIdle: true } : { at, allowWhileIdle: true },
       extra: { reminderId: item.id }
     });
   }
-  if (notifications.length) {
-    const granted = await permission();
-    if (granted === "granted") await LocalNotifications.schedule({ notifications });
-  }
+  if (notifications.length) await LocalNotifications.schedule({ notifications });
 }
 
 window.DaybookNative = {
   isNative: () => native,
-  requestPermission: permission,
+  requestPermission: () => permission(true),
   syncReminders
 };
 
