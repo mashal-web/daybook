@@ -106,14 +106,14 @@ function openView(v){
  $$(".view").forEach(x=>x.classList.toggle("active",x===target));
  $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";
- $("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");render();
+ $("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");$("#menu").setAttribute("aria-label","Open navigation");render();
 }
 $$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#menu").setAttribute("aria-expanded","false");
-$("#menu").onclick=()=>{const opened=!$("#sidebar").classList.contains("open");$("#sidebar").classList.toggle("open",opened);$("#menu").setAttribute("aria-expanded",String(opened));};
-document.addEventListener("click",e=>{if($("#sidebar").classList.contains("open")&&!$("#sidebar").contains(e.target)&&!$("#menu").contains(e.target)){$("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");}});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");}});
+$("#menu").onclick=()=>{const opened=!$("#sidebar").classList.contains("open");$("#sidebar").classList.toggle("open",opened);$("#menu").setAttribute("aria-expanded",String(opened));$("#menu").setAttribute("aria-label",opened?"Close navigation":"Open navigation");};
+document.addEventListener("click",e=>{if($("#sidebar").classList.contains("open")&&!$("#sidebar").contains(e.target)&&!$("#menu").contains(e.target)){$("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");$("#menu").setAttribute("aria-label","Open navigation");}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");$("#menu").setAttribute("aria-label","Open navigation");}});
 $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 function rowActions(type,id){return '<button class="small-action" data-edit="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Edit '+esc(type)+'">Edit</button><button class="small-action danger" data-delete="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Delete '+esc(type)+'">×</button>'}
