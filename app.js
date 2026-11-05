@@ -2,7 +2,8 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
-const today=new Date(), uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
+let today=new Date();
+const uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
 const safeRead=(k,f)=>{try{const v=JSON.parse(localStorage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
 const safeSet=(key,value)=>{try{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));return true}catch{return false}};
 const safeWrite=(key,value)=>safeSet("daybook_"+key,value);
@@ -206,6 +207,17 @@ function checkReminders(){if(window.DaybookNative?.isNative())return;if(!("Notif
 setInterval(checkReminders,15000);
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("daybook_"))location.reload()});
 render();
+let currentDateKey=iso(today);
+function refreshDayBoundary(){
+ const current=new Date(),key=iso(current);
+ if(key===currentDateKey)return;
+ today=current;currentDateKey=key;
+ $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
+ $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+ render();
+}
+setInterval(refreshDayBoundary,60000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshDayBoundary()});
 const syncNativeReminders=()=>window.DaybookNative?.syncReminders(data.reminders).catch(()=>toast("Could not sync Android reminders"));
 window.addEventListener("daybook-native-ready",syncNativeReminders);
 window.addEventListener("daybook-native-resume",syncNativeReminders);
