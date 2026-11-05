@@ -97,6 +97,8 @@ const reminderLogic = native.includes("while (at <= now)") && native.includes('c
 assert(reminderLogic, "Recurring Android reminders should advance missed occurrences and pre-schedule bounded occurrences");
 assert(native.includes("checkExactNotificationSetting"), "Android exact-alarm permission state must be checked");
 assert(native.includes("LocalNotifications.cancel"), "Reminder sync must cancel stale scheduled notifications");
+assert(app.includes('JSON.stringify(data.reminders)!==lastSyncedReminders'), "Unrelated edits must not reschedule Android reminders");
+assert(app.includes("lastSyncedReminders=snapshot"), "Successful reminder sync must advance its snapshot");
 assert(sw.includes("request.mode") && sw.includes("navigate"), "Service worker must use navigation-only offline fallback");
 
 console.log("Daybook regression checks passed.");
