@@ -41,6 +41,11 @@ const viewIds = new Set([...html.matchAll(/class=["'][^"']*\bview\b[^"']*["'][^>
 const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map(match => match[1]));
 for (const target of navTargets) assert(viewIds.has(target), "Missing view for navigation target: " + target);
 assert.equal(viewIds.size, 6, "Expected six main views");
+assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
+assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$("#timeFormatSetting").value'), "Time-format setting must be editable and persisted");
+assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
+assert(app.includes('$("#overdue").textContent=data.tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length'), "Dashboard must show overdue task count");
+assert(app.includes("function dueMeta(t)"), "Tasks must show relative due-date labels");
 assert(app.includes('aria-label="Weekly timetable with timing and seven days"'), "Weekly table should describe its eight columns");
 assert(!app.includes('<div class="table-scroll"><table'), "Timetable must not create nested scroll containers");
 assert(html.includes('class="table-scroll" role="region"'), "Outer timetable region should own horizontal scrolling");

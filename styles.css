@@ -601,3 +601,16 @@ a:focus-visible{outline:2px solid var(--cyan);outline-offset:4px;border-radius:8
  .table-event .small-action{right:3px;bottom:2px;min-width:40px;min-height:36px;padding:6px 8px;font-size:10px}
  .table-event .small-action.danger{right:44px}
 }
+
+
+/* Task deadline clarity and settings sheet */
+.stats{grid-template-columns:repeat(5,minmax(0,1fr))}
+.task-due{display:inline-flex;align-items:center;margin-left:4px;padding:2px 7px;border:1px solid rgba(132,169,211,.2);border-radius:999px;color:#a9c2e3;font-size:9px;font-weight:800;white-space:nowrap}
+.task-due.is-overdue{border-color:rgba(255,117,139,.35);background:rgba(255,94,122,.10);color:#ff9eae}
+.task-due.is-today{border-color:rgba(255,190,100,.3);background:rgba(255,190,100,.08);color:#f4c47e}
+.overdue-stat strong{color:#ff9eae}
+.settings-note{padding:14px 15px;border:1px solid var(--line);border-radius:15px;background:rgba(11,20,38,.55)}
+.settings-note b{font-size:12px}.settings-note p{margin:6px 0 12px;color:var(--muted);font-size:11px;line-height:1.6}
+#settingsDialog .fields{gap:16px}
+@media(max-width:1050px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.task-due{margin-left:2px}}
