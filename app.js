@@ -28,9 +28,18 @@ routineTemplate.push(...[
  [1,"15:30","University finishes"],[2,"09:00","Flexible study / personal work"],[0,"09:00","Weekly planning and personal time"]
 ].map(([day,time,title])=>({day,time,title,id:uid()})));
 const storedRoutineVersion=Number(safeRead("routineVersion",0));
-const routineData=storedRoutineVersion<ROUTINE_VERSION||!Array.isArray(oldRoutine)
- ? routineTemplate
- : oldRoutine.flatMap(r=>r.day===undefined?DAYS.map((_,day)=>({...r,id:uid(),day})): [r]);
+const routineData=(()=>{
+ if(!Array.isArray(oldRoutine))return routineTemplate;
+ const existing=oldRoutine.filter(r=>r&&typeof r==="object"&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(r.time||"")&&String(r.title||"").trim()).flatMap(r=>{
+  const day=Number(r.day);
+  const days=Number.isInteger(day)&&day>=0&&day<=6?[day]:DAYS.map((_,i)=>i);
+  return days.map(d=>({...r,id:days.length===1&&r.id?String(r.id):uid(),day:d,title:String(r.title).trim()}));
+ });
+ if(storedRoutineVersion>=ROUTINE_VERSION)return existing;
+ const occupied=new Set(existing.map(r=>r.day+"|"+r.time));
+ const defaults=routineTemplate.filter(r=>!occupied.has(r.day+"|"+r.time));
+ return [...existing,...defaults];
+})();
 const data={
  subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.slice():SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;if(!list.some(s=>String(s).toLowerCase()===course.toLowerCase()))list.unshift(course);return [...new Set(list)]})(),
  classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?(storedRoutineVersion<ROUTINE_VERSION?saved.filter(c=>+c.day!==6):saved):classSeed})(),
