@@ -1,4 +1,4 @@
-const CACHE="daybook-v16";
+const CACHE="daybook-v17";
 const CORE=["./","./index.html","./styles.css","./app.js","./native.js","./manifest.webmanifest","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
@@ -14,7 +14,7 @@ self.addEventListener("fetch",event=>{
       const response=await fetch(request);
       if(response&&response.ok&&response.type==="basic"){
         const cache=await caches.open(CACHE);
-        await await cache.put(request,response.clone());
+        await cache.put(request,response.clone());
       }
       return response;
     }catch(error){
