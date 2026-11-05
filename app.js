@@ -166,6 +166,7 @@ function validateBackup(parsed){
  for(const key of keys){
   if(!Object.prototype.hasOwnProperty.call(incoming,key))continue;
   if(!Array.isArray(incoming[key]))throw new Error("Invalid "+key+" data");
+  const seenIds=new Set();
   result[key]=incoming[key].map((item,index)=>{
    if(key==="subjects"){if(typeof item!=="string"||!item.trim())throw new Error("Invalid subject");return item.trim()}
    if(!item||typeof item!=="object"||Array.isArray(item))throw new Error("Invalid "+key+" entry "+(index+1));
@@ -173,6 +174,8 @@ function validateBackup(parsed){
    if(!copy.id)copy.id=uid();
    if(typeof copy.id!=="string"&&typeof copy.id!=="number")throw new Error("Invalid record ID");
    copy.id=String(copy.id);
+   if(seenIds.has(copy.id))throw new Error("Duplicate record ID in "+key);
+   seenIds.add(copy.id);
    if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
    if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.start||"")||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
    if(key==="routine"&&(copy.day!==undefined&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
