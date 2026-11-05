@@ -15,6 +15,7 @@ for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build
 assert.equal(/(?<!\$)\$\(["\'][^"\']+["\']\)\.(?:forEach|map|filter|find|some|reduce|flatMap|sort)\(/.test(app), false, "querySelector results must not be treated as collections");
 assert.equal(/\${3,}\(/.test(app), false, "Malformed triple-dollar selectors must not exist");
 assert(app.includes("const safeWrite="), "Storage writes must be guarded against unavailable or full storage");
+assert(!app.includes("+c.day!==6"), "Routine version upgrades must not delete custom Saturday classes");
 assert(app.includes("function persist(){const saved="), "Persistence must report storage failures");
 assert(app.includes('$("#manageForm").onsubmit='), "Subject manager must handle Enter-key submission");
 assert(app.includes("nextWeekKey"), "Weekly analytics must exclude future weeks");
