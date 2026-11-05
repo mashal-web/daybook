@@ -225,3 +225,13 @@ dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
 @media(prefers-reduced-motion:reduce){dialog[open]{animation:none}}
 @media(min-width:721px) and (max-width:1024px){.layout{grid-template-columns:88px minmax(0,1fr)}.sidebar{padding-inline:12px}.brand{justify-content:center;margin-inline:0}.brand span,.sidebar>.label,.sidebar nav .nav{font-size:0}.sidebar nav .nav{justify-content:center;padding:13px}.sidebar nav .nav .nav-icon{margin:0}.sidebar-note{display:none}}
 @media(display-mode:standalone){body{min-height:100dvh}.mobile-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))}}
+
+
+/* Combined timetable and routine page */
+.schedule-section{padding:20px 0 26px;border-bottom:1px solid var(--line)}
+.schedule-section:last-child{border-bottom:0;padding-bottom:0}
+.schedule-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px}
+.schedule-section-head h3{font-size:21px;letter-spacing:-.6px}
+.schedule-section-head .muted{font-size:11px;margin-top:4px}
+.routine-section{padding-top:28px}
+@media(max-width:720px){.schedule-section-head{align-items:flex-start;flex-direction:column}.schedule-section-head .primary{width:auto;align-self:flex-start}.routine-section{padding-top:22px}}
