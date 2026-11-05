@@ -45,7 +45,7 @@ const routineData=(()=>{
 })();
 const data={
  subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.filter(s=>typeof s==="string"&&s.trim()).map(s=>s.trim()):SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;return [...new Set(list)]})(),
- classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?(storedRoutineVersion<ROUTINE_VERSION?saved.filter(c=>c&&typeof c==="object"&&+c.day!==6):saved.filter(c=>c&&typeof c==="object")):classSeed})(),
+ classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?saved.filter(c=>c&&typeof c==="object"&&!Array.isArray(c)):classSeed})(),
  routine:routineData,
  tasks:safeArray("tasks"),sessions:safeArray("sessions"),reminders:safeArray("reminders"),
  goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h"});return value&&typeof value==="object"&&["12h","24h"].includes(value.timeFormat)?value:{timeFormat:"12h"}})()
