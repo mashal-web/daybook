@@ -95,7 +95,7 @@ function openView(v){
  if(!target||!target.classList.contains("view")){toast("This section is unavailable");return}
  activeView=v;
  $$(".view").forEach(x=>x.classList.toggle("active",x===target));
- $$$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";
  $("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");render();
 }
