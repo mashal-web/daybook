@@ -19,6 +19,7 @@ assert(!app.includes("+c.day!==6"), "Routine version upgrades must not delete cu
 assert(app.includes("function persist(){const saved="), "Persistence must report storage failures");
 assert(app.includes('$("#manageForm").onsubmit='), "Subject manager must handle Enter-key submission");
 assert(app.includes("nextWeekKey"), "Weekly analytics must exclude future weeks");
+assert(app.includes("function refreshDayBoundary()") && app.includes("setInterval(refreshDayBoundary,60000)"), "Dashboard dates must refresh across midnight");
 assert(app.includes("grace=5*60*1000"), "Web reminders must tolerate brief background-tab delays");
 assert(native.includes("reminderSyncQueue = reminderSyncQueue.catch"), "Android reminder sync must be serialized");
 assert(sw.includes("const response=await fetch(request)"), "Service worker should prefer current network assets");
