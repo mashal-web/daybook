@@ -12,8 +12,13 @@ const workflow = read(".github/workflows/android.yml");
 for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")]]) {
   assert.doesNotThrow(() => new Function(source), name + " must parse");
 }
-assert.equal(/(?<!\$)\$\(["'][^"']+["']\)\.forEach/.test(app), false, "querySelector results must not be treated as collections");
+assert.equal(/(?<!\$)\$\(["\'][^"\']+["\']\)\.(?:forEach|map|filter|find|some|reduce|flatMap|sort)\(/.test(app), false, "querySelector results must not be treated as collections");
 assert.equal(/\${3,}\(/.test(app), false, "Malformed triple-dollar selectors must not exist");
+assert(app.includes('$("#manageForm").onsubmit='), "Subject manager must handle Enter-key submission");
+assert(app.includes("nextWeekKey"), "Weekly analytics must exclude future weeks");
+assert(app.includes("grace=5*60*1000"), "Web reminders must tolerate brief background-tab delays");
+assert(native.includes("reminderSyncQueue = reminderSyncQueue.catch"), "Android reminder sync must be serialized");
+assert(sw.includes("const response=await fetch(request)"), "Service worker should prefer current network assets");
 assert.equal(app.includes("function renderScheduleConflicts"), false, "Obsolete conflict renderer should be removed");
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
