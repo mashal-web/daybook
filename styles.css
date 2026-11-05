@@ -172,3 +172,56 @@ footer{text-align:center;color:var(--soft);font-size:9px;letter-spacing:1.4px;ma
 .primary .ui-icon{display:inline-block;width:15px;height:15px;vertical-align:-3px;margin-right:5px}
 .secondary .ui-icon{display:inline-block;width:15px;height:15px;vertical-align:-3px;margin-right:5px}
 @media(max-width:760px){.sidebar nav .nav{gap:12px}.mobile-nav .nav{gap:3px}}
+
+
+/* Android-first Material-inspired interaction and layout refinements */
+:root{
+ --md-bg:#e9ebee;--md-surface:#eef0f2;--md-surface-low:#e5e8eb;
+ --md-primary:#343b44;--md-on-primary:#fff;--md-outline:#c5cbd1;
+ --md-radius-sm:12px;--md-radius-md:18px;--md-radius-lg:24px;
+}
+html{scroll-padding-top:76px;overscroll-behavior-y:contain}
+body{min-height:100dvh;background:var(--md-bg)}
+button,a,input,select{ -webkit-tap-highlight-color:transparent}
+button{min-height:44px}
+.nav{min-height:48px;border-radius:14px}
+.nav.active{background:#dfe3e7;box-shadow:inset 0 1px 2px #c6cbd1,inset 0 -1px 1px #fff}
+.ui-icon{width:20px;height:20px;stroke-width:1.9}
+.nav-icon .ui-icon{width:21px;height:21px}
+.icon-btn{min-width:44px;min-height:44px;border-radius:14px}
+.primary,.secondary{min-height:48px;border-radius:14px;padding-inline:18px}
+.panel,.stats article{border-radius:20px}
+.row{min-height:56px;border-radius:14px}
+.check{width:20px;height:20px}
+input,select{font-size:16px}
+header{position:sticky;top:0;z-index:15;padding:10px 0;margin-top:-10px;background:color-mix(in srgb,var(--md-bg) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.menu{min-width:44px;min-height:44px;border-radius:14px}
+dialog{border-radius:24px;padding:24px}
+dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
+.fields{gap:16px}
+.field input,.field select,.focus-controls select,.task-tools>input{min-height:48px;border-radius:14px;padding:12px 14px}
+.actions button{min-width:100px}
+.mobile-nav{padding:6px;border:1px solid #d5d9de;border-radius:22px;background:#f0f2f4ed;box-shadow:0 8px 28px #33333320,0 1px 2px #fff inset;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.mobile-nav .nav{min-height:56px;border-radius:16px;color:#656d77;font-size:10px;font-weight:650;gap:4px}
+.mobile-nav .nav.active{background:#dfe3e7;color:#252a31;box-shadow:inset 2px 2px 5px #c8cdd2,inset -2px -2px 5px #fff}
+.mobile-nav .nav-icon{width:24px;height:24px}
+.mobile-nav .nav-icon .ui-icon{width:22px;height:22px}
+.toast{bottom:calc(86px + env(safe-area-inset-bottom));border-radius:16px;padding:13px 18px}
+@media(max-width:720px){
+ body{padding-top:env(safe-area-inset-top)}
+ main{padding-top:12px;padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+ header{top:env(safe-area-inset-top);margin-top:-12px;padding:10px 0 9px}
+ h1{font-size:22px}
+ .mobile-nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));min-height:68px}
+ .mobile-nav .nav{min-height:54px;padding:5px 2px}
+ .intro .primary{width:auto;align-self:flex-start}
+ .week-controls{top:calc(60px + env(safe-area-inset-top));border-radius:14px}
+ dialog[open]{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:min(88dvh,760px);border-radius:26px 26px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));animation:sheet-in .18s ease-out}
+ dialog[open]::backdrop{background:#171b2070}
+ .actions{bottom:calc(-20px - env(safe-area-inset-bottom));padding:14px 0 calc(8px + env(safe-area-inset-bottom))}
+ .row .small-action{min-width:40px;min-height:40px}
+}
+@keyframes sheet-in{from{transform:translateY(24px);opacity:.7}to{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){dialog[open]{animation:none}}
+@media(min-width:721px) and (max-width:1024px){.layout{grid-template-columns:88px minmax(0,1fr)}.sidebar{padding-inline:12px}.brand{justify-content:center;margin-inline:0}.brand span,.sidebar>.label,.sidebar nav .nav:not(.active){font-size:0}.sidebar nav .nav{justify-content:center;padding:13px}.sidebar nav .nav .nav-icon{margin:0}.sidebar-note{display:none}}
+@media(display-mode:standalone){body{min-height:100dvh}.mobile-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))}}
