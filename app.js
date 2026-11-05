@@ -23,7 +23,7 @@ const routineTemplate=Array.from({length:7},(_,day)=>[
 ].map(x=>({...x,day,id:uid()}))).flat();
 routineTemplate.push(...[
  [1,"07:30","Leave for university"],[3,"07:30","Leave for university"],[4,"07:30","Leave for university"],[5,"07:30","Leave for university"],
- [3,"10:30","Library study until 3:00 PM"],[4,"13:00","Library study until 3:00 PM"],[5,"13:00","Library study until 3:00 PM"],
+ [3,"10:30","Library study until 3:00 PM"],[4,"14:00","Library study until 3:00 PM"],[5,"14:00","Library study until 3:00 PM"],
  [3,"15:00","Leave library"],[4,"15:00","Leave library"],[5,"15:00","Leave library"],
  [1,"15:30","University finishes"],[2,"09:00","Flexible study / personal work"],[0,"09:00","Weekly planning and personal time"]
 ].map(([day,time,title])=>({day,time,title,id:uid()})));
