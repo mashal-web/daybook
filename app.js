@@ -4,6 +4,8 @@ const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturda
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
 const today=new Date(), uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
 const safeRead=(k,f)=>{try{const v=JSON.parse(localStorage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
+const safeSet=(key,value)=>{try{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));return true}catch{return false}};
+const safeWrite=(key,value)=>safeSet("daybook_"+key,value);
 const safeArray=(k,f=[])=>{const value=safeRead(k,f);return Array.isArray(value)?value.filter(item=>item&&typeof item==="object"&&!Array.isArray(item)):f};
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"}].map(x=>({...x,id:uid()}));
 const ROUTINE_VERSION=2;
@@ -48,10 +50,10 @@ const data={
  tasks:safeArray("tasks"),sessions:safeArray("sessions"),reminders:safeArray("reminders"),
  goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h"});return value&&typeof value==="object"&&["12h","24h"].includes(value.timeFormat)?value:{timeFormat:"12h"}})()
 };
-localStorage.setItem("daybook_subjects",JSON.stringify(data.subjects));
-localStorage.setItem("daybook_routine",JSON.stringify(data.routine));
-localStorage.setItem("daybook_routineVersion",String(ROUTINE_VERSION));
-localStorage.setItem("daybook_classes",JSON.stringify(data.classes));
+safeWrite("subjects",data.subjects);
+safeWrite("routine",data.routine);
+safeWrite("routineVersion",ROUTINE_VERSION);
+safeWrite("classes",data.classes);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
@@ -64,7 +66,7 @@ const storedRemaining=Number(savedFocus.remaining);
 const focusRemaining=Number.isFinite(storedRemaining)&&storedRemaining>=0&&storedRemaining<=focusDuration?storedRemaining:focusDuration;
 const focusEndsAt=Number(savedFocus.endsAt);
 let focusState={...savedFocus,mode:focusMode,duration:focusDuration,remaining:focusRemaining,running:savedFocus.running===true&&Number.isFinite(focusEndsAt),endsAt:savedFocus.running===true&&Number.isFinite(focusEndsAt)?focusEndsAt:null};
-function storeFocus(){localStorage.setItem(FOCUS_KEY,JSON.stringify(focusState))}
+function storeFocus(){if(!safeSet(FOCUS_KEY,focusState))toast("Focus timer could not be saved on this device")}
 function formatTimer(seconds){return String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
 function renderFocus(){
  const subject=$("#focusSubject");if(subject){const selected=focusState.subject||data.subjects[0]||"";subject.innerHTML=data.subjects.map(s=>'<option value="'+esc(s)+'" '+(s===selected?"selected":"")+'>'+esc(s)+'</option>').join("")||'<option value="">Add a subject in Study Planner</option>';subject.disabled=!data.subjects.length;subject.onchange=()=>{focusState.subject=subject.value;storeFocus()}}
@@ -92,8 +94,8 @@ $("#focusStart").onclick=()=>{
 $("#focusReset").onclick=()=>{focusState.running=false;focusState.endsAt=null;focusState.duration=focusState.mode==="focus"?1500:300;focusState.remaining=focusState.duration;storeFocus();renderFocus()};
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
-function persist(){["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].forEach(k=>localStorage.setItem("daybook_"+k,JSON.stringify(data[k])));if(window.DaybookNative?.isNative())window.DaybookNative.syncReminders(data.reminders).catch(()=>toast("Could not update Android reminders"));}
-function save(msg="Saved"){persist();render();toast(msg)}
+function persist(){const saved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative())window.DaybookNative.syncReminders(data.reminders).catch(()=>toast("Could not update Android reminders"));return saved}
+function save(msg="Saved"){const stored=persist();render();toast(stored?msg:"Could not save changes. Export a backup before closing Daybook.")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
 function fmt(t){if(!t)return "";if(data.settings.timeFormat==="24h")return t;let [h,m]=t.split(":").map(Number);return (h%12||12)+":"+String(m).padStart(2,"0")+" "+(h>=12?"PM":"AM")}
