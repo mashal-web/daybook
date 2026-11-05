@@ -91,6 +91,19 @@ jobs:
       - name: Sync Capacitor plugins
         run: npx cap sync android
 
+      - name: Declare exact-alarm permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          content = manifest.read_text()
+          permission = '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />'
+          if permission not in content:
+              content = re.sub(r'(<manifest\\b[^>]*>)', r'\\1\\n    ' + permission, content, count=1)
+              manifest.write_text(content)
+          PY
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
