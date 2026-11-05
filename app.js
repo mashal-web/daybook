@@ -1,7 +1,7 @@
 "use strict";
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const SUBJECTS=["Applied Physics & Engineering Mechanics","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
+const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
 const today=new Date(), uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
 const safeRead=(k,f)=>{try{const v=JSON.parse(localStorage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
 const routineSeed=()=>{const a=[],add=(day,time,title)=>a.push({id:uid(),day,time,title});for(let d=0;d<7;d++){add(d,"05:30","Wake up, Fajr and freshen up");add(d,"06:00","Quran");add(d,"07:00","Breakfast and get ready");add(d,"16:00","Focused study / assignments");add(d,"18:00","Break, prayer and personal time");add(d,"20:00","Revision and prepare for tomorrow");add(d,"21:30","Sleep");}
