@@ -10,41 +10,64 @@ on:
       - "styles.css"
       - "native.js"
       - "package.json"
-      - "package-lock.json"
       - "capacitor.config.json"
+      - "manifest.webmanifest"
+      - "icon.svg"
       - "scripts/**"
       - ".github/workflows/android.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: daybook-android-build
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build installable Android APK
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools"
+
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
       - name: Install dependencies
-        run: npm install
-      - name: Prepare web app
+        run: npm install --no-audit --no-fund
+
+      - name: Prepare web app and native plugin bundle
         run: npm run build
+
+      - name: Verify packaged app files
+        run: |
+          test -s www/index.html
+          test -s www/app.js
+          test -s www/native.js
+          test -s www/styles.css
+          test -s www/manifest.webmanifest
+
       - name: Add Android platform
         run: npx cap add android
+
       - name: Add Android notification icon
         run: |
           mkdir -p android/app/src/main/res/drawable
@@ -56,15 +79,21 @@ jobs:
                   android:pathData="M12,2L3,7v10l9,5 9,-5V7zM12,5.1l5.8,3.2L12,11.5 6.2,8.3zM5,10.2l5.5,3v5.3L5,15.4zM13.5,18.5v-5.3l5.5,-3v5.2z"/>
           </vector>
           EOF
+
       - name: Sync Capacitor plugins
         run: npx cap sync android
+
       - name: Build debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
-      - name: Upload APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Verify APK
+        run: test -s android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: daybook-android-debug
+          name: Daybook-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
