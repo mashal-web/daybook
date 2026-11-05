@@ -2,6 +2,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 
 const native = Capacitor.isNativePlatform();
+if (native) document.documentElement.classList.add("native-app");
 const notificationId = (value) => {
   let hash = 0;
   for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) | 0;
