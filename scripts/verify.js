@@ -7,13 +7,20 @@ const app = read("app.js");
 const html = read("index.html");
 const sw = read("sw.js");
 const build = read("scripts/build.js");
+const native = read("native.js");
+const workflow = read(".github/workflows/android.yml");
 
 assert.doesNotThrow(() => new Function(app), "app.js must parse");
 assert.doesNotThrow(() => new Function(sw), "sw.js must parse");
 assert.doesNotThrow(() => new Function(build), "build.js must parse");
+assert.doesNotThrow(() => new Function(native.replace(/^import .*;\\s*/gm, "")), "native.js must parse");
 assert.equal(/(?<!\$)\$\(["'][^"']+["']\)\.forEach/.test(app), false, "collection operations must use $()");
 assert.equal(/\${3,}\(/.test(app), false, "triple-dollar selectors must not exist");
 assert.equal(app.includes("function renderScheduleConflicts"), false, "obsolete schedule conflict renderer must be removed");
+assert.equal(app.includes("if(!list.some(s=>String(s).toLowerCase()===course.toLowerCase()))"), false, "removed subjects must not be silently re-added");
+assert(native.includes("schedule: { at: scheduledAt, allowWhileIdle: true }"), "Android reminders must use anchored one-time occurrences");
+assert.equal(native.includes("repeats: true") || native.includes("every: repeat"), false, "Android recurring reminders must not use conflicting schedule modes");
+assert(workflow.includes("android.permission.SCHEDULE_EXACT_ALARM"), "Android exact-alarm permission must be declared");
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
 assert.equal(new Set(ids).size, ids.length, "HTML IDs must be unique");
