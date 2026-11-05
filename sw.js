@@ -1,10 +1,19 @@
-const CACHE="daybook-v24";
+const CACHE="daybook-v25";
 const CORE=["./","./index.html","./styles.css","./app.js","./native.js","./manifest.webmanifest","./icon.svg"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });
 self.addEventListener("activate",event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("daybook-")&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+});
+
+self.addEventListener("notificationclick",event=>{
+  event.notification.close();
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+    for(const client of windows)if("focus"in client)return client.focus();
+    if(self.clients.openWindow)return self.clients.openWindow("./");
+  })());
 });
 self.addEventListener("fetch",event=>{
   const request=event.request;
