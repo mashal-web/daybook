@@ -101,6 +101,7 @@ assert(native.includes("checkExactNotificationSetting"), "Android exact-alarm pe
 assert(native.includes("LocalNotifications.cancel"), "Reminder sync must cancel stale scheduled notifications");
 assert(app.includes('JSON.stringify(data.reminders)!==lastSyncedReminders'), "Unrelated edits must not reschedule Android reminders");
 assert(app.includes("lastSyncedReminders=snapshot"), "Successful reminder sync must advance its snapshot");
+assert(app.includes('s.done?"Reopen":"Complete"')&&app.includes("s.done=!s.done"), "Study sessions must be reopenable after completion");
 assert(sw.includes("request.mode") && sw.includes("navigate"), "Service worker must use navigation-only offline fallback");
 
 console.log("Daybook regression checks passed.");
