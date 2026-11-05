@@ -33,6 +33,9 @@ const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map
 for (const target of navTargets) assert(viewIds.has(target), "Navigation target has no view: " + target);
 assert.equal(viewIds.size, 6, "Expected six primary views");
 assert(app.includes('aria-label="Weekly timetable with timing and seven days"'), "Weekly table must identify its eight-column structure");
+assert(app.includes('class="table-scroll"><table class="week-table"'), "Weekly timetable must scroll horizontally on small screens");
+assert(app.includes("data.routine.filter(r=>+r.day===today.getDay())"), "Overview must show routine activities as well as classes");
+assert(app.includes('data-id="'+esc(id)+'"'), "Dynamic record IDs must be HTML-escaped");
 assert(app.includes('colspan="8"'), "Empty timetable state must span all eight columns");
 assert(build.includes('"sw.js"'), "Android build must include the service worker");
 
@@ -58,6 +61,12 @@ const backup = { app: "Daybook", version: 1, data: {
 const imported = validateBackup(backup);
 assert.deepEqual(imported.result.subjects, ["Engineering Mathematics"], "Exported subject strings must import");
 assert.equal(imported.incoming.goal, 10);
+assert.equal(typeof imported.result.tasks[0].id, "string", "Imported numeric IDs must normalize to strings");
+const legacyBackup = { ...backup, data: { ...backup.data, routine: [{ id: "legacy", time: "06:00", title: "Legacy common activity" }] } };
+const legacyRoutine = validateBackup(legacyBackup).result.routine;
+assert.equal(legacyRoutine.length, 7, "Legacy common routine entries must expand across all seven days");
+assert.equal(new Set(legacyRoutine.map(item => item.id)).size, 7, "Expanded routine entries must receive unique IDs");
+assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, tasks: [{ id: "duplicate", title: "One" }, { id: "duplicate", title: "Two" }] } }), /Duplicate record ID/);
 assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, goal: 0 } }), /Invalid weekly goal/);
 assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, settings: { timeFormat: "invalid" } } }), /Invalid settings/);
 
