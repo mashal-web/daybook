@@ -55,6 +55,7 @@ safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
+let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
@@ -95,7 +96,7 @@ $("#focusStart").onclick=()=>{
 $("#focusReset").onclick=()=>{focusState.running=false;focusState.endsAt=null;focusState.duration=focusState.mode==="focus"?1500:300;focusState.remaining=focusState.duration;storeFocus();renderFocus()};
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
-function persist(){const saved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative())window.DaybookNative.syncReminders(data.reminders).catch(()=>toast("Could not update Android reminders"));return saved}
+function persist(){const saved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
 function save(msg="Saved"){const stored=persist();render();toast(stored?msg:"Could not save changes. Export a backup before closing Daybook.")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
@@ -218,6 +219,6 @@ function refreshDayBoundary(){
 }
 setInterval(refreshDayBoundary,60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshDayBoundary()});
-const syncNativeReminders=()=>window.DaybookNative?.syncReminders(data.reminders).catch(()=>toast("Could not sync Android reminders"));
+const syncNativeReminders=()=>{if(!window.DaybookNative?.isNative())return Promise.resolve();const snapshot=JSON.stringify(data.reminders);return window.DaybookNative.syncReminders(data.reminders).then(()=>{lastSyncedReminders=snapshot}).catch(()=>toast("Could not sync Android reminders"))};
 window.addEventListener("daybook-native-ready",syncNativeReminders);
 window.addEventListener("daybook-native-resume",syncNativeReminders);
