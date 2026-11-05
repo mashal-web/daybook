@@ -7,6 +7,7 @@ const html = read("index.html");
 const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
+const manifest = JSON.parse(read("manifest.webmanifest"));
 const workflow = read(".github/workflows/android.yml");
 
 for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")]]) {
@@ -47,6 +48,8 @@ assert(app.includes('colspan="8"'), "Empty timetable row should span all eight c
 assert(/data-id=.*esc\(id\)/.test(app), "Record IDs must be HTML escaped before rendering");
 assert(build.includes('"sw.js"'), "Android build must copy the service worker");
 assert(workflow.includes("node scripts/verify.js"), "Android workflow must run regression tests");
+assert(manifest.icons.some(icon=>icon.sizes==="192x192"&&icon.type==="image/png"), "PWA manifest must include a 192px PNG icon");
+assert(manifest.icons.some(icon=>icon.sizes==="512x512"&&icon.type==="image/png"), "PWA manifest must include a 512px PNG icon");
 assert(workflow.includes("android.permission.SCHEDULE_EXACT_ALARM"), "Android build must declare exact-alarm permission");
 
 const uid = (() => { let n = 0; return () => "test-" + (++n); })();
