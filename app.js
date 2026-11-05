@@ -30,7 +30,7 @@ routineTemplate.push(...[
 const storedRoutineVersion=Number(safeRead("routineVersion",0));
 const routineData=(()=>{
  if(!Array.isArray(oldRoutine))return routineTemplate;
- const existing=oldRoutine.filter(r=>r&&typeof r==="object"&&/^([01]\\d|2[0-3]):[0-5]\\d$/.test(r.time||"")&&String(r.title||"").trim()).flatMap(r=>{
+ const existing=oldRoutine.filter(r=>r&&typeof r==="object"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time||"")&&String(r.title||"").trim()).flatMap(r=>{
   const day=Number(r.day);
   const days=Number.isInteger(day)&&day>=0&&day<=6?[day]:DAYS.map((_,i)=>i);
   return days.map(d=>({...r,id:days.length===1&&r.id?String(r.id):uid(),day:d,title:String(r.title).trim()}));
@@ -138,7 +138,7 @@ if(type==="reminder"){title=id?"Edit reminder":"Add reminder";body=field("Remind
 $("#dialogTitle").textContent=title;$("#fields").innerHTML=body;$("#editor").showModal()}
 $$("[data-add]").forEach(b=>b.onclick=()=>openEditor(b.dataset.add));
 $("#close").onclick=$("#cancel").onclick=()=>$("#editor").close();
-$("#form").onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target).entries());const type=edit.type,id=edit.id;let key=({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type];const validDate=s=>/^\\d{4}-\\d{2}-\\d{2}$/.test(s)&&!Number.isNaN(new Date(s+"T12:00:00").getTime())&&iso(new Date(s+"T12:00:00"))===s;const validTime=s=>/^([01]\\d|2[0-3]):[0-5]\\d$/.test(s);if(["task","routine","reminder"].includes(type))v.title=(v.title||"").trim();if(type==="class"){v.subject=(v.subject||"").trim();if(!v.subject||!validTime(v.start)||!validTime(v.end)){toast("Enter a subject and valid start/end times");return}v.day=+v.day;if(!Number.isInteger(v.day)||v.day<0||v.day>6){toast("Choose a valid day");return}if(minutes(v.end)<=minutes(v.start)){toast("End time must be after start time");return}const clash=data.classes.some(c=>c.id!==id&&+c.day===v.day&&minutes(v.start)<minutes(c.end)&&minutes(v.end)>minutes(c.start));if(clash&&!confirm("This class overlaps another class. Save anyway?"))return}
+$("#form").onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target).entries());const type=edit.type,id=edit.id;let key=({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type];const validDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(new Date(s+"T12:00:00").getTime())&&iso(new Date(s+"T12:00:00"))===s;const validTime=s=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s);if(["task","routine","reminder"].includes(type))v.title=(v.title||"").trim();if(type==="class"){v.subject=(v.subject||"").trim();if(!v.subject||!validTime(v.start)||!validTime(v.end)){toast("Enter a subject and valid start/end times");return}v.day=+v.day;if(!Number.isInteger(v.day)||v.day<0||v.day>6){toast("Choose a valid day");return}if(minutes(v.end)<=minutes(v.start)){toast("End time must be after start time");return}const clash=data.classes.some(c=>c.id!==id&&+c.day===v.day&&minutes(v.start)<minutes(c.end)&&minutes(v.end)>minutes(c.start));if(clash&&!confirm("This class overlaps another class. Save anyway?"))return}
 if(type==="routine"){if(!v.title||!validTime(v.time)){toast("Enter an activity and a valid time");return}v.day=+v.day;if(!Number.isInteger(v.day)||v.day<0||v.day>6){toast("Choose a valid day");return}const clash=data.routine.some(r=>r.id!==id&&+r.day===v.day&&r.time===v.time);if(clash){toast("There is already an activity at this time");return}}
 if(type==="task"&&!v.title){toast("Enter a task name");return}if(type==="reminder"&&(!v.title||!validDate(v.date)||!validTime(v.time))){toast("Enter a reminder, valid date and valid time");return}if(type==="study"){v.subject=(v.subject||"").trim();v.topic=(v.topic||"").trim();const mins=Number(v.minutes);if(!v.subject||!validDate(v.date)||!Number.isInteger(mins)||mins<1||mins>1440){toast("Enter a subject, valid date and duration from 1 to 1440 minutes");return}v.minutes=mins}
 if(id){const i=data[key].findIndex(x=>x.id===id);data[key][i]={...data[key][i],...v}}else data[key].push({id:uid(),...v,done:false,createdAt:new Date().toISOString()});$("#editor").close();save(id?"Changes saved":"Added successfully")};
@@ -164,12 +164,12 @@ function validateBackup(parsed){
    if(!copy.id)copy.id=uid();
    if(typeof copy.id!=="string"&&typeof copy.id!=="number")throw new Error("Invalid record ID");
    if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
-   if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.start||"")||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
-   if(key==="routine"&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
-   if(["sessions","reminders"].includes(key)&&(!/^\\d{4}-\\d{2}-\\d{2}$/.test(copy.date||"")||iso(new Date(copy.date+"T12:00:00"))!==copy.date))throw new Error("Invalid date in "+key);
+   if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.start||"")||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
+   if(key==="routine"&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
+   if(["sessions","reminders"].includes(key)&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.date||"")||iso(new Date(copy.date+"T12:00:00"))!==copy.date))throw new Error("Invalid date in "+key);
    if(key==="sessions"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.minutes))||Number(copy.minutes)<1||Number(copy.minutes)>1440))throw new Error("Invalid study session");
-   if(key==="reminders"&&(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(copy.time||"")||!["none","daily","weekly",undefined].includes(copy.repeat)))throw new Error("Invalid reminder");
-   if(key==="tasks"&&copy.due&&(!/^\\d{4}-\\d{2}-\\d{2}$/.test(copy.due)||iso(new Date(copy.due+"T12:00:00"))!==copy.due))throw new Error("Invalid task due date");
+   if(key==="reminders"&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")||!["none","daily","weekly",undefined].includes(copy.repeat)))throw new Error("Invalid reminder");
+   if(key==="tasks"&&copy.due&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.due)||iso(new Date(copy.due+"T12:00:00"))!==copy.due))throw new Error("Invalid task due date");
    return copy;
   });
  }
