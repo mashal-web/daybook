@@ -219,6 +219,16 @@ function smokeTestAppRuntime() {
   byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
   assert(JSON.parse(storage.get("daybook_routine")).some(item => item.title === "Runtime routine"), "Routine form should persist an activity");
 
+  elements.find(element => element.dataset.add === "class").click();
+  context.formPayload = { subject: "Engineering Mathematics", day: "0", start: "10:00", end: "11:00", room: "Test room" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  assert(JSON.parse(storage.get("daybook_classes")).some(item => item.room === "Test room"), "Class form should persist a class");
+
+  elements.find(element => element.dataset.add === "reminder").click();
+  context.formPayload = { title: "Runtime reminder", date: "2099-12-31", time: "18:00", repeat: "daily" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  assert(JSON.parse(storage.get("daybook_reminders")).some(item => item.title === "Runtime reminder"), "Reminder form should persist a reminder");
+
   elements.find(element => element.dataset.add === "study").click();
   context.formPayload = { subject: "Engineering Mathematics", topic: "Runtime test", date: "2099-12-31", minutes: "45" };
   byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
