@@ -14,6 +14,8 @@ on:
       - "manifest.webmanifest"
       - "sw.js"
       - "icon.svg"
+      - "icon-192.png"
+      - "icon-512.png"
       - "scripts/**"
       - ".github/workflows/android.yml"
 
@@ -91,6 +93,35 @@ jobs:
 
       - name: Sync Capacitor plugins
         run: npx cap sync android
+
+      - name: Apply Daybook launcher icons
+        run: |
+          RES="android/app/src/main/res"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "$RES/mipmap-$density"
+            cp icon-192.png "$RES/mipmap-$density/ic_launcher.png"
+            cp icon-192.png "$RES/mipmap-$density/ic_launcher_round.png"
+            cp icon-512.png "$RES/mipmap-$density/ic_launcher_foreground.png"
+          done
+          mkdir -p "$RES/mipmap-anydpi-v26"
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher_round.xml" <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+
+      - name: Verify Daybook launcher resources
+        run: |
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
       - name: Declare exact-alarm permission
         run: |
