@@ -223,5 +223,5 @@ dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
 }
 @keyframes sheet-in{from{transform:translateY(24px);opacity:.7}to{transform:translateY(0);opacity:1}}
 @media(prefers-reduced-motion:reduce){dialog[open]{animation:none}}
-@media(min-width:721px) and (max-width:1024px){.layout{grid-template-columns:88px minmax(0,1fr)}.sidebar{padding-inline:12px}.brand{justify-content:center;margin-inline:0}.brand span,.sidebar>.label,.sidebar nav .nav:not(.active){font-size:0}.sidebar nav .nav{justify-content:center;padding:13px}.sidebar nav .nav .nav-icon{margin:0}.sidebar-note{display:none}}
+@media(min-width:721px) and (max-width:1024px){.layout{grid-template-columns:88px minmax(0,1fr)}.sidebar{padding-inline:12px}.brand{justify-content:center;margin-inline:0}.brand span,.sidebar>.label,.sidebar nav .nav{font-size:0}.sidebar nav .nav{justify-content:center;padding:13px}.sidebar nav .nav .nav-icon{margin:0}.sidebar-note{display:none}}
 @media(display-mode:standalone){body{min-height:100dvh}.mobile-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))}}
