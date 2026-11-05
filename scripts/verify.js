@@ -41,6 +41,11 @@ const viewIds = new Set([...html.matchAll(/class=["'][^"']*\bview\b[^"']*["'][^>
 const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map(match => match[1]));
 for (const target of navTargets) assert(viewIds.has(target), "Missing view for navigation target: " + target);
 assert.equal(viewIds.size, 6, "Expected six main views");
+assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "Weekly routine must include university schedule summary and setup guidance");
+assert(app.includes('$("#classCount").textContent=data.classes.length'), "Weekly routine must summarize saved university entries");
+assert(app.includes('UNIVERSITY CLASS')&&app.includes('DAILY ROUTINE'), "Weekly timetable events must visually distinguish classes from routine activities");
+assert(css.includes(".schedule-insights")&&css.includes(".class-setup-note"), "Weekly routine must style its class summary and setup note");
+
 assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
 assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$("#timeFormatSetting").value'), "Time-format setting must be editable and persisted");
 assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
