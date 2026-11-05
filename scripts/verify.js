@@ -42,7 +42,7 @@ const iso = value => {
 };
 const validationMatch = app.match(/function validateBackup\(parsed\)\{[\s\S]*?return \{incoming,result\};\n\}/);
 assert(validationMatch, "Backup validation function must exist");
-const validateBackup = new Function("uid", "minutes", "iso", validationMatch[0] + "; return validateBackup;")(uid, minutes, iso);
+const validateBackup = new Function("uid", "minutes", "iso", "DAYS", validationMatch[0] + "; return validateBackup;")(uid, minutes, iso, ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
 const backup = { app: "Daybook", version: 1, data: {
   subjects: ["Engineering Mathematics"], classes: [],
   routine: [{ id: "r1", day: 1, time: "06:00", title: "Tilawat" }],
