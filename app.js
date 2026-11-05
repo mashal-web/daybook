@@ -80,7 +80,7 @@ function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
 function fmt(t){if(!t)return "";if(data.settings.timeFormat==="24h")return t;let [h,m]=t.split(":").map(Number);return (h%12||12)+":"+String(m).padStart(2,"0")+" "+(h>=12?"PM":"AM")}
 function toast(s){const el=$("#toast");el.textContent=s;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),2200)}
-function openView(v){activeView=v;$$(".view").forEach(x=>x.classList.toggle("active",x.id===v));$$(".nav").forEach(x=>x.classList.toggle("active",x.dataset.view===v));$("#heading").textContent=({overview:"Overview",weekly:"Weekly timetable",routine:"Daily routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";$("#sidebar").classList.remove("open");render()}
+function openView(v){activeView=v;$(".view").forEach(x=>x.classList.toggle("active",x.id===v));$(".nav").forEach(x=>{const active=x.dataset.view===v;x.classList.toggle("active",active);if(active)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current")});$("#heading").textContent=({overview:"Overview",weekly:"Weekly timetable",routine:"Daily routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";$("#sidebar").classList.remove("open");render()}
 $$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#menu").onclick=()=>$("#sidebar").classList.toggle("open");
