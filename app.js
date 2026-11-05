@@ -158,9 +158,9 @@ function validateBackup(parsed){
   if(!Object.prototype.hasOwnProperty.call(incoming,key))continue;
   if(!Array.isArray(incoming[key]))throw new Error("Invalid "+key+" data");
   result[key]=incoming[key].map((item,index)=>{
+   if(key==="subjects"){if(typeof item!=="string"||!item.trim())throw new Error("Invalid subject");return item.trim()}
    if(!item||typeof item!=="object"||Array.isArray(item))throw new Error("Invalid "+key+" entry "+(index+1));
    const copy={...item};
-   if(key==="subjects"){if(typeof item!=="string"||!item.trim())throw new Error("Invalid subject");return item.trim()}
    if(!copy.id)copy.id=uid();
    if(typeof copy.id!=="string"&&typeof copy.id!=="number")throw new Error("Invalid record ID");
    if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
@@ -173,8 +173,8 @@ function validateBackup(parsed){
    return copy;
   });
  }
- if(parsed.goal!==undefined&&(!Number.isFinite(Number(parsed.goal))||Number(parsed.goal)<1||Number(parsed.goal)>100))throw new Error("Invalid weekly goal");
- if(parsed.settings!==undefined&&(!parsed.settings||typeof parsed.settings!=="object"||!["12h","24h"].includes(parsed.settings.timeFormat)))throw new Error("Invalid settings");
+ if(incoming.goal!==undefined&&(!Number.isFinite(Number(parsed.goal))||Number(parsed.goal)<1||Number(parsed.goal)>100))throw new Error("Invalid weekly goal");
+ if(incoming.settings!==undefined&&(!parsed.settings||typeof parsed.settings!=="object"||!["12h","24h"].includes(parsed.settings.timeFormat)))throw new Error("Invalid settings");
  return {incoming,result};
 }
 $("#importBtn").onclick=()=>$("#importFile").click();$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5*1024*1024)throw new Error("Backup file is larger than 5 MB");const parsed=JSON.parse(await file.text());const {incoming,result}=validateBackup(parsed);if(!confirm("Import this backup and replace matching Daybook data currently stored on this device?"))return;Object.assign(data,result);if(incoming.goal!==undefined)data.goal=Number(incoming.goal);if(incoming.settings)data.settings={...data.settings,...incoming.settings};save("Backup imported")}catch(err){toast(err.message==="Backup file is larger than 5 MB"?err.message:"Backup rejected: "+(err.message||"invalid data"))}finally{e.target.value=""}};
