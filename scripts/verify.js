@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const read = path => fs.readFileSync(path, "utf8");
 const app = read("app.js");
 const html = read("index.html");
+const css = read("styles.css");
 const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
@@ -44,6 +45,9 @@ assert.equal(viewIds.size, 6, "Expected six main views");
 assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "Weekly routine must include university schedule summary and setup guidance");
 assert(app.includes('$("#classCount").textContent=data.classes.length'), "Weekly routine must summarize saved university entries");
 assert(app.includes('UNIVERSITY CLASS')&&app.includes('DAILY ROUTINE'), "Weekly timetable events must visually distinguish classes from routine activities");
+assert(app.includes('const times=[...new Set(columns.flatMap(items=>items.map(x=>x.time)))].sort'), "Repeated daily activities must share one timetable row per start time");
+assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.routine.filter(x=>+x.day===day)'), "University classes and daily routine must render in the same seven-day grid");
+assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
 assert(css.includes(".schedule-insights")&&css.includes(".class-setup-note"), "Weekly routine must style its class summary and setup note");
 
 assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
