@@ -27,6 +27,7 @@ assert(sw.includes('key.startsWith("daybook-")'), "Service worker must not delet
 assert.equal(app.includes("function renderScheduleConflicts"), false, "Obsolete conflict renderer should be removed");
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
+assert(html.includes('<dialog id="goalDialog" aria-labelledby="goalDialogTitle"') && html.includes('<h3 id="goalDialogTitle">Weekly study goal</h3>'), "Goal dialog must label itself with its own heading");
 assert.equal(new Set(ids).size, ids.length, "HTML IDs must be unique");
 const idSet = new Set(ids);
 for (const id of new Set([...app.matchAll(/\$\(["']#([^"']+)["']\)/g)].map(match => match[1]))) {
