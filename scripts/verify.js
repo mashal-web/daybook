@@ -104,4 +104,126 @@ assert(app.includes("lastSyncedReminders=snapshot"), "Successful reminder sync m
 assert(app.includes('s.done?"Reopen":"Complete"')&&app.includes("s.done=!s.done"), "Study sessions must be reopenable after completion");
 assert(sw.includes("request.mode") && sw.includes("navigate"), "Service worker must use navigation-only offline fallback");
 
+
+function smokeTestAppRuntime() {
+  class MockElement {
+    constructor(tag, attrs = {}) {
+      this.tagName = tag.toUpperCase();
+      this.attributes = { ...attrs };
+      this.dataset = {};
+      this.listeners = {};
+      this.style = {};
+      this.classNames = new Set((attrs.class || "").split(/\s+/).filter(Boolean));
+      this.classList = {
+        add: name => this.classNames.add(name),
+        remove: name => this.classNames.delete(name),
+        contains: name => this.classNames.has(name),
+        toggle: (name, force) => {
+          const enabled = force === undefined ? !this.classNames.has(name) : !!force;
+          if (enabled) this.classNames.add(name); else this.classNames.delete(name);
+          return enabled;
+        }
+      };
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key.startsWith("data-")) this.dataset[key.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = value;
+      }
+      this.value = attrs.value || "";
+      this.checked = !!attrs.checked;
+      this.textContent = "";
+      this.innerHTML = "";
+      this.disabled = false;
+      this.open = false;
+    }
+    addEventListener(type, callback) { (this.listeners[type] ||= []).push(callback); }
+    fire(type, event = {}) {
+      for (const callback of this.listeners[type] || []) callback({ target: this, preventDefault() {}, ...event });
+      if (typeof this["on" + type] === "function") this["on" + type]({ target: this, preventDefault() {}, ...event });
+    }
+    click() { this.fire("click"); }
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+    removeAttribute(name) { delete this.attributes[name]; }
+    contains(element) { return element === this; }
+    showModal() { this.open = true; }
+    close() { this.open = false; }
+  }
+
+  const elements = [];
+  for (const match of html.matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
+    const attrs = {};
+    for (const attr of match[2].matchAll(/([^\s=]+)(?:="([^"]*)")?/g)) attrs[attr[1]] = attr[2] ?? "";
+    elements.push(new MockElement(match[1], attrs));
+  }
+  const byId = new Map(elements.filter(element => element.attributes.id).map(element => [element.attributes.id, element]));
+  const documentEvents = {};
+  const document = {
+    documentElement: new MockElement("html"),
+    querySelector(selector) { return selector.startsWith("#") ? byId.get(selector.slice(1)) || null : null; },
+    querySelectorAll(selector) {
+      if (selector.startsWith(".")) return elements.filter(element => element.classList.contains(selector.slice(1)));
+      const match = selector.match(/^\[data-([a-z-]+)\]$/);
+      if (match) {
+        const key = match[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        return elements.filter(element => Object.prototype.hasOwnProperty.call(element.dataset, key));
+      }
+      return [];
+    },
+    getElementById(id) { return byId.get(id) || null; },
+    addEventListener(type, callback) { (documentEvents[type] ||= []).push(callback); },
+    createElement(tag) { return new MockElement(tag); }
+  };
+  const storage = new Map();
+  const localStorage = {
+    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+    setItem(key, value) { storage.set(key, String(value)); },
+    removeItem(key) { storage.delete(key); }
+  };
+  const windowEvents = {};
+  const window = {
+    DaybookNative: undefined,
+    addEventListener(type, callback) { (windowEvents[type] ||= []).push(callback); },
+    dispatchEvent(event) { for (const callback of windowEvents[event.type] || []) callback(event); }
+  };
+  const context = {
+    document, window, localStorage, Date, Math, JSON, String, Number, Object, Array, Set, Map,
+    RegExp, Promise, Error, Intl, confirm: () => true, setInterval: () => 1,
+    setTimeout: () => 1, clearTimeout: () => {}, Notification: undefined,
+    location: { reload() {} }, URL: {}, Blob: class {},
+    FormData: class { entries() { return Object.entries(context.formPayload || {}); } }
+  };
+  assert.doesNotThrow(() => new Function(...Object.keys(context), app)(...Object.values(context)), "app.js must initialize without browser runtime errors");
+
+  const nav = elements.filter(element => element.classList.contains("nav"));
+  assert.equal(nav.length, 12, "Desktop and mobile navigation should both be present");
+  nav.find(element => element.dataset.view === "tasks").click();
+  assert.equal(byId.get("tasks").classList.contains("active"), true, "Tasks navigation should activate the Tasks view");
+  assert.equal(byId.get("heading").textContent, "Tasks", "Navigation should update the page heading");
+
+  const menu = byId.get("menu");
+  menu.click();
+  assert.equal(menu.attributes["aria-expanded"], "true", "Menu should expose its expanded state");
+  assert.equal(menu.attributes["aria-label"], "Close navigation", "Menu accessible name should change when opened");
+  menu.click();
+  assert.equal(menu.attributes["aria-expanded"], "false", "Menu should close on the next tap");
+
+  const addTask = elements.find(element => element.dataset.add === "task");
+  addTask.click();
+  assert.equal(byId.get("editor").open, true, "Add task should open the editor");
+  context.formPayload = { title: "Runtime smoke test", category: "Personal", priority: "High", due: "", notes: "" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  const savedTasks = JSON.parse(storage.get("daybook_tasks"));
+  assert.equal(savedTasks.length, 1, "Submitting the task form should persist a task");
+  assert.equal(savedTasks[0].title, "Runtime smoke test");
+
+  elements.find(element => element.dataset.add === "routine").click();
+  context.formPayload = { title: "Runtime routine", day: "0", time: "22:00" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  assert(JSON.parse(storage.get("daybook_routine")).some(item => item.title === "Runtime routine"), "Routine form should persist an activity");
+
+  elements.find(element => element.dataset.add === "study").click();
+  context.formPayload = { subject: "Engineering Mathematics", topic: "Runtime test", date: "2099-12-31", minutes: "45" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  assert(JSON.parse(storage.get("daybook_sessions")).some(item => item.topic === "Runtime test"), "Study form should persist a session");
+}
+smokeTestAppRuntime();
+
 console.log("Daybook regression checks passed.");
