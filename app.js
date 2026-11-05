@@ -8,10 +8,25 @@ const routineSeed=()=>{const a=[],add=(day,time,title)=>a.push({id:uid(),day,tim
 [[1,"07:30","Leave for university"],[1,"08:05","University classes"],[1,"15:30","University finishes"],[3,"07:30","Leave for university"],[3,"08:00","University classes"],[3,"10:30","Library study until 3 PM"],[4,"07:30","Leave for university"],[4,"08:00","University classes"],[4,"13:00","Library study until 3 PM"],[5,"07:30","Leave for university"],[5,"08:00","University classes"],[5,"13:00","Library study until 3 PM"],[6,"09:40","Class (no commute)"],[6,"11:00","Class ends"],[2,"09:00","Flexible study / personal work"],[0,"09:00","Weekly planning and personal time"]].forEach(x=>add(...x));return a};
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"},{day:6,start:"09:40",end:"11:00",subject:"Class (no commute)"}].map(x=>({...x,id:uid()}));
 const oldRoutine=safeRead("routine",null);
+const routineDays=Array.from({length:7},(_,day)=>[
+ {day,time:"05:30",title:"Wake up and Fajr prayer"},
+ {day,time:"06:00",title:"Tilawat (30 minutes)"},
+ {day,time:"06:30",title:"Morning exercise (30 minutes)"},
+ {day,time:"07:00",title:"Breakfast and get ready"},
+ {day,time:"12:30",title:"Phone time (30 minutes)"},
+ {day,time:"18:00",title:"Maghrib prayer and Tilawat (30 minutes)"},
+ {day,time:"19:30",title:"Phone time (30 minutes)"},
+ {day,time:"20:30",title:"Revision and prepare for tomorrow"},
+ {day,time:"21:00",title:"Wind down; put phone away"},
+ {day,time:"21:30",title:"Sleep"}
+].map(x=>({...x,id:uid()}))).flat();
+const routineBase=oldRoutine===null?routineSeed():oldRoutine.flatMap(r=>r.day===undefined?DAYS.map((_,day)=>({...r,id:uid(),day})): [r]);
+const routineKeep=routineBase.filter(r=>!["05:30","06:00","06:30","07:00","12:30","18:00","19:30","20:30","21:00","21:30"].includes(r.time));
+const updatedRoutine=[...routineKeep,...routineDays];
 const data={
  subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.slice():SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;if(!list.some(s=>String(s).toLowerCase()===course.toLowerCase()))list.unshift(course);return [...new Set(list)]})(),
  classes:safeRead("classes",null)||classSeed,
- routine:oldRoutine===null?routineSeed():oldRoutine.flatMap(r=>r.day===undefined?DAYS.map((_,day)=>({...r,id:uid(),day})): [r]),
+ routine:updatedRoutine,
  tasks:safeRead("tasks",[]),sessions:safeRead("sessions",[]),reminders:safeRead("reminders",[]),
  goal:safeRead("goal",10),settings:safeRead("settings",{timeFormat:"12h"})
 };
