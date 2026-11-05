@@ -1,5 +1,5 @@
-const CACHE="daybook-v12";
-const CORE=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
+const CACHE="daybook-v13";
+const CORE=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg","./native.js"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });
