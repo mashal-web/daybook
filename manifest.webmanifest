@@ -1,11 +1,13 @@
 {
-  "name": "Daybook — Study Planner",
+  "name": "Daybook — Personal Productivity",
   "short_name": "Daybook",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f5f6f8",
-  "theme_color": "#f5f6f8",
-  "description": "Personal timetable, routine and study planner.",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#e9ebee",
+  "theme_color": "#e9ebee",
+  "description": "Your personal timetable, daily routine, study planner, tasks and focus timer.",
   "icons": [
     {
       "src": "./icon.svg",
