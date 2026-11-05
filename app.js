@@ -9,12 +9,13 @@ const routineSeed=()=>{const a=[],add=(day,time,title)=>a.push({id:uid(),day,tim
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"},{day:6,start:"09:40",end:"11:00",subject:"Class (no commute)"}].map(x=>({...x,id:uid()}));
 const oldRoutine=safeRead("routine",null);
 const data={
- subjects:safeRead("subjects",SUBJECTS),
+ subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.slice():SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;if(!list.some(s=>String(s).toLowerCase()===course.toLowerCase()))list.unshift(course);return [...new Set(list)]})(),
  classes:safeRead("classes",null)||classSeed,
  routine:oldRoutine===null?routineSeed():oldRoutine.flatMap(r=>r.day===undefined?DAYS.map((_,day)=>({...r,id:uid(),day})): [r]),
  tasks:safeRead("tasks",[]),sessions:safeRead("sessions",[]),reminders:safeRead("reminders",[]),
  goal:safeRead("goal",10),settings:safeRead("settings",{timeFormat:"12h"})
 };
+localStorage.setItem("daybook_subjects",JSON.stringify(data.subjects));
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 function persist(){["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].forEach(k=>localStorage.setItem("daybook_"+k,JSON.stringify(data[k])));if(window.DaybookNative?.isNative())window.DaybookNative.syncReminders(data.reminders).catch(()=>toast("Could not update Android reminders"));}
 function save(msg="Saved"){persist();render();toast(msg)}
