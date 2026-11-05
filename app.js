@@ -85,12 +85,12 @@ function openView(v){
  const target=document.getElementById(v);
  if(!target||!target.classList.contains("view")){toast("This section is unavailable");return}
  activeView=v;
- $(".view").forEach(x=>x.classList.toggle("active",x===target));
- $(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ $$(".view").forEach(x=>x.classList.toggle("active",x===target));
+ $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";
  $("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");render();
 }
-$$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$$$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#menu").setAttribute("aria-expanded","false");
 $("#menu").onclick=()=>{const opened=!$("#sidebar").classList.contains("open");$("#sidebar").classList.toggle("open",opened);$("#menu").setAttribute("aria-expanded",String(opened));};
@@ -100,7 +100,6 @@ $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"l
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 function rowActions(type,id){return '<button class="small-action" data-edit="'+type+'" data-id="'+id+'" aria-label="Edit">Edit</button><button class="small-action danger" data-delete="'+type+'" data-id="'+id+'" aria-label="Delete">×</button>'}
 function taskMarkup(t){return '<div class="row task-row '+(t.done?"completed":"")+'"><input class="check" type="checkbox" data-task="'+t.id+'" '+(t.done?"checked":"")+'><div class="grow"><b>'+esc(t.title)+'</b><small>'+esc(t.category||"Personal")+' · '+esc(t.priority||"Normal")+(t.due?" · Due "+esc(t.due):"")+(t.notes?" · "+esc(t.notes):"")+'</small></div>'+rowActions("task",t.id)+'</div>'}
-function renderScheduleConflicts(){const issues=[];for(let day=0;day<7;day++){const classes=data.classes.filter(x=>+x.day===day).slice().sort((x,y)=>minutes(x.start)-minutes(y.start));for(let i=0;i<classes.length;i++){for(let j=i+1;j<classes.length;j++){if(minutes(classes[j].start)<minutes(classes[i].end)&&minutes(classes[j].end)>minutes(classes[i].start)){issues.push({day,kind:"Class overlap",detail:classes[i].subject+" ("+fmt(classes[i].start)+"–"+fmt(classes[i].end)+") overlaps "+classes[j].subject+" ("+fmt(classes[j].start)+"–"+fmt(classes[j].end)+")"});}}}const routine=data.routine.filter(x=>+x.day===day);const seen=new Map();routine.forEach(r=>{const key=r.time;if(seen.has(key))issues.push({day,kind:"Same-time routine items",detail:seen.get(key)+" and "+r.title+" are both set for "+fmt(r.time)});else seen.set(key,r.title);});}const el=$("#scheduleConflicts");if(!el)return;el.innerHTML=issues.length?'<div class="conflict-head"><b>'+issues.length+' schedule conflict'+(issues.length===1?'':'s')+' found</b><span>Review these entries</span></div>'+issues.map(x=>'<div class="conflict-item"><b>'+DAYS[x.day]+' · '+esc(x.kind)+'</b><small>'+esc(x.detail)+'</small></div>').join(""):'<div class="conflict-clear"><b>No detected schedule conflicts</b><small>Class time overlaps and routine items scheduled at exactly the same time are checked.</small></div>'}
 function renderWeek(){
  const start=new Date(today);start.setDate(start.getDate()-start.getDay()+weekOffset*7);const end=new Date(start);end.setDate(end.getDate()+6);
  $("#weekLabel").textContent=start.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+end.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
