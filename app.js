@@ -41,7 +41,7 @@ const routineData=(()=>{
  return [...existing,...defaults];
 })();
 const data={
- subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.slice():SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;if(!list.some(s=>String(s).toLowerCase()===course.toLowerCase()))list.unshift(course);return [...new Set(list)]})(),
+ subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.filter(s=>typeof s==="string"&&s.trim()).map(s=>s.trim()):SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;return [...new Set(list)]})(),
  classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?(storedRoutineVersion<ROUTINE_VERSION?saved.filter(c=>+c.day!==6):saved):classSeed})(),
  routine:routineData,
  tasks:safeRead("tasks",[]),sessions:safeRead("sessions",[]),reminders:safeRead("reminders",[]),
@@ -99,7 +99,7 @@ function openView(v){
  $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";
  $("#sidebar").classList.remove("open");$("#menu").setAttribute("aria-expanded","false");render();
 }
-$$$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#menu").setAttribute("aria-expanded","false");
 $("#menu").onclick=()=>{const opened=!$("#sidebar").classList.contains("open");$("#sidebar").classList.toggle("open",opened);$("#menu").setAttribute("aria-expanded",String(opened));};
