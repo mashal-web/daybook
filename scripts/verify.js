@@ -51,6 +51,7 @@ assert(workflow.includes("node scripts/verify.js"), "Android workflow must run r
 assert(manifest.icons.some(icon=>icon.sizes==="192x192"&&icon.type==="image/png"), "PWA manifest must include a 192px PNG icon");
 assert(manifest.icons.some(icon=>icon.sizes==="512x512"&&icon.type==="image/png"), "PWA manifest must include a 512px PNG icon");
 assert(workflow.includes("android.permission.SCHEDULE_EXACT_ALARM"), "Android build must declare exact-alarm permission");
+assert(workflow.includes("Apply Daybook launcher icons")&&workflow.includes("ic_launcher_foreground.png"), "Android builds must use Daybook launcher assets");
 
 const uid = (() => { let n = 0; return () => "test-" + (++n); })();
 const minutes = value => { const [h, m] = value.split(":").map(Number); return h * 60 + m; };
