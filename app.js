@@ -173,8 +173,8 @@ function validateBackup(parsed){
    return copy;
   });
  }
- if(incoming.goal!==undefined&&(!Number.isFinite(Number(parsed.goal))||Number(parsed.goal)<1||Number(parsed.goal)>100))throw new Error("Invalid weekly goal");
- if(incoming.settings!==undefined&&(!parsed.settings||typeof parsed.settings!=="object"||!["12h","24h"].includes(parsed.settings.timeFormat)))throw new Error("Invalid settings");
+ if(incoming.goal!==undefined&&(!Number.isFinite(Number(incoming.goal))||Number(incoming.goal)<1||Number(incoming.goal)>100))throw new Error("Invalid weekly goal");
+ if(incoming.settings!==undefined&&(!incoming.settings||typeof incoming.settings!=="object"||!["12h","24h"].includes(incoming.settings.timeFormat)))throw new Error("Invalid settings");
  return {incoming,result};
 }
 $("#importBtn").onclick=()=>$("#importFile").click();$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5*1024*1024)throw new Error("Backup file is larger than 5 MB");const parsed=JSON.parse(await file.text());const {incoming,result}=validateBackup(parsed);if(!confirm("Import this backup and replace matching Daybook data currently stored on this device?"))return;Object.assign(data,result);if(incoming.goal!==undefined)data.goal=Number(incoming.goal);if(incoming.settings)data.settings={...data.settings,...incoming.settings};save("Backup imported")}catch(err){toast(err.message==="Backup file is larger than 5 MB"?err.message:"Backup rejected: "+(err.message||"invalid data"))}finally{e.target.value=""}};
