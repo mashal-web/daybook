@@ -4,6 +4,7 @@ const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturda
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
 const today=new Date(), uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
 const safeRead=(k,f)=>{try{const v=JSON.parse(localStorage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
+const safeArray=(k,f=[])=>{const value=safeRead(k,f);return Array.isArray(value)?value.filter(item=>item&&typeof item==="object"&&!Array.isArray(item)):f};
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"}].map(x=>({...x,id:uid()}));
 const ROUTINE_VERSION=2;
 const oldRoutine=safeRead("routine",null);
@@ -42,10 +43,10 @@ const routineData=(()=>{
 })();
 const data={
  subjects:(()=>{const saved=safeRead("subjects",SUBJECTS);const list=Array.isArray(saved)?saved.filter(s=>typeof s==="string"&&s.trim()).map(s=>s.trim()):SUBJECTS.slice();const old="Applied Physics & Engineering Mechanics";const course="Applied Physics & Electro Mechanical Fundamental";const index=list.indexOf(old);if(index>=0)list[index]=course;return [...new Set(list)]})(),
- classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?(storedRoutineVersion<ROUTINE_VERSION?saved.filter(c=>+c.day!==6):saved):classSeed})(),
+ classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?(storedRoutineVersion<ROUTINE_VERSION?saved.filter(c=>c&&typeof c==="object"&&+c.day!==6):saved.filter(c=>c&&typeof c==="object")):classSeed})(),
  routine:routineData,
- tasks:safeRead("tasks",[]),sessions:safeRead("sessions",[]),reminders:safeRead("reminders",[]),
- goal:safeRead("goal",10),settings:safeRead("settings",{timeFormat:"12h"})
+ tasks:safeArray("tasks"),sessions:safeArray("sessions"),reminders:safeArray("reminders"),
+ goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h"});return value&&typeof value==="object"&&["12h","24h"].includes(value.timeFormat)?value:{timeFormat:"12h"}})()
 };
 localStorage.setItem("daybook_subjects",JSON.stringify(data.subjects));
 localStorage.setItem("daybook_routine",JSON.stringify(data.routine));
@@ -54,7 +55,15 @@ localStorage.setItem("daybook_classes",JSON.stringify(data.classes));
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
-let focusState=readFocus()||{mode:"focus",duration:1500,remaining:1500,running:false,endsAt:null};
+const savedFocus=readFocus()||{};
+const focusMode=savedFocus.mode==="break"?"break":"focus";
+const defaultDuration=focusMode==="break"?300:1500;
+const storedDuration=Number(savedFocus.duration);
+const focusDuration=Number.isFinite(storedDuration)&&storedDuration>=60&&storedDuration<=7200?storedDuration:defaultDuration;
+const storedRemaining=Number(savedFocus.remaining);
+const focusRemaining=Number.isFinite(storedRemaining)&&storedRemaining>=0&&storedRemaining<=focusDuration?storedRemaining:focusDuration;
+const focusEndsAt=Number(savedFocus.endsAt);
+let focusState={...savedFocus,mode:focusMode,duration:focusDuration,remaining:focusRemaining,running:savedFocus.running===true&&Number.isFinite(focusEndsAt),endsAt:savedFocus.running===true&&Number.isFinite(focusEndsAt)?focusEndsAt:null};
 function storeFocus(){localStorage.setItem(FOCUS_KEY,JSON.stringify(focusState))}
 function formatTimer(seconds){return String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0")}
 function renderFocus(){
