@@ -11,7 +11,8 @@ const build = read("scripts/build.js");
 assert.doesNotThrow(() => new Function(app), "app.js must parse");
 assert.doesNotThrow(() => new Function(sw), "sw.js must parse");
 assert.doesNotThrow(() => new Function(build), "build.js must parse");
-assert.equal(/(?<!\$)\$\(["'][^"']+["']\)\.forEach/.test(app), false, "collection operations must use $$()");
+assert.equal(/(?<!\$)\$\(["'][^"']+["']\)\.forEach/.test(app), false, "collection operations must use $()");
+assert.equal(/\${3,}\(/.test(app), false, "triple-dollar selectors must not exist");
 assert.equal(app.includes("function renderScheduleConflicts"), false, "obsolete schedule conflict renderer must be removed");
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
