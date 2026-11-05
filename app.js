@@ -175,13 +175,14 @@ function validateBackup(parsed){
    copy.id=String(copy.id);
    if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
    if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.start||"")||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
-   if(key==="routine"&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
+   if(key==="routine"&&(copy.day!==undefined&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
    if(["sessions","reminders"].includes(key)&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.date||"")||iso(new Date(copy.date+"T12:00:00"))!==copy.date))throw new Error("Invalid date in "+key);
    if(key==="sessions"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.minutes))||Number(copy.minutes)<1||Number(copy.minutes)>1440))throw new Error("Invalid study session");
    if(key==="reminders"&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")||!["none","daily","weekly",undefined].includes(copy.repeat)))throw new Error("Invalid reminder");
    if(key==="tasks"&&copy.due&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.due)||iso(new Date(copy.due+"T12:00:00"))!==copy.due))throw new Error("Invalid task due date");
    return copy;
   });
+  if(key==="routine")result[key]=result[key].flatMap(item=>item.day===undefined?DAYS.map((_,day)=>({...item,id:uid(),day})): [item]);
  }
  if(incoming.goal!==undefined&&(!Number.isFinite(Number(incoming.goal))||Number(incoming.goal)<1||Number(incoming.goal)>100))throw new Error("Invalid weekly goal");
  if(incoming.settings!==undefined&&(!incoming.settings||typeof incoming.settings!=="object"||!["12h","24h"].includes(incoming.settings.timeFormat)))throw new Error("Invalid settings");
