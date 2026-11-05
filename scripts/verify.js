@@ -87,6 +87,6 @@ const reminderLogic = native.includes("while (at <= now)") && native.includes('c
 assert(reminderLogic, "Recurring Android reminders should advance missed occurrences and pre-schedule bounded occurrences");
 assert(native.includes("checkExactNotificationSetting"), "Android exact-alarm permission state must be checked");
 assert(native.includes("LocalNotifications.cancel"), "Reminder sync must cancel stale scheduled notifications");
-assert(sw.includes('request.mode === "navigate"'), "Offline fallback should be limited to page navigation");
+assert(/request\\.mode\\s*===\\s*["']navigate/.test(sw), "Offline fallback should be limited to page navigation");
 
 console.log("Daybook regression checks passed.");
