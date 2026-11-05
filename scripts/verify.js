@@ -119,6 +119,7 @@ assert.equal(sessionState.sessions[0].done, false);
 assert.equal(sessionState.sessions[0].completedAt, null);
 assert.equal(sessionMessage, "Study session reopened");
 assert(["focusProgress","progress","goalProgress"].every(id=>html.includes('id="'+id+'" role="progressbar"')), "Progress indicators must expose accessible progressbar semantics");
+assert(html.includes('id="heading" aria-live="polite"')&&html.includes('id="notifyStatus" role="status" aria-live="polite"'), "Page navigation and notification status must be announced to screen readers");
 assert(app.includes('setAttribute("aria-valuenow"'), "Progress values must update for assistive technology");
 assert(sw.includes("request.mode") && sw.includes("navigate"), "Service worker must use navigation-only offline fallback");
 
