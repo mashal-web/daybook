@@ -62,4 +62,17 @@ assert.equal(migrated.filter(item => item.title === "My custom routine").length,
 assert.equal(migrated.some(item => item.title === "Breakfast" && item.day === 0), true, "Unoccupied default slots must be added");
 assert.equal(migrated.some(item => item.title === "Breakfast" && item.day === 1), true, "Default slots must be preserved on every day");
 
+
+const timePattern = app.match(/const validTime=s=>(\/[^;]+?\/)\.test\(s\)/);
+assert(timePattern, "Time validator must exist");
+const validTime = new Function("return " + timePattern[1])();
+assert(validTime.test("06:00") && validTime.test("23:59"), "Valid 24-hour times must pass");
+assert(!validTime.test("24:00") && !validTime.test("6:00"), "Invalid time formats must fail");
+const datePattern = app.match(/const validDate=s=>(\/[^;]+?\/)\.test\(s\)/);
+assert(datePattern, "Date validator must exist");
+const validDateShape = new Function("return " + datePattern[1])();
+assert(validDateShape.test("2026-12-01"), "Valid ISO dates must pass");
+assert(!validDateShape.test("26-12-01"), "Invalid ISO dates must fail");
+assert.equal((app.match(/\\\\/g) || []).length, 0, "Regex literals must not contain accidental double-escaped backslashes");
+
 console.log("Daybook verification passed: syntax, navigation, DOM IDs, timetable structure, backup import and routine migration.");
