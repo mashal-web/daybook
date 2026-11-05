@@ -1,25 +1,41 @@
 # Daybook — Personal Study & Routine Manager
 
-A responsive, light-neumorphic personal planner built with plain HTML, CSS and JavaScript. No framework, build step, or account is required.
+Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS and JavaScript. It runs as a web app and can be packaged as an Android app with Capacitor.
 
 ## Features
-- Weekly university timetable with previous/next week navigation
-- Add, edit and delete classes; overlap warning and optional room/location
-- Seven-day daily routine with separate activities for each weekday
-- Add, edit and delete routine activities
-- Study planner with the user's seven course subjects preloaded
-- Study sessions with date, topic, duration and completion tracking
-- Subject manager to add or remove courses
+- One combined weekly timetable: one timing column plus all seven days
+- Classes and daily activities shown together in chronological time rows
+- Add, edit and delete classes and routine activities
+- Study planner with editable course subjects and study sessions
 - Task manager with search, filters, priorities, categories, deadlines and notes
-- Progress analytics for completed tasks, study time, subject breakdown and weekly study goal
-- Reminders with one-time, daily and weekly repeat options
-- Browser notification permission support
+- Focus timer with completed sessions recorded in study history
+- Progress analytics for task completion, study time, subject breakdown and weekly study goal
+- One-time, daily and weekly reminders
+- Browser notification support while the web app is open
+- Android local notifications through Capacitor
 - JSON export and import for backups and device transfers
-- Local browser storage and installable/offline-capable PWA support
-- Responsive layout for desktop, tablet and mobile
+- Local browser storage and offline-capable PWA support
+- Responsive desktop and mobile navigation
 
-## Preloaded subjects
-- Applied Physics & Engineering Mechanics
+## Current routine defaults
+The initial timetable is based on the user's saved routine. It includes:
+- Wake up and Fajr prayer at 5:30 AM
+- Tilawat 6:00–6:30 AM
+- Exercise 6:30–7:00 AM
+- Breakfast 7:00–7:30 AM
+- Lunch 1:00–2:00 PM
+- Maghrib prayer and Tilawat 6:00–6:30 PM
+- Phone time 7:30–8:00 PM
+- Dinner 8:00–8:30 PM
+- Wind down and sleep at 9:30 PM
+- University blocks Monday, Wednesday, Thursday and Friday
+- No university on Saturday; Tuesday and Sunday are non-class days
+- Library blocks on Wednesday, Thursday and Friday
+
+All timetable entries are editable. Existing saved routine entries are preserved when the routine data version is upgraded; defaults are added only where a day/time slot is not already occupied.
+
+## Courses
+- Applied Physics & Electro Mechanical Fundamental
 - Engineering Mathematics
 - Islamiat
 - Functional English
@@ -27,29 +43,15 @@ A responsive, light-neumorphic personal planner built with plain HTML, CSS and J
 - Engineering Drawing
 - Foundation Mathematics
 
-## Preloaded weekly campus blocks
-These are editable starting points based on the schedule previously provided:
-- Monday: 8:05 AM–3:30 PM
-- Tuesday: no campus block
-- Wednesday: 8:00–10:30 AM
-- Thursday: 8:00 AM–1:00 PM
-- Friday: 8:00 AM–1:00 PM
-- Saturday: 9:40–11:00 AM (no commute)
-- Sunday: no campus block
+## Data and backups
+- Planner data is stored locally in the current browser or Android app. It does not automatically sync between devices.
+- Use Export backup to save a JSON file, then Import backup on the destination device.
+- Clearing browser or app data can erase local planner data. Keep a backup.
+- Web notifications are checked while Daybook is open; background browser suspension can delay or prevent delivery.
+- Android reminders use local notifications. Delivery depends on notification permission, Android alarm settings, battery management and device configuration; do not treat them as a guaranteed emergency alarm.
 
-The routine is also prefilled across all seven days. Edit it to match changes in prayer times, travel, classes and personal commitments.
+## Run and publish
+Open `index.html` in a modern browser, or publish the repository with GitHub Pages. HTTPS is required for service workers and install features.
 
-## Run / publish
-Open `index.html` in a modern browser, or publish the repository with GitHub Pages. Service-worker/offline and install features require HTTPS (GitHub Pages provides HTTPS).
-
-## Data, backups and notifications
-- Planner data is saved in the current browser using localStorage. It does not automatically sync between browsers or devices.
-- Use the download/export button to save a JSON backup. Import it on another device/browser to transfer your data.
-- Browser notifications require permission. They are checked while the app is open; the browser or operating system may suspend background tabs, so they are not a guaranteed alarm replacement.
-- Clearing browser site data may erase locally saved planner data. Keep a backup.
-
-## Android app build
-
-Daybook is packaged for Android with Capacitor. Every push to `main` that changes the app or Android build files triggers the **Build Daybook Android APK** GitHub Actions workflow. You can also run it manually from the repository's Actions tab. When it succeeds, open the workflow run, then download the `daybook-android-debug` artifact. Install the APK on an Android device (you may need to allow installation from that source). The APK is a debug build for personal testing, not a Play Store release; a signed release AAB/APK requires a private signing key and release configuration.
-
-Android reminders use the native local-notifications plugin. Grant notification permission in Android settings or from the Reminders screen. Android battery restrictions and device settings can still affect delivery. App data remains on that device; export a JSON backup before changing phones or reinstalling.
+## Android build
+The Android APK is built with Capacitor through GitHub Actions. Pushes to `main` that change app or build files trigger the **Build Daybook Android APK** workflow. A successful workflow uploads an installable debug APK artifact. The debug APK is for personal testing, not a Play Store release; a signed release requires a private signing key and release configuration.
