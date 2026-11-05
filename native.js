@@ -24,7 +24,9 @@ async function permission(request = false) {
   return result.display;
 }
 
-async function syncReminders(reminders) {
+let reminderSyncQueue = Promise.resolve();
+
+async function syncRemindersNow(reminders) {
   if (!native) return;
   const granted = await permission(false);
   if (granted !== "granted") return;
@@ -66,6 +68,13 @@ async function syncReminders(reminders) {
   notifications.sort((a, b) => a.schedule.at - b.schedule.at);
   const scheduled = notifications.slice(0, 250);
   if (scheduled.length) await LocalNotifications.schedule({ notifications: scheduled });
+}
+
+function syncReminders(reminders) {
+  if (!native) return Promise.resolve();
+  const snapshot = Array.isArray(reminders) ? reminders.map(item => item && typeof item === "object" ? { ...item } : item) : [];
+  reminderSyncQueue = reminderSyncQueue.catch(() => {}).then(() => syncRemindersNow(snapshot));
+  return reminderSyncQueue;
 }
 
 window.DaybookNative = {
