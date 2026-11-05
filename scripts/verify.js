@@ -193,7 +193,7 @@ function smokeTestAppRuntime() {
   const storage = new Map();
   const localStorage = {
     getItem(key) { return storage.has(key) ? storage.get(key) : null; },
-    setItem(key, value) { storage.set(key, String(value)); },
+    setItem(key, value) { if (context.storageFailure) throw new Error("QuotaExceededError"); storage.set(key, String(value)); },
     removeItem(key) { storage.delete(key); }
   };
   const windowEvents = {};
@@ -206,7 +206,7 @@ function smokeTestAppRuntime() {
     document, window, localStorage, Date, Math, JSON, String, Number, Object, Array, Set, Map,
     RegExp, Promise, Error, Intl, confirm: () => true, setInterval: () => 1,
     setTimeout: () => 1, clearTimeout: () => {}, Notification: undefined,
-    location: { reload() {} }, URL: {}, Blob: class {},
+    location: { reload() {} }, URL: {}, Blob: class {}, storageFailure: false,
     FormData: class { entries() { return Object.entries(context.formPayload || {}); } }
   };
   assert.doesNotThrow(() => new Function(...Object.keys(context), app)(...Object.values(context)), "app.js must initialize without browser runtime errors");
@@ -257,6 +257,12 @@ function smokeTestAppRuntime() {
   context.formPayload = { subject: "Engineering Mathematics", topic: "Runtime test", date: "2099-12-31", minutes: "45" };
   byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
   assert(JSON.parse(storage.get("daybook_sessions")).some(item => item.topic === "Runtime test"), "Study form should persist a session");
+
+  context.storageFailure = true;
+  elements.find(element => element.dataset.add === "task").click();
+  context.formPayload = { title: "Storage failure test", category: "Personal", priority: "Normal", due: "", notes: "" };
+  byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
+  assert(byId.get("toast").textContent.includes("Could not save changes"), "Storage quota failures should warn instead of crashing silently");
 }
 smokeTestAppRuntime();
 
