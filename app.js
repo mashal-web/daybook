@@ -183,4 +183,6 @@ function checkReminders(){if(window.DaybookNative?.isNative())return;if(!("Notif
 setInterval(checkReminders,15000);
 window.addEventListener("storage",e=>{if(e.key&&e.key.startsWith("daybook_"))location.reload()});
 render();
-window.addEventListener("daybook-native-ready",()=>window.DaybookNative?.syncReminders(data.reminders).catch(()=>{}));
+const syncNativeReminders=()=>window.DaybookNative?.syncReminders(data.reminders).catch(()=>toast("Could not sync Android reminders"));
+window.addEventListener("daybook-native-ready",syncNativeReminders);
+window.addEventListener("daybook-native-resume",syncNativeReminders);
