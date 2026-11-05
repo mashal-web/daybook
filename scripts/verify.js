@@ -104,7 +104,7 @@ assert(native.includes("LocalNotifications.cancel"), "Reminder sync must cancel 
 assert(app.includes('JSON.stringify(data.reminders)!==lastSyncedReminders'), "Unrelated edits must not reschedule Android reminders");
 assert(app.includes("lastSyncedReminders=snapshot"), "Successful reminder sync must advance its snapshot");
 assert(app.includes('s.done?"Reopen":"Complete"')&&app.includes("s.done=!s.done"), "Study sessions must be reopenable after completion");
-const sessionToggleMatch = app.match(/\$\$\("\\[data-sessiondone\\]"\)\.forEach\(b=>b\.onclick=\(\)=>\{([\s\S]*?)\}\);/);
+const sessionToggleMatch = app.match(/\$\$\("\[data-sessiondone\]"\)\.forEach\(b=>b\.onclick=\(\)=>\{([\s\S]*?)\}\);/);
 assert(sessionToggleMatch, "Study-session completion handler must be wired");
 const sessionState = { sessions: [{ id: "session-1", done: false }] };
 let sessionMessage = "";
