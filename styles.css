@@ -94,12 +94,10 @@ h4{font-size:11px}
 .small-action{border:0;background:transparent;color:var(--muted);font-size:10px;font-weight:750;padding:5px}
 .small-action:hover{color:var(--ink)}.small-action.danger{color:#9a7777;font-size:15px}
 .class .small-action{position:absolute;bottom:2px;right:5px}
-.routine-grid .day{min-height:420px}
 .routine-event{position:relative;padding:9px 18px 27px 9px;margin:0 0 8px;border-radius:10px;background:#eceef0;border-left:3px solid #7a838c}
 .routine-event b{display:block;font-size:9px;color:var(--ink);margin-bottom:4px}
 .routine-event small{display:block;font-size:10px;line-height:1.4;color:var(--muted)}
 .routine-event .small-action{position:absolute;right:4px;bottom:2px}
-.routine-grid .day.today{outline:1px solid #8b949d}
 .subject-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px}
 .chip,.filters button{padding:8px 12px;border-radius:20px;background:var(--bg);box-shadow:var(--inset);font-size:10px;color:var(--muted)}
@@ -233,7 +231,6 @@ dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
 .schedule-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px}
 .schedule-section-head h3{font-size:21px;letter-spacing:-.6px}
 .schedule-section-head .muted{font-size:11px;margin-top:4px}
-.routine-section{padding-top:28px}
 @media(max-width:720px){.schedule-section-head{align-items:flex-start;flex-direction:column}.schedule-section-head .primary{width:auto;align-self:flex-start}.routine-section{padding-top:22px}}
 
 /* Unified schedule action group */
