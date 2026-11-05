@@ -216,6 +216,11 @@ function smokeTestAppRuntime() {
   assert.equal(savedTasks.length, 1, "Submitting the task form should persist a task");
   assert.equal(savedTasks[0].title, "Runtime smoke test");
 
+  byId.get("manageSubjects").click();
+  byId.get("newSubject").value = "Runtime subject";
+  byId.get("manageForm").onsubmit({ target: byId.get("manageForm"), preventDefault() {} });
+  assert(JSON.parse(storage.get("daybook_subjects")).includes("Runtime subject"), "Subject form should submit from the keyboard");
+
   elements.find(element => element.dataset.add === "routine").click();
   context.formPayload = { title: "Runtime routine", day: "0", time: "22:00" };
   byId.get("form").onsubmit({ target: byId.get("form"), preventDefault() {} });
