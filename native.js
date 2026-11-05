@@ -70,7 +70,12 @@ async function syncReminders(reminders) {
 
 window.DaybookNative = {
   isNative: () => native,
-  requestPermission: () => permission(true),
+  requestPermission: async () => {
+    const display = await permission(true);
+    if (!native) return { display, exactAlarm: "not-applicable" };
+    const exact = await LocalNotifications.checkExactNotificationSetting();
+    return { display, exactAlarm: exact.exact_alarm };
+  },
   syncReminders
 };
 
