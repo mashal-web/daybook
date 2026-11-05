@@ -34,7 +34,8 @@ const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map
 for (const target of navTargets) assert(viewIds.has(target), "Missing view for navigation target: " + target);
 assert.equal(viewIds.size, 6, "Expected six main views");
 assert(app.includes('aria-label="Weekly timetable with timing and seven days"'), "Weekly table should describe its eight columns");
-assert(app.includes('class="table-scroll"><table class="week-table"'), "Weekly table should have a mobile scroll wrapper");
+assert(!app.includes('<div class="table-scroll"><table'), "Timetable must not create nested scroll containers");
+assert(html.includes('class="table-scroll" role="region"'), "Outer timetable region should own horizontal scrolling");
 assert(app.includes('colspan="8"'), "Empty timetable row should span all eight columns");
 assert(/data-id=.*esc\(id\)/.test(app), "Record IDs must be HTML escaped before rendering");
 assert(build.includes('"sw.js"'), "Android build must copy the service worker");
