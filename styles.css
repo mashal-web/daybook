@@ -569,3 +569,16 @@ footer{letter-spacing:2px}
  .brand b:after,.view{animation:none!important}
  .primary:after{display:none}
 }
+
+/* Unified eight-column weekly timetable */
+.table-scroll{width:100%;overflow:auto;overscroll-behavior-x:contain;border:1px solid rgba(130,174,220,.18);border-radius:18px;background:rgba(7,14,29,.58);scrollbar-width:thin;scrollbar-color:#456080 #101a2d}
+.week-grid{display:block;min-width:1120px;width:100%}.week-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;color:#eaf3ff}
+.week-table th,.week-table td{border-right:1px solid rgba(139,174,215,.12);border-bottom:1px solid rgba(139,174,215,.12);vertical-align:top}.week-table tr>*:last-child{border-right:0}.week-table tbody tr:last-child>*{border-bottom:0}
+.week-table thead th{position:sticky;top:0;z-index:3;padding:13px 8px;background:rgba(17,29,51,.98);text-align:center;font-size:11px;font-weight:800}.week-table thead th span,.week-table thead th small{display:block}.week-table thead th small{margin-top:4px;color:#91a8c7;font-size:10px;font-weight:600}
+.week-table thead .time-heading{left:0;z-index:5;width:104px;text-align:left;padding-left:14px}.week-table thead th.is-today{color:#82eaff;background:rgba(23,55,78,.98)}
+.week-table tbody th.time-cell{position:sticky;left:0;z-index:2;width:104px;padding:13px 9px;background:rgba(14,25,44,.98);color:#9db2d0;text-align:left;white-space:nowrap;font-size:10px;font-weight:800}.week-table td{height:65px;padding:7px;background:rgba(9,17,32,.42)}
+.table-event{position:relative;min-height:49px;margin:0 0 5px;padding:9px 7px 27px;border:1px solid rgba(127,166,211,.18);border-left:3px solid #63dcff;border-radius:10px;background:linear-gradient(145deg,rgba(26,49,76,.86),rgba(13,24,43,.92));overflow-wrap:anywhere}.table-event:last-child{margin-bottom:0}
+.table-event b{display:block;color:#f0f7ff;font-size:10px;line-height:1.35;font-weight:750}.table-event small{display:block;margin-top:4px;color:#9db2d0;font-size:9px;line-height:1.35}.table-routine{border-left-color:#d28aff;background:linear-gradient(145deg,rgba(48,35,72,.72),rgba(18,23,43,.94))}
+.table-event .small-action{position:absolute;right:3px;bottom:2px;padding:4px 5px;color:#a9c1df;font-size:9px}.table-event .small-action.danger{right:31px;color:#ff9eae}.empty-slot{display:block;padding:8px 0;text-align:center;color:rgba(143,166,196,.22);font-size:11px}.table-empty{padding:35px!important;text-align:center;color:#9db2d0;font-size:12px}
+.mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr))}.mobile-nav .nav{min-width:0;font-size:9px}
+@media(max-width:720px){.table-scroll{margin:0 -12px;width:calc(100% + 24px);border-radius:13px}.week-grid{min-width:0}.week-table{min-width:1120px}.week-table thead th{padding:11px 6px}.week-table tbody th.time-cell{padding:11px 7px}.week-table td{padding:6px}.mobile-nav{grid-template-columns:repeat(6,minmax(0,1fr));left:7px;right:7px}.mobile-nav .nav{font-size:8px;padding-inline:1px}}
