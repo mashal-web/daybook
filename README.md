@@ -48,7 +48,8 @@ All timetable entries are editable. Existing saved routine entries are preserved
 - Use Export backup to save a JSON file, then Import backup on the destination device.
 - Clearing browser or app data can erase local planner data. Keep a backup.
 - Web notifications are checked while Daybook is open; background browser suspension can delay or prevent delivery.
-- Android reminders use local notifications. Delivery depends on notification permission, Android alarm settings, battery management and device configuration; do not treat them as a guaranteed emergency alarm.
+- Android reminders use local notifications. Daily and weekly repeats are pre-scheduled as individual occurrences (30 daily or 12 weekly) and refreshed when Daybook opens, resumes or saves data. Keep opening the app periodically so the rolling schedule can refresh.
+- Android 12+ exact delivery also depends on the system Alarms & reminders access. Daybook requests this through Android settings after notification permission is granted. Doze, battery management and device settings can still delay delivery; do not treat reminders as a guaranteed emergency alarm.
 
 ## Run and publish
 Open `index.html` in a modern browser, or publish the repository with GitHub Pages. HTTPS is required for service workers and install features.
