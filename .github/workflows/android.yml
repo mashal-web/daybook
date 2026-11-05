@@ -100,7 +100,7 @@ jobs:
           content = manifest.read_text()
           permission = '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />'
           if permission not in content:
-              content = re.sub(r'(<manifest\\b[^>]*>)', r'\\1\\n    ' + permission, content, count=1)
+              content = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    ' + permission, content, count=1)
               manifest.write_text(content)
           PY
 
