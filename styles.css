@@ -760,3 +760,5 @@ dialog{background:linear-gradient(150deg,#142139,#0b1424);color:var(--text);box-
  .mobile-nav .nav{gap:4px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+.backup-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
