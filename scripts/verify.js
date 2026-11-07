@@ -235,12 +235,15 @@ function smokeTestAppRuntime() {
   assert.equal(byId.get("tasks").classList.contains("active"), true, "Tasks navigation should activate the Tasks view");
   assert.equal(byId.get("heading").textContent, "Tasks", "Navigation should update the page heading");
 
-  const menu = byId.get("menu");
-  menu.click();
-  assert.equal(menu.attributes["aria-expanded"], "true", "Menu should expose its expanded state");
-  assert.equal(menu.attributes["aria-label"], "Close navigation", "Menu accessible name should change when opened");
-  menu.click();
-  assert.equal(menu.attributes["aria-expanded"], "false", "Menu should close on the next tap");
+  const mobileNav = elements.find(element => element.classList.contains("mobile-nav"));
+  assert(mobileNav, "Mobile navigation must remain available after removing the header menu");
+  const mobileTasks = elements.filter(element => element.classList.contains("nav") && element.dataset.view === "tasks").at(-1);
+  mobileTasks.click();
+  assert.equal(byId.get("tasks").classList.contains("active"), true, "Mobile navigation should activate the selected view");
+  assert.equal(byId.get("heading").textContent, "Tasks", "Mobile navigation should update the page heading");
+  assert(byId.has("settingsExport") && byId.has("settingsImport") && byId.has("importFile"), "Backup controls must remain available in Settings");
+  assert.equal(typeof byId.get("settingsExport").onclick, "function", "Settings export action must be wired");
+  assert.equal(typeof byId.get("settingsImport").onclick, "function", "Settings import action must be wired");
 
   const addTask = elements.find(element => element.dataset.add === "task");
   addTask.click();
