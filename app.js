@@ -310,7 +310,7 @@ function field(label,name,kind="text",value="",extra=""){const optional=extra===
 function selectField(label,name,options,value){return '<div class="field"><label for="'+esc(name)+'">'+esc(label)+'</label><select id="'+esc(name)+'" name="'+esc(name)+'" required>'+options.map(o=>'<option value="'+esc(o.value)+'" '+(o.value===String(value)?"selected":"")+'>'+esc(o.label)+'</option>').join("")+'</select></div>'}
 function openEditor(type,id=null,duplicateFrom=null){edit={type,id};const sourceId=id||duplicateFrom;const old=sourceId?(type==="event"?scheduleStore.getAll().find(x=>String(x.id)===String(sourceId)):data[({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type]].find(x=>String(x.id)===String(sourceId)))||{}:{};let title="",body="";const subjectOpts=[...new Set([...data.subjects,...(old.subject?[old.subject]:[])])].map(s=>({value:s,label:s}));if(type==="event"){
  title=id?"Event details & editing":duplicateFrom?"Duplicate event":"Create event";
- const startDate=old.start?old.start.slice(0,10):iso(weekDates().find(x=>x.day===selectedDay)?.date||today),startTime=old.start?old.start.slice(11):"09:00",endDate=old.end?old.end.slice(0,10):startDate,endTime=old.end?old.end.slice(11):"10:00";
+ const startDate=old.start?old.start.slice(0,10):iso(weekDates().find(x=>x.day===selectedDay)?.date||today),startTime=old.start?old.start.slice(11):"09:00",endDate=old.end?old.end.slice(0,10):sourceId?"":startDate,endTime=old.end?old.end.slice(11):sourceId?"":"10:00";
  const cats=["Personal","University","Study","Work","Health","Family","Other"],cat=old.category||"Personal",freq=old.recurrence?.frequency||"none",days=old.recurrence?.weekdays?.length?old.recurrence.weekdays:[new Date(startDate+"T12:00:00").getDay()];
  body=field("Event title","eventTitle","text",old.title||"")+
  selectField("Category","eventCategory",cats.map(x=>({value:x,label:x})),cat)+
@@ -337,7 +337,7 @@ $("#dialogTitle").textContent=title;$("#fields").innerHTML=body;$("#editor").sho
   allDay.onchange=sync;frequency.onchange=sync;sync();
   if(id&&old.recurrence?.frequency==="weekly")$("#fields").insertAdjacentHTML("beforeend",'<p class="event-series-note">This is a recurring series. Saving changes updates every matching occurrence in the series.</p>');
  }}
-$$("[data-add]").forEach(b=>b.onclick=()=>openEditor(b.dataset.add));
+document.addEventListener("click",event=>{const add=event.target.closest("[data-add]");if(add)openEditor(add.dataset.add)});
 $("#close").onclick=$("#cancel").onclick=()=>$("#editor").close();
 document.addEventListener("click",event=>{
  const open=event.target.closest("[data-event-open]");if(open){openEditor("event",open.dataset.eventOpen);return}
