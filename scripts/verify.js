@@ -5,6 +5,7 @@ const read = path => fs.readFileSync(path, "utf8");
 const app = read("app.js");
 const html = read("index.html");
 const css = read("styles.css");
+const timetableCss = read("timetable-theme.css");
 const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
@@ -62,7 +63,7 @@ assert(app.includes("UNIVERSITY CLASS")&&app.includes("HAPPENING NOW"), "Day age
 assert(app.includes("function weekDates()")&&app.includes("function scheduleEntries(day)")&&app.includes("data-weekday"), "Weekly timetable must render seven selectable days and a selected-day agenda");
 assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.routine.filter(x=>+x.day===day)'), "University classes and daily routine must render in the same seven-day grid");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
-assert(css.includes(".schedule-insights")&&css.includes(".week-day-strip")&&css.includes(".day-timeline"), "Weekly routine must style responsive day navigation and timeline");
+assert(css.includes(".schedule-insights")&&timetableCss.includes(".week-day-strip")&&timetableCss.includes(".day-timeline"), "Weekly routine must style responsive day navigation and timeline");
 
 assert(html.includes('id="academics"') && html.includes('id="habits"') && html.includes('id="finance"'), "Academic, habit and finance modules must be present");
 assert(build.includes('"upgrade.js"') && build.includes('"upgrade.css"') && build.includes('"timetable-theme.css"'), "Android build must package every stylesheet and extension module");
