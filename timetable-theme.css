@@ -1,0 +1,132 @@
+/* Daybook — Future timetable visual system
+   Lightweight, CSS-only refinement. Existing schedule data and interactions remain unchanged. */
+:root{
+  --schedule-ink:#eef5ff;
+  --schedule-muted:#91a5c2;
+  --schedule-line:rgba(150,184,226,.13);
+  --schedule-cyan:#79e7ff;
+  --schedule-violet:#c2a5ff;
+}
+.schedule-section{padding-top:10px}
+.schedule-section-head{align-items:flex-end;margin-bottom:22px}
+.schedule-section-head h3{font-size:clamp(21px,2.2vw,28px);letter-spacing:-.8px}
+.schedule-section-head .label{color:var(--schedule-cyan)}
+.schedule-section-head .muted{max-width:560px;font-size:12px}
+.schedule-actions{gap:10px}
+.schedule-actions .primary{box-shadow:0 8px 24px rgba(44,174,210,.16),inset 0 1px rgba(255,255,255,.18)}
+.schedule-actions .secondary{background:rgba(17,30,49,.86)}
+.week-controls{
+  position:relative;display:flex;align-items:center;gap:9px;
+  padding:10px 12px;margin:0 0 15px;border:1px solid var(--schedule-line);
+  border-radius:16px;background:linear-gradient(120deg,rgba(18,31,51,.92),rgba(10,19,34,.94));
+  box-shadow:0 12px 30px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.035)
+}
+.week-controls b{flex:1;margin:0 8px;color:#eaf4ff;font-size:13px;letter-spacing:.15px;font-variant-numeric:tabular-nums}
+.week-controls button{min-width:42px;border-radius:11px}
+#thisWeek{border-color:rgba(121,231,255,.28);color:var(--schedule-cyan);background:rgba(65,165,195,.09);font-weight:800}
+.schedule-insights{
+  display:grid;grid-template-columns:repeat(3,minmax(110px,1fr)) auto;align-items:center;
+  gap:12px;padding:17px 19px;margin-bottom:15px;border-radius:18px;
+  background:linear-gradient(115deg,rgba(19,37,59,.98),rgba(12,21,37,.98));
+  box-shadow:0 14px 34px rgba(0,0,0,.15),inset 0 1px rgba(255,255,255,.05)
+}
+.schedule-count{min-width:0;padding:2px 7px}
+.schedule-count-icon{width:10px;height:10px}
+.schedule-count strong{font-size:22px;letter-spacing:-.8px}
+.schedule-count small{font-size:10px;letter-spacing:.15px}
+.schedule-legend{margin-left:0;justify-content:flex-end;gap:16px}
+.schedule-legend span{font-size:10px}
+.class-setup-note{
+  padding:14px 17px;border-radius:15px;margin-bottom:15px;
+  background:linear-gradient(110deg,rgba(39,123,151,.15),rgba(101,81,153,.10));
+  box-shadow:inset 3px 0 0 rgba(121,231,255,.7)
+}
+.class-setup-note b{font-size:11px}
+.class-setup-note span{font-size:11px}
+.table-scroll{
+  position:relative;padding:0;border:1px solid rgba(144,183,229,.19);
+  border-radius:20px;background:#080f1c;
+  box-shadow:0 20px 48px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.04);
+  scrollbar-color:#42617f #0b1423
+}
+.week-grid{min-width:0}
+.week-table{min-width:1120px;border-spacing:0;table-layout:fixed}
+.week-table th,.week-table td{border-color:var(--schedule-line)}
+.week-table thead th{
+  height:76px;padding:14px 9px;background:linear-gradient(180deg,#182b44,#122139);
+  color:#c9d9ed;font-size:11px;letter-spacing:.35px
+}
+.week-table thead th span{font-size:11px;font-weight:850}
+.week-table thead th small{color:#829ab9;font-size:10px;font-weight:650}
+.week-table thead th.is-today{
+  color:#a5f1ff;background:linear-gradient(180deg,#1b4057,#173149);
+  box-shadow:inset 0 -3px 0 var(--schedule-cyan),inset 0 0 26px rgba(92,215,245,.09)
+}
+.week-table thead .time-heading{
+  width:112px;padding-left:17px;color:#91a5c2;text-transform:uppercase;
+  letter-spacing:1.3px;font-size:9px
+}
+.week-table tbody th.time-cell{
+  width:112px;padding:15px 12px;background:#101c2e;color:#9eb2cf;
+  font-size:10px;font-weight:800;letter-spacing:.1px
+}
+.week-table tbody tr:nth-child(even) td{background:rgba(17,29,47,.68)}
+.week-table td{height:88px;padding:9px;vertical-align:top}
+.week-table tbody tr:hover td{background:rgba(43,90,119,.12)}
+.week-table tbody tr:hover th.time-cell{color:#d7e9ff;background:#152944}
+.table-event{
+  min-height:72px;margin:0 0 7px;padding:10px 9px 40px;
+  border:1px solid rgba(117,177,218,.19);border-left:3px solid var(--schedule-cyan);
+  border-radius:12px;background:linear-gradient(145deg,rgba(29,62,86,.96),rgba(14,29,48,.98));
+  box-shadow:0 7px 18px rgba(0,0,0,.13),inset 0 1px rgba(255,255,255,.055);
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease
+}
+.table-event:hover{
+  transform:translateY(-2px);border-color:rgba(121,231,255,.4);
+  box-shadow:0 12px 24px rgba(0,0,0,.22),0 0 0 1px rgba(121,231,255,.06)
+}
+.table-routine{
+  border-left-color:var(--schedule-violet);
+  background:linear-gradient(145deg,rgba(53,43,81,.94),rgba(25,25,48,.98))
+}
+.table-event .event-kind{
+  margin-bottom:6px;color:#8be7fa;font-size:8px;letter-spacing:1px
+}
+.table-routine .event-kind{color:#d0b4ff}
+.table-event b{font-size:11px;line-height:1.4;color:#f2f7ff}
+.table-event small{margin-top:5px;color:#9fb4d0;font-size:9px;line-height:1.5}
+.table-event .small-action{
+  min-height:27px;right:5px;bottom:5px;padding:4px 7px;
+  border:1px solid rgba(151,190,230,.16);border-radius:7px;
+  background:rgba(5,13,24,.48);font-size:9px
+}
+.table-event .small-action.danger{right:43px;color:#ff9eae}
+.empty-slot{display:block;padding:10px 0;color:rgba(139,164,195,.2);font-size:12px}
+.table-empty{padding:42px!important;color:#9db2d0}
+@media(max-width:720px){
+  .schedule-section-head{gap:13px}
+  .schedule-section-head h3{font-size:23px}
+  .schedule-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .schedule-actions button{width:100%;min-height:46px}
+  .week-controls{top:calc(60px + env(safe-area-inset-top));z-index:8;padding:8px;border-radius:14px}
+  .week-controls b{font-size:11px}
+  .schedule-insights{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px}
+  .schedule-count{padding:4px 3px}
+  .schedule-count strong{font-size:21px}
+  .schedule-legend{grid-column:1/-1;justify-content:flex-start;padding-top:10px;border-top:1px solid var(--schedule-line)}
+  .class-setup-note{display:block;padding:13px}
+  .class-setup-note b{display:block;margin-bottom:5px}
+  .table-scroll{margin:0 -12px;width:calc(100% + 24px);border-radius:15px}
+  .week-table{min-width:1120px}
+  .week-table thead th{height:68px;padding:11px 7px}
+  .week-table tbody th.time-cell{padding:12px 8px}
+  .week-table td{height:84px;padding:7px}
+  .table-event{min-height:70px;padding:9px 7px 42px;border-radius:10px}
+  .table-event b{font-size:10px}
+  .table-event small{font-size:9px}
+  .table-event:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .table-event{transition:none}
+  .table-event:hover{transform:none}
+}
