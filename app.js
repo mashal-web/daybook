@@ -49,7 +49,7 @@ const data={
  classes:(()=>{const saved=safeRead("classes",null);return Array.isArray(saved)?saved.filter(c=>c&&typeof c==="object"&&!Array.isArray(c)):classSeed})(),
  routine:routineData,
  tasks:safeArray("tasks"),sessions:safeArray("sessions"),reminders:safeArray("reminders"),
- goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h"});return value&&typeof value==="object"&&["12h","24h"].includes(value.timeFormat)?value:{timeFormat:"12h"}})()
+ goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h",theme:"dark"});return value&&typeof value==="object"?{...value,timeFormat:["12h","24h"].includes(value.timeFormat)?value.timeFormat:"12h",theme:["dark","light"].includes(value.theme)?value.theme:"dark"}:{timeFormat:"12h",theme:"dark"}})()
 };
 safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
@@ -57,6 +57,8 @@ safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
+function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;}
+applyTheme(data.settings.theme);
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
 const savedFocus=readFocus()||{};
@@ -168,7 +170,7 @@ $("#taskSearch").addEventListener("input",renderTasks);$$("[data-filter]").forEa
 $("#manageSubjects").onclick=()=>{renderSubjectManager();$("#manageDialog").showModal()};$("#manageClose").onclick=()=>$("#manageDialog").close();$("#manageForm").onsubmit=e=>{e.preventDefault();$("#addSubject").click()};
 function renderSubjectManager(){$("#subjectList").innerHTML=data.subjects.map((s,i)=>'<div class="row"><span class="grow">'+esc(s)+'</span><button class="small-action danger" data-subjectdel="'+i+'">Remove</button></div>').join("");$$("[data-subjectdel]").forEach(b=>b.onclick=()=>{const s=data.subjects[+b.dataset.subjectdel];if(data.classes.some(x=>x.subject===s)||data.sessions.some(x=>x.subject===s)){if(!confirm("This subject is used in your timetable or study history. Remove it anyway?"))return}data.subjects.splice(+b.dataset.subjectdel,1);persist();renderSubjectManager();render()})}
 $("#addSubject").onclick=e=>{e.preventDefault();const v=$("#newSubject").value.trim();if(!v)return;if(data.subjects.some(s=>s.toLowerCase()===v.toLowerCase())){toast("Subject already exists");return}data.subjects.push(v);window.dispatchEvent(new CustomEvent("daybook-subjects-updated",{detail:data.subjects.slice()}));$("#newSubject").value="";persist();renderSubjectManager();render();toast("Subject added")};
-$("#settingsBtn").onclick=()=>{$("#timeFormatSetting").value=data.settings.timeFormat||"12h";$("#settingsDialog").showModal()};$("#settingsForm").onsubmit=e=>{e.preventDefault();data.settings={...data.settings,timeFormat:$("#timeFormatSetting").value};$("#settingsDialog").close();save("Settings saved")};$("#settingsExport").onclick=exportBackup;$("#settingsImport").onclick=()=>$("#importFile").click();
+$("#settingsBtn").onclick=()=>{$("#timeFormatSetting").value=data.settings.timeFormat||"12h";$("#themeSetting").value=data.settings.theme||"dark";$("#settingsDialog").showModal()};$("#settingsForm").onsubmit=e=>{e.preventDefault();data.settings={...data.settings,timeFormat:$("#timeFormatSetting").value,theme:$("#themeSetting").value};applyTheme(data.settings.theme);$("#settingsDialog").close();save("Appearance and settings saved")};$("#settingsExport").onclick=exportBackup;$("#settingsImport").onclick=()=>$("#importFile").click();
 $("#goalEdit").onclick=()=>{$("#goalInput").value=data.goal;$("#goalDialog").showModal()};$("#goalForm").onsubmit=e=>{e.preventDefault();data.goal=Math.min(100,Math.max(1,Number($("#goalInput").value)));$("#goalDialog").close();save("Weekly goal updated")};$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());
 function exportBackup(){persist();const blob=new Blob([JSON.stringify({app:"Daybook",version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:"application/json"});const a=document.createElement("a");const url=URL.createObjectURL(blob);a.href=url;a.download="daybook-backup-"+iso(today)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Backup exported")}
 function validateBackup(parsed){

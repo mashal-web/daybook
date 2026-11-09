@@ -2,6 +2,11 @@
 
 Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS and JavaScript. It runs as a web app and can be packaged as an Android app with Capacitor.
 
+## Visual system
+- Android-first bottom navigation with a dedicated More sheet for secondary workspaces
+- Unified design tokens with separately art-directed midnight graphite and soft porcelain themes
+- Persistent dark/light appearance preference, safe-area-aware layouts, touch-friendly controls and reduced-motion support
+
 ## Features
 - One combined weekly timetable: one timing column plus all seven days
 - Classes and daily activities shown together in chronological time rows

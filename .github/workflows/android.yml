@@ -12,6 +12,7 @@ on:
       - "upgrade.css"
       - "upgrade.js"
       - "mobile-app.css"
+      - "design-system.css"
       - "native.js"
       - "package.json"
       - "capacitor.config.json"
@@ -81,6 +82,7 @@ jobs:
           test -s www/upgrade.css
           test -s www/upgrade.js
           test -s www/mobile-app.css
+          test -s www/design-system.css
           test -s www/manifest.webmanifest
           test -s www/sw.js
 
