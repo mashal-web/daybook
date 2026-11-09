@@ -88,7 +88,7 @@ assert(css.includes(".schedule-insights")&&timetableCss.includes(".week-day-stri
 assert(html.includes('id="academics"') && html.includes('id="habits"') && html.includes('id="finance"'), "Academic, habit and finance modules must be present");
 assert(build.includes('"upgrade.js"') && build.includes('"upgrade.css"') && build.includes('"timetable-theme.css"'), "Android build must package every stylesheet and extension module");
 assert(sw.includes('"./upgrade.js"') && sw.includes('"./upgrade.css"') && sw.includes('"./timetable-theme.css"'), "Offline shell must cache the new modules");
-assert(upgrade.includes("Complete backup exported") && upgrade.includes("Complete Daybook backup restored"), "Complete backup must include and restore extension data");
+assert(app.includes("Complete backup exported")&&persistence.includes("function exportFile()")&&persistence.includes("async function importFile(")&&upgrade.includes("academic_courses")===false, "Unified backup must export all persisted Daybook keys through the shared persistence layer");
 assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
 assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$("#timeFormatSetting").value'), "Time-format setting must be editable and persisted");
 assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
