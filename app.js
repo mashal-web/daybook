@@ -22,7 +22,7 @@ const ICONS={
  home:'<path d="m3 10 9-7 9 7M5 9v12h14V9m-9 12v-7h4v7"/>',
  task:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 11 2 2 5-5M8 17h8"/>'
 };
-window.daybookIcon=(name,size=16)=>'<svg class="ui-icon action-icon" width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+(ICONS[name]||ICONS.check)+'</svg>';
+window.daybookIcon=(name,size=16)=>{if(!ICONS[name])return "";return '<svg class="ui-icon action-icon" width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+(ICONS[name])+'</svg>';};
 
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
