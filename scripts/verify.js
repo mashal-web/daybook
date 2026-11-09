@@ -7,6 +7,13 @@ const html = read("index.html");
 const css = read("styles.css");
 const timetableCss = read("timetable-theme.css");
 
+
+const sw = read("sw.js");
+const build = read("scripts/build.js");
+const native = read("native.js");
+const upgrade = read("upgrade.js");
+const mobile = read("mobile-app.css");
+const design = read("design-system.css");
 const plannerCss = read("study-planner.css");
 assert(html.includes('id="planner"')&&html.includes('id="plannerFocusSubject"')&&html.includes('id="plannerConsistency"'), "Study planner workspace, shared focus timer and progress visualizations must be present");
 assert(build.includes('"study-planner.css"')&&sw.includes('"./study-planner.css"'), "Study planner stylesheet must be packaged and cached offline");
@@ -17,13 +24,6 @@ assert(app.includes("data-subjectrename")&&app.includes("Existing study sessions
 assert(app.includes('field("Start time (optional)","startTime","time"')&&app.includes('field("Notes (optional)","notes","text"'), "Study sessions must support optional start times and notes");
 assert(app.includes('$("#plannerFocusStart").onclick=toggleFocusTimer')&&app.includes('$("#plannerFocusReset").onclick=resetFocusTimer'), "Planner timer controls must reuse the existing persistent focus timer");
 assert(app.includes("sessionCompletedDate(s)===todayKey")&&app.includes("sessionCompletedDate(s)>=weekKey"), "Study totals must use actual completion dates");
-
-const sw = read("sw.js");
-const build = read("scripts/build.js");
-const native = read("native.js");
-const upgrade = read("upgrade.js");
-const mobile = read("mobile-app.css");
-const design = read("design-system.css");
 assert(build.includes('"mobile-app.css"'), "Android build must package mobile stylesheet");
 assert(build.includes('"design-system.css"') && sw.includes('"./design-system.css"'), "Android build and offline cache must include the unified design system");
 assert(html.includes('id="themeSetting"') && app.includes("function applyTheme(theme)") && app.includes('theme:$("#themeSetting").value'), "Dark/light theme preference must be selectable and persistent");
