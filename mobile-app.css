@@ -7,7 +7,7 @@ button,a{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media(max-width:900px){
 .layout{display:block;min-height:100dvh}.sidebar{display:none}
 main{width:100%;max-width:760px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 15px calc(var(--mobile-bar-height) + 30px + env(safe-area-inset-bottom))}
-header{position:relative;display:flex;align-items:center;gap:10px;margin:0 -2px 22px;padding:4px 2px 14px;border-bottom:1px solid var(--line)}
+
 header h1{font-size:21px;line-height:1.2}.header-actions{margin-left:auto}.icon-btn{width:44px;height:44px;min-width:44px;min-height:44px}
 .intro{gap:12px;margin-bottom:17px}.intro h2{font-size:clamp(26px,7vw,34px);line-height:1.12}.intro .muted{font-size:12px}.intro .primary{align-self:stretch;width:100%;min-height:48px}
 .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.stats article{min-width:0;min-height:100px;padding:13px;border-radius:16px}.stats strong{font-size:clamp(21px,6vw,27px)}.stats small,.stats span{font-size:10px}
