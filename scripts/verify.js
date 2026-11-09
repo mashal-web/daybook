@@ -106,34 +106,15 @@ assert(manifest.icons.some(icon=>icon.sizes==="512x512"&&icon.type==="image/png"
 assert(workflow.includes("android.permission.SCHEDULE_EXACT_ALARM"), "Android build must declare exact-alarm permission");
 assert(workflow.includes("Apply Daybook launcher icons")&&workflow.includes("ic_launcher_foreground.png"), "Android builds must use Daybook launcher assets");
 
-const uid = (() => { let n = 0; return () => "test-" + (++n); })();
-const minutes = value => { const [h, m] = value.split(":").map(Number); return h * 60 + m; };
-const iso = value => {
-  const date = new Date(value);
-  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
-};
-const validationMatch = app.match(/function validateBackup\(parsed\)\{[\s\S]*?return \{incoming,result\};\n\}/);
-assert(validationMatch, "Backup validation function must exist");
-const validateBackup = new Function("uid", "minutes", "iso", "DAYS", validationMatch[0] + "; return validateBackup;")(uid, minutes, iso, ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
-const backup = { app: "Daybook", version: 1, data: {
-  subjects: ["Engineering Mathematics"], classes: [],
-  routine: [{ id: "r1", day: 1, time: "06:00", title: "Tilawat" }],
-  tasks: [{ id: "t1", title: "Revise derivatives" }],
-  sessions: [],
-  reminders: [{ id: "m1", title: "Study", date: "2026-12-01", time: "18:00", repeat: "none" }],
-  goal: 10, settings: { timeFormat: "12h" }
-}};
-const imported = validateBackup(backup);
-assert.deepEqual(imported.result.subjects, ["Engineering Mathematics"]);
-assert.equal(imported.incoming.goal, 10);
-assert.equal(imported.result.tasks[0].id, "t1");
-const legacy = validateBackup({ ...backup, data: { ...backup.data, routine: [{ id: "legacy", time: "06:00", title: "Legacy activity" }] } }).result.routine;
-assert.equal(legacy.length, 7, "Legacy common routine entries should expand across all seven days");
-assert.equal(new Set(legacy.map(item => item.id)).size, 7, "Expanded entries must receive unique IDs");
-assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, tasks: [{ id: "dup", title: "A" }, { id: "dup", title: "B" }] } }), /Duplicate record ID/);
-assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, goal: 0 } }), /Invalid weekly goal/);
-assert.throws(() => validateBackup({ ...backup, data: { ...backup.data, settings: { timeFormat: "invalid" } } }), /Invalid settings/);
-
+const backupMap=new Map(),backupStorage={get length(){return backupMap.size},key:i=>[...backupMap.keys()][i]??null,getItem:k=>backupMap.has(k)?backupMap.get(k):null,setItem:(k,v)=>backupMap.set(k,String(v)),removeItem:k=>backupMap.delete(k)};
+const backupWindow={localStorage:backupStorage};
+new Function("window","Blob",persistence)(backupWindow,class BlobMock{constructor(parts,options){this.parts=parts;this.type=options.type}});
+const validateBackup=backupWindow.DaybookPersistence.validateBackup;
+const legacyBackup={app:"Daybook",version:1,data:{subjects:["Engineering Mathematics"],classes:[],routine:[{id:"r1",day:1,time:"06:00",title:"Tilawat"}],tasks:[{id:"t1",title:"Revise derivatives"}],sessions:[],reminders:[],goal:10,settings:{timeFormat:"12h"}},extensions:{academic_courses:[{id:"c1",name:"Engineering Mathematics"}],habits:[{id:"h1",name:"Prayer"}]}};
+const converted=validateBackup(legacyBackup);
+assert(converted["daybook_subjects"]&&converted["daybook_tasks"]&&converted["daybook_academic_courses"]&&converted["daybook_habits"],"Legacy backup keys must migrate into the centralized storage namespace");
+assert.throws(()=>validateBackup({...legacyBackup,version:99}),/Unsupported/,"Unsupported backup versions must be rejected");
+assert.throws(()=>validateBackup({...legacyBackup,data:{tasks:[{__rawStorageValue:"broken"}]}}),/unreadable/,"Unreadable backup records must be rejected");
 const migrationMatch = app.match(/const routineData=\(\(\)=>\{[\s\S]*?\}\)\(\);/);
 assert(migrationMatch, "Routine migration must exist");
 const migrate = new Function("oldRoutine", "routineTemplate", "storedRoutineVersion", "ROUTINE_VERSION", "DAYS", "uid", migrationMatch[0] + "; return routineData;");
