@@ -10,7 +10,7 @@ body{background:radial-gradient(ellipse at 78% -12%,rgba(43,113,148,.17),transpa
 .nav.active{background:linear-gradient(110deg,rgba(76,171,204,.17),rgba(120,101,190,.1));border-color:rgba(123,211,239,.22);color:#a9efff;box-shadow:inset 3px 0 #83e7ff}
 .sidebar-note{background:linear-gradient(145deg,#14243a,#101929);box-shadow:var(--shadow);border:1px solid var(--line);color:#e9f4ff}.sidebar-note small{color:var(--muted)}
 main{padding:30px clamp(18px,4vw,58px) 42px;max-width:1450px}
-header{border-bottom:1px solid var(--line);padding-bottom:17px;margin-bottom:30px}
+
 h1{color:#f0f6ff;font-size:25px;letter-spacing:-1px}h2{color:#f0f6ff;font-size:clamp(29px,3.2vw,39px);letter-spacing:-1.7px}h2 em{color:#86e5fa}h3{color:#eaf3ff;font-size:15px}
 .today{background:rgba(18,32,51,.9);border:1px solid var(--line);box-shadow:var(--inset);color:#a8bdd7}
 .icon-btn,.primary,.secondary{border:1px solid var(--line);border-radius:12px}
