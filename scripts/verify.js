@@ -6,6 +6,17 @@ const app = read("app.js");
 const html = read("index.html");
 const css = read("styles.css");
 const timetableCss = read("timetable-theme.css");
+
+const plannerCss = read("study-planner.css");
+assert(html.includes('id="planner"')&&html.includes('id="plannerFocusSubject"')&&html.includes('id="plannerConsistency"'), "Study planner workspace, shared focus timer and progress visualizations must be present");
+assert(build.includes('"study-planner.css"')&&sw.includes('"./study-planner.css"'), "Study planner stylesheet must be packaged and cached offline");
+assert(plannerCss.includes("#planner .planner-overview")&&plannerCss.includes("@media(max-width:900px)"), "Study planner styling must be scoped and mobile responsive");
+assert(app.includes("function sessionCompletedDate")&&app.includes("function renderPlanner()")&&app.includes("plannerSessionFilter"), "Study statistics and session filters must derive from saved sessions");
+assert(app.includes("data-subjectrename")&&app.includes("Existing study sessions and timetable records will be preserved"), "Subject rename and removal must preserve historical references");
+assert(app.includes('field("Start time (optional)","startTime","time"')&&app.includes('field("Notes (optional)","notes","text"'), "Study sessions must support optional start times and notes");
+assert(app.includes('$("#plannerFocusStart").onclick=toggleFocusTimer')&&app.includes('$("#plannerFocusReset").onclick=resetFocusTimer'), "Planner timer controls must reuse the existing persistent focus timer");
+assert(app.includes("sessionCompletedDate(s)===todayKey")&&app.includes("sessionCompletedDate(s)>=weekKey"), "Study totals must use actual completion dates");
+
 const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
