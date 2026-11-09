@@ -5,7 +5,7 @@
  let healthy=true,recovered=false,blocked=false;
  function rawSet(key,value){native.setItem(key,value)}
  function recover(){
-  let raw;try{raw=native.getItem(JOURNAL)}catch(e){healthy=false;return}
+  let raw;try{raw=native.getItem(JOURNAL)}catch(e){healthy=false;blocked=true;return}
   if(!raw)return;
   try{const j=JSON.parse(raw);if(!j||j.version!==1||!Array.isArray(j.changes))throw Error("Invalid recovery journal");
    if(j.phase!=="committed")for(const c of j.changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}
@@ -17,6 +17,7 @@
   getItem(key){return native.getItem(String(key))},
   setItem(key,value){
    key=String(key);value=String(value);
+   if(key.startsWith(PREFIX)){try{JSON.parse(value)}catch(e){throw Error("Stored Daybook values must be valid JSON: "+key)}}
    if(blocked)throw Error("Storage writes are paused because recovery needs attention");
    if(key===JOURNAL)throw Error("Reserved storage key");
    const previous=native.getItem(key);
@@ -27,7 +28,7 @@
     if(native.getItem(key)!==value)throw Error("Storage read-back verification failed");
     journal.phase="committed";rawSet(JOURNAL,JSON.stringify(journal));native.removeItem(JOURNAL);healthy=true;
    }catch(error){
-    try{if(previous===null)native.removeItem(key);else rawSet(key,previous);native.removeItem(JOURNAL)}catch(rollbackError){healthy=false}
+    try{if(previous===null)native.removeItem(key);else rawSet(key,previous);native.removeItem(JOURNAL)}catch(rollbackError){healthy=false;blocked=true}
     throw error;
    }
   },
@@ -63,7 +64,7 @@
    for(const c of changes){rawSet(c.key,c.next);if(native.getItem(c.key)!==c.next)throw Error("Could not verify "+c.key)}
    journal.phase="committed";rawSet(JOURNAL,JSON.stringify(journal));native.removeItem(JOURNAL);healthy=true;return true;
   }catch(error){
-   try{for(const c of changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}native.removeItem(JOURNAL)}catch(rollbackError){healthy=false}
+   try{for(const c of changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}native.removeItem(JOURNAL)}catch(rollbackError){healthy=false;blocked=true}
    throw error;
   }
  }
