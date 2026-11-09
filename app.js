@@ -1,5 +1,29 @@
 "use strict";
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const ICONS={
+ edit:'<path d="m16 4 4 4M5 19l4-.8L20 7a2.1 2.1 0 0 0-3-3L6 15l-1 4Z"/>',
+ trash:'<path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/>',
+ check:'<path d="m5 12 4 4L19 6"/>',
+ rotate:'<path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ x:'<path d="m18 6-12 12M6 6l12 12"/>',
+ left:'<path d="m15 18-6-6 6-6"/>',
+ right:'<path d="m9 18 6-6-6-6"/>',
+ calendar:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ search:'<circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4 1.4-1.1a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a8 8 0 0 1 0 2Z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
+ moon:'<path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/>',
+ wallet:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18m-5 4h2"/>',
+ book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 6h16M8 10h8"/>',
+ chart:'<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/>',
+ bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>',
+ home:'<path d="m3 10 9-7 9 7M5 9v12h14V9m-9 12v-7h4v7"/>',
+ task:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 11 2 2 5-5M8 17h8"/>'
+};
+window.daybookIcon=(name,size=16)=>'<svg class="ui-icon action-icon" width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+(ICONS[name]||ICONS.check)+'</svg>';
+
 const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
 let today=new Date();
@@ -121,7 +145,7 @@ $("#closeMore")?.addEventListener("click",()=>$("#moreDialog")?.close());
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
-function rowActions(type,id){return '<button class="small-action" data-edit="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Edit '+esc(type)+'">Edit</button><button class="small-action danger" data-delete="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Delete '+esc(type)+'">×</button>'}
+function rowActions(type,id){return '<button class="small-action" data-edit="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Edit '+esc(type)+'" title="Edit">'+window.daybookIcon("edit")+'<span>Edit</span></button><button class="small-action danger" data-delete="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Delete '+esc(type)+'" title="Delete">'+window.daybookIcon("trash")+'<span>Delete</span></button>'}
 function dueMeta(t){if(!t.due)return "";const due=new Date(t.due+"T12:00:00"),todayDate=new Date(iso(today)+"T12:00:00"),days=Math.round((due-todayDate)/86400000);const label=days<0?"Overdue":days===0?"Due today":days===1?"Due tomorrow":"Due "+due.toLocaleDateString("en-US",{month:"short",day:"numeric"});return '<span class="task-due '+(days<0&&!t.done?"is-overdue":days===0?"is-today":"")+'">'+esc(label)+'</span>'}
 function taskMarkup(t){return '<div class="row task-row '+(t.done?"completed":"")+'"><input class="check" type="checkbox" aria-label="'+(t.done?"Reopen task: ":"Complete task: ")+esc(t.title)+'" data-task="'+esc(t.id)+'" '+(t.done?"checked":"")+'><div class="grow"><b>'+esc(t.title)+'</b><small>'+esc(t.category||"Personal")+' · '+esc(t.priority||"Normal")+(t.due?" · "+dueMeta(t):"")+(t.notes?" · "+esc(t.notes):"")+'</small></div>'+rowActions("task",t.id)+'</div>'}
 function renderWeek(){
@@ -138,7 +162,7 @@ function renderWeek(){
 }
 $("#prev").onclick=()=>{weekOffset--;renderWeek()};$("#next").onclick=()=>{weekOffset++;renderWeek()};$("#thisWeek").onclick=()=>{weekOffset=0;renderWeek()};
 function renderTasks(){const q=($("#taskSearch")?.value||"").trim().toLowerCase();let list=data.tasks.filter(t=>(filter==="all"||(filter==="done"?t.done:filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today):!t.done))&&(!q||(t.title+" "+t.category+" "+t.notes).toLowerCase().includes(q)));list.sort((a,b)=>Number(a.done)-Number(b.done)||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999"));$("#allTasks").innerHTML=list.map(taskMarkup).join("")||'<div class="empty">No tasks match this view. Add a task to get started.</div>';$$("[data-filter]").forEach(b=>{const selected=b.dataset.filter===filter;b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected))});wireActions();$$("[data-task]").forEach(e=>e.onchange=()=>{const t=data.tasks.find(x=>String(x.id)===e.dataset.task);if(t){t.done=e.checked;t.completedAt=e.checked?new Date().toISOString():null;save(e.checked?"Task completed":"Task reopened")}})}
-function renderPlanner(){$("#subjects").innerHTML=data.subjects.map(s=>'<span class="chip">'+esc(s)+'</span>').join("")||'<span class="muted">Add subjects to start planning.</span>';$("#sessionCount").textContent=data.sessions.length+" sessions";$("#sessions").innerHTML=data.sessions.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(s=>'<div class="row '+(s.done?"completed":"")+'"><div class="grow"><b>'+esc(s.subject)+'</b><small>'+esc(s.topic||"Study session")+' · '+esc(s.date)+' · '+s.minutes+' min</small></div>'+'<button class="small-action" data-sessiondone="'+esc(s.id)+'">'+(s.done?"Reopen":"Complete")+'</button>'+rowActions("study",s.id)+'</div>').join("")||'<div class="empty">Plan your first study session.</div>';$$("[data-sessiondone]").forEach(b=>b.onclick=()=>{const s=data.sessions.find(x=>String(x.id)===b.dataset.sessiondone);if(!s)return;s.done=!s.done;s.completedAt=s.done?new Date().toISOString():null;save(s.done?"Study session completed":"Study session reopened")});wireActions()}
+function renderPlanner(){$("#subjects").innerHTML=data.subjects.map(s=>'<span class="chip">'+esc(s)+'</span>').join("")||'<span class="muted">Add subjects to start planning.</span>';$("#sessionCount").textContent=data.sessions.length+" sessions";$("#sessions").innerHTML=data.sessions.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(s=>'<div class="row '+(s.done?"completed":"")+'"><div class="grow"><b>'+esc(s.subject)+'</b><small>'+esc(s.topic||"Study session")+' · '+esc(s.date)+' · '+s.minutes+' min</small></div>'+'<button class="small-action" data-sessiondone="'+esc(s.id)+'">'+(s.done?window.daybookIcon("rotate")+'<span>Reopen</span>':window.daybookIcon("check")+'<span>Complete</span>')+'</button>'+rowActions("study",s.id)+'</div>').join("")||'<div class="empty">Plan your first study session.</div>';$$("[data-sessiondone]").forEach(b=>b.onclick=()=>{const s=data.sessions.find(x=>String(x.id)===b.dataset.sessiondone);if(!s)return;s.done=!s.done;s.completedAt=s.done?new Date().toISOString():null;save(s.done?"Study session completed":"Study session reopened")});wireActions()}
 function renderReminders(){
  const items=data.reminders.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
  $("#reminderItems").innerHTML=items.map(r=>{
@@ -168,7 +192,7 @@ if(type==="task"&&!v.title){toast("Enter a task name");return}if(type==="reminde
 if(id){const i=data[key].findIndex(x=>String(x.id)===String(id));data[key][i]={...data[key][i],...v}}else data[key].push({id:uid(),...v,done:false,createdAt:new Date().toISOString()});$("#editor").close();save(id?"Changes saved":"Added successfully")};
 $("#taskSearch").addEventListener("input",renderTasks);$$("[data-filter]").forEach(b=>b.onclick=()=>{filter=b.dataset.filter;renderTasks()});
 $("#manageSubjects").onclick=()=>{renderSubjectManager();$("#manageDialog").showModal()};$("#manageClose").onclick=()=>$("#manageDialog").close();$("#manageForm").onsubmit=e=>{e.preventDefault();$("#addSubject").click()};
-function renderSubjectManager(){$("#subjectList").innerHTML=data.subjects.map((s,i)=>'<div class="row"><span class="grow">'+esc(s)+'</span><button class="small-action danger" data-subjectdel="'+i+'">Remove</button></div>').join("");$$("[data-subjectdel]").forEach(b=>b.onclick=()=>{const s=data.subjects[+b.dataset.subjectdel];if(data.classes.some(x=>x.subject===s)||data.sessions.some(x=>x.subject===s)){if(!confirm("This subject is used in your timetable or study history. Remove it anyway?"))return}data.subjects.splice(+b.dataset.subjectdel,1);persist();renderSubjectManager();render()})}
+function renderSubjectManager(){$("#subjectList").innerHTML=data.subjects.map((s,i)=>'<div class="row"><span class="grow">'+esc(s)+'</span><button class="small-action danger" data-subjectdel="'+i+'">'+window.daybookIcon("trash")+'<span>Remove</span></button></div>').join("");$$("[data-subjectdel]").forEach(b=>b.onclick=()=>{const s=data.subjects[+b.dataset.subjectdel];if(data.classes.some(x=>x.subject===s)||data.sessions.some(x=>x.subject===s)){if(!confirm("This subject is used in your timetable or study history. Remove it anyway?"))return}data.subjects.splice(+b.dataset.subjectdel,1);persist();renderSubjectManager();render()})}
 $("#addSubject").onclick=e=>{e.preventDefault();const v=$("#newSubject").value.trim();if(!v)return;if(data.subjects.some(s=>s.toLowerCase()===v.toLowerCase())){toast("Subject already exists");return}data.subjects.push(v);window.dispatchEvent(new CustomEvent("daybook-subjects-updated",{detail:data.subjects.slice()}));$("#newSubject").value="";persist();renderSubjectManager();render();toast("Subject added")};
 $("#settingsBtn").onclick=()=>{$("#timeFormatSetting").value=data.settings.timeFormat||"12h";$("#themeSetting").value=data.settings.theme||"dark";$("#settingsDialog").showModal()};$("#settingsForm").onsubmit=e=>{e.preventDefault();data.settings={...data.settings,timeFormat:$("#timeFormatSetting").value,theme:$("#themeSetting").value};applyTheme(data.settings.theme);$("#settingsDialog").close();save("Appearance and settings saved")};$("#settingsExport").onclick=exportBackup;$("#settingsImport").onclick=()=>$("#importFile").click();
 $("#goalEdit").onclick=()=>{$("#goalInput").value=data.goal;$("#goalDialog").showModal()};$("#goalForm").onsubmit=e=>{e.preventDefault();data.goal=Math.min(100,Math.max(1,Number($("#goalInput").value)));$("#goalDialog").close();save("Weekly goal updated")};$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());
