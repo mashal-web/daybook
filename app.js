@@ -209,7 +209,7 @@ function renderHomeTimeline(items){
 }
 function renderHomeTasks(){
  const tasks=data.tasks.slice(),done=tasks.filter(t=>t.done).length,pending=tasks.length-done,rate=tasks.length?Math.round(done/tasks.length*100):0;
- $("#homeDoneTasks").textContent=done;$("#homePendingTasks").textContent=pending;
+ $("#homeDoneTasks").textContent=done;$("#homePendingTasks").textContent=pending;$("#overdue").textContent=data.tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length;
  $("#homeTaskProgress").style.width=rate+"%";$("#homeProgressValue").textContent=tasks.length?rate+"%":"—";
  $("#homeProgressCaption").textContent=tasks.length?done+" of "+tasks.length+" tasks completed · "+pending+" remaining":"No tasks yet. Add one to start tracking progress.";
  const priority=tasks.filter(t=>!t.done).sort((a,b)=>Number(!!b.due&&b.due<iso(today))-Number(!!a.due&&a.due<iso(today))||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,3);
