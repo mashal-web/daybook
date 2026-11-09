@@ -8,10 +8,11 @@ const css = read("styles.css");
 const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
+const upgrade = read("upgrade.js");
 const manifest = JSON.parse(read("manifest.webmanifest"));
 const workflow = read(".github/workflows/android.yml");
 
-for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")]]) {
+for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")], ["upgrade.js", upgrade]]) {
   assert.doesNotThrow(() => new Function(source), name + " must parse");
 }
 assert.equal(/(?<!\$)\$\(["\'][^"\']+["\']\)\.(?:forEach|map|filter|find|some|reduce|flatMap|sort)\(/.test(app), false, "querySelector results must not be treated as collections");
@@ -41,7 +42,7 @@ for (const id of new Set([...app.matchAll(/\$\(["']#([^"']+)["']\)/g)].map(match
 const viewIds = new Set([...html.matchAll(/class=["'][^"']*\bview\b[^"']*["'][^>]*id=["']([^"']+)["']/g)].map(match => match[1]));
 const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map(match => match[1]));
 for (const target of navTargets) assert(viewIds.has(target), "Missing view for navigation target: " + target);
-assert.equal(viewIds.size, 6, "Expected six main views");
+assert.equal(viewIds.size, 9, "Expected nine main views");
 assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "Weekly routine must include university schedule summary and setup guidance");
 assert(app.includes('$("#classCount").textContent=data.classes.length'), "Weekly routine must summarize saved university entries");
 assert(app.includes('UNIVERSITY CLASS')&&app.includes('DAILY ROUTINE'), "Weekly timetable events must visually distinguish classes from routine activities");
@@ -50,6 +51,10 @@ assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
 assert(css.includes(".schedule-insights")&&css.includes(".class-setup-note"), "Weekly routine must style its class summary and setup note");
 
+assert(html.includes('id="academics"') && html.includes('id="habits"') && html.includes('id="finance"'), "Academic, habit and finance modules must be present");
+assert(build.includes('"upgrade.js"') && build.includes('"upgrade.css"') && build.includes('"timetable-theme.css"'), "Android build must package every stylesheet and extension module");
+assert(sw.includes('"./upgrade.js"') && sw.includes('"./upgrade.css"') && sw.includes('"./timetable-theme.css"'), "Offline shell must cache the new modules");
+assert(upgrade.includes("Complete backup exported") && upgrade.includes("Complete Daybook backup restored"), "Complete backup must include and restore extension data");
 assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
 assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$("#timeFormatSetting").value'), "Time-format setting must be editable and persisted");
 assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
@@ -230,7 +235,7 @@ function smokeTestAppRuntime() {
   assert.doesNotThrow(() => new Function(...Object.keys(context), app)(...Object.values(context)), "app.js must initialize without browser runtime errors");
 
   const nav = elements.filter(element => element.classList.contains("nav"));
-  assert.equal(nav.length, 12, "Desktop and mobile navigation should both be present");
+  assert.equal(nav.length, 18, "Desktop and mobile navigation should both be present");
   nav.find(element => element.dataset.view === "tasks").click();
   assert.equal(byId.get("tasks").classList.contains("active"), true, "Tasks navigation should activate the Tasks view");
   assert.equal(byId.get("heading").textContent, "Tasks", "Navigation should update the page heading");

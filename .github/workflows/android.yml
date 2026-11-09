@@ -8,6 +8,9 @@ on:
       - "app.js"
       - "index.html"
       - "styles.css"
+      - "timetable-theme.css"
+      - "upgrade.css"
+      - "upgrade.js"
       - "native.js"
       - "package.json"
       - "capacitor.config.json"
@@ -73,6 +76,9 @@ jobs:
           test -s www/app.js
           test -s www/native.js
           test -s www/styles.css
+          test -s www/timetable-theme.css
+          test -s www/upgrade.css
+          test -s www/upgrade.js
           test -s www/manifest.webmanifest
           test -s www/sw.js
 

@@ -109,7 +109,7 @@ function openView(v){
  activeView=v;
  $$(".view").forEach(x=>x.classList.toggle("active",x===target));
  $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
- $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders"})[v]||"Daybook";
+ $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders",academics:"Academic management",habits:"Habits & routines",finance:"Personal finance"})[v]||"Daybook";
  render();
 }
 $$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
