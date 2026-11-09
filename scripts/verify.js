@@ -92,7 +92,7 @@ assert(!html.includes('class="table-scroll"'), "Timetable must not require a wid
 assert(app.includes("A clear day")&&app.includes("Add an activity"), "Empty days should provide an add-activity action");
 assert(/data-id=.*esc\(id\)/.test(app), "Record IDs must be HTML escaped before rendering");
 assert(build.includes('"sw.js"'), "Android build must copy the service worker");
-assert(workflow.includes("node scripts/verify.js"), "Android workflow must run regression tests");
+assert(workflow.includes("npm test")||workflow.includes("node scripts/verify.js"), "Android workflow must run regression tests");
 assert(manifest.icons.some(icon=>icon.sizes==="192x192"&&icon.type==="image/png"), "PWA manifest must include a 192px PNG icon");
 assert(manifest.icons.some(icon=>icon.sizes==="512x512"&&icon.type==="image/png"), "PWA manifest must include a 512px PNG icon");
 assert(workflow.includes("android.permission.SCHEDULE_EXACT_ALARM"), "Android build must declare exact-alarm permission");
