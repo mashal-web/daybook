@@ -32,7 +32,7 @@
     throw error;
    }
   },
-  removeItem(key){key=String(key);const previous=native.getItem(key);if(previous===null)return;this.setItem(key,"");native.removeItem(key)},
+  removeItem(key){key=String(key);if(blocked)throw Error("Storage writes are paused because recovery needs attention");const previous=native.getItem(key);if(previous===null)return;const journal={version:1,phase:"pending",changes:[{key,previous,next:null}]};try{rawSet(JOURNAL,JSON.stringify(journal));native.removeItem(key);journal.phase="committed";rawSet(JOURNAL,JSON.stringify(journal));native.removeItem(JOURNAL)}catch(error){try{rawSet(key,previous);native.removeItem(JOURNAL)}catch(rollbackError){healthy=false;blocked=true}throw error}},
   key(index){return native.key(index)},
   get length(){return native.length}
  };
