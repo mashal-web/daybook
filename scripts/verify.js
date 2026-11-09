@@ -237,7 +237,7 @@ function smokeTestAppRuntime() {
   };
   const context = {
     document, window, localStorage, Date, Math, JSON, String, Number, Object, Array, Set, Map,
-    RegExp, Promise, Error, Intl, confirm: () => true, setInterval: () => 1,
+    RegExp, Promise, Error, Intl, CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } }, confirm: () => true, setInterval: () => 1,
     setTimeout: () => 1, clearTimeout: () => {}, Notification: undefined,
     location: { reload() {} }, URL: {}, Blob: class {}, storageFailure: false,
     FormData: class { entries() { return Object.entries(context.formPayload || {}); } }
