@@ -114,7 +114,7 @@ const legacyBackup={app:"Daybook",version:1,data:{subjects:["Engineering Mathema
 const converted=validateBackup(legacyBackup);
 assert(converted["daybook_subjects"]&&converted["daybook_tasks"]&&converted["daybook_academic_courses"]&&converted["daybook_habits"],"Legacy backup keys must migrate into the centralized storage namespace");
 assert.throws(()=>validateBackup({...legacyBackup,version:99}),/Unsupported/,"Unsupported backup versions must be rejected");
-assert.throws(()=>validateBackup({...legacyBackup,data:{tasks:[{__rawStorageValue:"broken"}]}}),/unreadable/,"Unreadable backup records must be rejected");
+assert.throws(()=>validateBackup({...legacyBackup,data:{tasks:{__rawStorageValue:"broken"}}}),/unreadable/,"Unreadable backup records must be rejected");
 const migrationMatch = app.match(/const routineData=\(\(\)=>\{[\s\S]*?\}\)\(\);/);
 assert(migrationMatch, "Routine migration must exist");
 const migrate = new Function("oldRoutine", "routineTemplate", "storedRoutineVersion", "ROUTINE_VERSION", "DAYS", "uid", migrationMatch[0] + "; return routineData;");
