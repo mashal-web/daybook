@@ -192,7 +192,7 @@ button{min-height:44px}
 .row{min-height:56px;border-radius:14px}
 .check{width:20px;height:20px}
 input,select{font-size:16px}
-header{position:sticky;top:0;z-index:15;padding:10px 0;margin-top:-10px;background:color-mix(in srgb,var(--md-bg) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+
 .menu{min-width:44px;min-height:44px;border-radius:14px}
 dialog{border-radius:24px;padding:24px}
 dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
@@ -206,9 +206,9 @@ dialog::backdrop{background:#171b2070;backdrop-filter:blur(5px)}
 .mobile-nav .nav-icon .ui-icon{width:22px;height:22px}
 .toast{bottom:calc(86px + env(safe-area-inset-bottom));border-radius:16px;padding:13px 18px}
 @media(max-width:720px){
- body{padding-top:env(safe-area-inset-top)}
+
  main{padding-top:12px;padding-bottom:calc(104px + env(safe-area-inset-bottom))}
- header{top:env(safe-area-inset-top);margin-top:-12px;padding:10px 0 9px}
+
  h1{font-size:22px}
  .mobile-nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));min-height:68px}
  .mobile-nav .nav{min-height:54px;padding:5px 2px}
@@ -501,7 +501,7 @@ body:after{
 .nav:hover .nav-icon{transform:translateX(2px)}
 .sidebar-note{position:relative;overflow:hidden}
 .sidebar-note:after{content:"";position:absolute;width:110px;height:110px;right:-50px;top:-55px;border-radius:50%;background:rgba(90,215,255,.10);filter:blur(2px)}
-header{border-color:var(--glass-border);background:rgba(10,17,34,.74);box-shadow:0 12px 38px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.07)}
+
 header .label{margin-bottom:2px}
 .icon-btn{border:1px solid rgba(145,183,235,.17);background:rgba(27,40,66,.64);transition:all .18s ease}
 .icon-btn:hover{transform:translateY(-2px);border-color:rgba(99,225,255,.45);box-shadow:var(--glow-cyan)}
@@ -706,7 +706,7 @@ body{background-color:var(--ink-0);background-image:linear-gradient(rgba(103,155
 .sidebar nav .nav{border:1px solid transparent;border-radius:13px;color:#9eb0ca}
 .sidebar nav .nav.active{border-color:rgba(114,229,255,.20);background:linear-gradient(100deg,rgba(61,151,190,.17),rgba(125,105,190,.08));color:#eafaff;box-shadow:inset 3px 0 0 var(--cyan),0 7px 22px rgba(0,0,0,.14)}
 .sidebar nav .nav.active .nav-icon{color:var(--cyan);filter:drop-shadow(0 0 7px rgba(114,229,255,.34))}
-header{border:1px solid var(--line);background:rgba(9,16,29,.88);box-shadow:0 10px 35px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.045)}
+
 .intro{padding:clamp(4px,1vw,12px) 0 8px}
 .intro h2{letter-spacing:-1.4px}
 .intro h2 em{background:linear-gradient(100deg,#7deaff 5%,#a6a0ff 55%,#e2a8ff);-webkit-background-clip:text;background-clip:text}
