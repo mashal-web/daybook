@@ -1,5 +1,5 @@
 /* Scoped Study Planner academic workspace */
-#planner{display:grid;gap:24px;min-width:0}
+#planner.active{display:grid;gap:24px;min-width:0}
 #planner .planner-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
 #planner .planner-heading h2{margin:5px 0 7px}#planner .planner-heading .primary{min-height:46px;white-space:nowrap}
 #planner .planner-overview{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:10px}
