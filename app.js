@@ -332,8 +332,8 @@ if(type==="study"){title=id?"Edit study session":"Plan study session";body=selec
 if(type==="reminder"){title=id?"Edit reminder":"Add reminder";body=field("Reminder","title","text",old.title||"")+field("Date","date","date",old.date||iso(today))+field("Time","time","time",old.time||"19:00")+selectField("Repeat","repeat",[{value:"none",label:"Does not repeat"},{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly"}],old.repeat||"none")}
 $("#dialogTitle").textContent=title;$("#fields").innerHTML=body;$("#editor").showModal();
  if(type==="event"){
-  const allDay=$("#eventAllDay"),endFields=$("#eventEndFields"),frequency=$("#eventFrequency"),weekdays=$("#eventWeekdays"),endDate=$("#eventEndDate"),endTime=$("#eventEndTime");
-  const sync=()=>{const disabled=allDay.checked;$("#eventStartTime").disabled=disabled;endDate.disabled=disabled;endTime.disabled=disabled;endFields.hidden=disabled;weekdays.hidden=frequency.value!=="weekly";$("#eventRecurrenceEnd").closest(".field").hidden=frequency.value!=="weekly"};
+  const allDay=document.getElementById("eventAllDay"),endFields=document.getElementById("eventEndFields"),frequency=document.getElementById("eventFrequency"),weekdays=document.getElementById("eventWeekdays"),endDate=document.getElementById("eventEndDate"),endTime=document.getElementById("eventEndTime");
+  const sync=()=>{const disabled=allDay.checked;document.getElementById("eventStartTime").disabled=disabled;endDate.disabled=disabled;endTime.disabled=disabled;endFields.hidden=disabled;weekdays.hidden=frequency.value!=="weekly";document.getElementById("eventRecurrenceEnd").closest(".field").hidden=frequency.value!=="weekly"};
   allDay.onchange=sync;frequency.onchange=sync;sync();
   if(id&&old.recurrence?.frequency==="weekly")$("#fields").insertAdjacentHTML("beforeend",'<p class="event-series-note">This is a recurring series. Saving changes updates every matching occurrence in the series.</p>');
  }}
@@ -348,8 +348,8 @@ document.addEventListener("click",event=>{
 });
 $("#form").onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target).entries());const type=edit.type,id=edit.id;let key=({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type];
  if(type==="event"){
-  const title=String(v.eventTitle||"").trim(),startDate=v.eventStartDate,startTime=v.eventAllDay?"00:00":v.eventStartTime,endDate=v.eventEndDate,endTime=v.eventAllDay?"00:00":v.eventEndTime,allDay=$("#eventAllDay").checked,frequency=v.eventFrequency||"none",weekdays=Array.from(e.target.querySelectorAll('input[name="eventWeekday"]:checked')).map(x=>Number(x.value)),validDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"")&&!Number.isNaN(new Date(s+"T12:00:00").getTime())&&iso(new Date(s+"T12:00:00"))===s,validTime=s=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s||"");
-  if(!title){toast("Enter an event title");$("#eventTitle").focus();return}
+  const title=String(v.eventTitle||"").trim(),startDate=v.eventStartDate,startTime=v.eventAllDay?"00:00":v.eventStartTime,endDate=v.eventEndDate,endTime=v.eventAllDay?"00:00":v.eventEndTime,allDay=document.getElementById("eventAllDay").checked,frequency=v.eventFrequency||"none",weekdays=Array.from(e.target.querySelectorAll('input[name="eventWeekday"]:checked')).map(x=>Number(x.value)),validDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"")&&!Number.isNaN(new Date(s+"T12:00:00").getTime())&&iso(new Date(s+"T12:00:00"))===s,validTime=s=>/^([01]\d|2[0-3]):[0-5]\d$/.test(s||"");
+  if(!title){toast("Enter an event title");document.getElementById("eventTitle").focus();return}
   if(!validDate(startDate)){toast("Choose a valid start date");return}
   if(!allDay&&!validTime(startTime)){toast("Choose a valid start time");return}
   if(!allDay&&(!validDate(endDate)||!validTime(endTime))){toast("Enter a valid end date and end time");return}if(allDay&&((endDate&&!validDate(endDate))||(endTime&&!validTime(endTime)))){toast("Enter a valid end date and end time, or clear both");return}
