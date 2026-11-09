@@ -405,11 +405,12 @@ assert(persistence.includes("Refusing to overwrite unreadable stored data")&&per
 
 
 const eventUi=read("app.js");
-assert(eventUi.includes('function eventConflicts(candidate,id)')&&eventUi.includes('scheduleStore.createEvent(candidate)')&&eventUi.includes('scheduleStore.updateEvent(id,candidate)'),"Event form must validate conflicts and use the canonical scheduling engine");
+assert(eventUi.includes('function eventConflicts(candidate,id)')&&eventUi.includes('frequency==="weekly"?366:0')&&eventUi.includes('scheduleStore.createEvent(candidate)')&&eventUi.includes('scheduleStore.updateEvent(id,candidate)'),"Event form must validate conflicts across recurring dates and use the canonical scheduling engine");
 assert(eventUi.includes('scheduleStore.duplicateEvent')===false&&eventUi.includes('openEditor("event",null,id)'),"Event duplication must open a prefilled independent event draft");
 assert(eventUi.includes('data-event-action="delete"')&&eventUi.includes('Delete this event'),"Event deletion must require explicit confirmation");
 assert(eventUi.includes('eventFrequency')&&eventUi.includes('value:"weekly"')&&eventUi.includes('eventWeekday'),"Event form must expose supported weekly recurrence controls");
 assert(eventUi.includes('eventAllDay')&&eventUi.includes('eventStartDate')&&eventUi.includes('eventEndDate'),"Event form must support all-day and date-range fields");
 assert(html.includes('data-add="event"')&&html.includes('id="schedule"')&&html.includes('id="planner"'),"Event creation entry points must exist in Home, Week and Study Planner");
-assert(upgrade.includes('data-event-open')&&upgrade.includes('data-add="event"'),"Agenda and Smart Planner must expose event management entry points");
+assert(upgrade.includes('data-event-open')&&upgrade.includes('data-add="event"')&&upgrade.includes('window.DaybookOpenEventForm'),"Agenda and Smart Planner must expose working event management entry points");
+assert(eventUi.includes('window.DaybookOpenEventForm=(id=null)=>openEditor("event",id)')&&eventUi.includes('$("[data-add]")'),"Home, Week and Study Planner event buttons must open the shared editor");
 assert(css.includes(".event-form-section")&&css.includes("@media(max-width:600px)"),"Event form must have mobile responsive styling");
