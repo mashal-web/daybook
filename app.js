@@ -80,6 +80,7 @@ safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 const scheduleStore=window.DaybookSchedule.create({storage:localStorage,classes:data.classes,routine:data.routine,sessions:data.sessions});
+window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}

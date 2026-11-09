@@ -86,6 +86,7 @@ if(importInput){const oldHandler=importInput.onchange;importInput.onchange=async
 document.addEventListener("click",e=>{const n=e.target.closest("[data-view]");if(n)setTimeout(renderAll,0)});
 window.addEventListener("daybook-subjects-updated",e=>{const names=Array.isArray(e.detail)?e.detail:[];for(const name of names)if(typeof name==="string"&&!courses.some(c=>c.name.toLowerCase()===name.toLowerCase()))courses.push({id:id(),name,code:"",credits:0});persist();renderAcademics()});
 window.addEventListener("storage",e=>{if(e.key?.startsWith("daybook_"))renderAll()});
+window.addEventListener("daybook-schedule-updated",()=>{renderAgenda();renderSmartPlan()});
 if($("#financeForm"))$("#financeForm").elements.date.value=today();
 renderAll();
 })();

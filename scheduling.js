@@ -69,7 +69,7 @@
   if(raw!==null){try{const parsed=JSON.parse(raw);if(!parsed||parsed.version!==VERSION||!Array.isArray(parsed.events))throw new Error("Unsupported schedule data");events=parsed.events.map(normalizeEvent);if(events.some(x=>!x)||events.length!==parsed.events.length)throw new Error("Invalid schedule records")}
    catch(e){healthy=false;blocked=true;events=migrateLegacy(options.classes||[],options.routine||[])}
   }else{events=migrateLegacy(options.classes||[],options.routine||[],options.sessions||[]);migrated=true;if(events.length&&!write())healthy=false}
-  function transact(next){if(blocked)return false;const old=events;events=next;if(!write()){events=old;return false}return true}
+  function transact(next,origin){if(blocked)return false;const old=events;events=next;if(!write()){events=old;return false}if(root.dispatchEvent){const detail={origin:origin||"api"};const event=typeof root.CustomEvent==="function"?new root.CustomEvent("daybook-schedule-updated",{detail}):{type:"daybook-schedule-updated",detail};root.dispatchEvent(event)}return true}
   function occurrence(event,baseDate){
    const startTime=event.allDay?"00:00":event.start.slice(11),start=parseLocal(baseDate+"T"+startTime);if(!start)return null;
    let duration=null;if(event.allDay)duration=1440;else if(event.end){const a=parseLocal(event.start),b=parseLocal(event.end);if(a&&b&&b>a)duration=Math.round((b-a)/60000)}
@@ -96,7 +96,7 @@
    if(blocked)return false;const retained=events.filter(x=>!x.source||!["class","routine","study"].includes(x.source.kind)),mapped=migrateLegacy(classes,routine,sessions);
    const existing=new Map(events.filter(x=>x.source&&["class","routine","study"].includes(x.source.kind)).map(x=>[x.source.kind+":"+x.source.legacyId,x]));
    const next=mapped.map(item=>{const old=existing.get(item.source.kind+":"+item.source.legacyId);if(!old)return item;const a={...old,createdAt:"",updatedAt:""},b={...item,id:old.id,createdAt:"",updatedAt:""};return JSON.stringify(a)===JSON.stringify(b)?old:{...item,id:old.id,createdAt:old.createdAt}});
-   const merged=[...retained,...next];if(JSON.stringify(merged)===JSON.stringify(events))return healthy?true:write();return transact(merged);
+   const merged=[...retained,...next];if(JSON.stringify(merged)===JSON.stringify(events))return healthy?true:write();return transact(merged,"legacy-sync");
   }
   return {version:VERSION,getAll:()=>clone(events),getForDate,getForWeek,getUpcoming,durationMinutes,overlaps,findOverlaps,createEvent,updateEvent,deleteEvent,duplicateEvent,syncLegacy,isHealthy:()=>healthy,wasMigrated:()=>migrated,storageKey:STORAGE_KEY};
  }

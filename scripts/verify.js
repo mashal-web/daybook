@@ -78,6 +78,8 @@ assert(html.includes('src="scheduling.js"')&&build.includes('"scheduling.js"')&&
 assert(scheduling.includes("function getForDate")&&scheduling.includes("function getForWeek")&&scheduling.includes("function getUpcoming")&&scheduling.includes("function findOverlaps"), "Scheduling engine must expose centralized schedule queries");
 assert(app.includes("scheduleStore.getForDate")&&app.includes("scheduleStore.getForWeek"), "Week and day views must read the unified scheduling engine");
 assert(upgrade.includes("engine.getForDate(new Date())"), "Agenda must read the unified scheduling engine");
+assert(upgrade.includes('window.addEventListener("daybook-schedule-updated"'), "Agenda and smart planning must refresh on shared schedule changes");
+assert(scheduling.includes('"daybook-schedule-updated"'), "Schedule mutations must publish a shared update event");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
 assert(css.includes(".schedule-insights")&&timetableCss.includes(".week-day-strip")&&timetableCss.includes(".day-timeline"), "Weekly routine must style responsive day navigation and timeline");
 
