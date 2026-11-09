@@ -1,0 +1,73 @@
+/* Scoped Study Planner academic workspace */
+#planner{display:grid;gap:24px;min-width:0}
+#planner .planner-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+#planner .planner-heading h2{margin:5px 0 7px}#planner .planner-heading .primary{min-height:46px;white-space:nowrap}
+#planner .planner-overview{display:grid;grid-template-columns:1.35fr repeat(3,minmax(0,1fr));gap:10px}
+#planner .planner-stat{min-width:0;padding:17px 18px;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;flex-direction:column;gap:5px}
+#planner .planner-stat-primary{background:var(--surface-2)}#planner .planner-stat>span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+#planner .planner-stat strong{font-size:clamp(21px,2.2vw,29px);letter-spacing:-.06em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}#planner .planner-stat small{font-size:11px;color:var(--muted)}
+#planner .planner-goal{padding:18px 20px;margin:0;background:var(--surface);border:1px solid var(--line);box-shadow:none}
+#planner .planner-goal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}#planner .planner-goal-head h3{font-size:19px}
+#planner .planner-goal-track{height:8px;margin:14px 0 8px;border-radius:20px;background:var(--surface-3);overflow:hidden}#planner .planner-goal-track span{display:block;width:0;height:100%;border-radius:inherit;background:var(--accent);transition:width .2s}
+#planner .planner-goal>p{margin:0;font-size:11px}
+#planner .planner-focus{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1.2fr);align-items:center;gap:24px;padding:20px 22px;margin:0;background:var(--surface-2);border:1px solid var(--line);box-shadow:none}
+#planner .planner-focus-copy h3{font-size:20px;margin:3px 0 6px}#planner .planner-focus-copy .muted{font-size:12px;margin:0;max-width:390px}
+#planner .planner-focus-controls{display:grid;grid-template-columns:minmax(120px,1fr) auto auto;align-items:end;gap:12px}
+#planner .planner-subject-select{display:grid;gap:6px;color:var(--muted);font-size:10px;font-weight:700}
+#planner .planner-subject-select select,#planner .planner-filter-subject select{min-width:0;width:100%;min-height:42px;padding:8px 30px 8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+#planner .planner-focus-clock{display:grid;min-width:90px}#planner .planner-focus-clock strong{font-size:25px;line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:-.05em}#planner .planner-focus-clock span{font-size:9px;letter-spacing:.1em;color:var(--muted);font-weight:800}
+#planner .planner-focus-buttons{display:flex;gap:7px}#planner .planner-focus-buttons button{min-height:42px;padding:8px 12px;white-space:nowrap}
+#planner .planner-section-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+#planner .planner-section-head h3{font-size:19px}#planner .planner-section-head .muted{font-size:11px;margin:4px 0 0}
+#planner .planner-subject-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#planner .planner-subject-card{min-width:0;padding:15px 16px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}#planner .planner-subject-card.is-archived{opacity:.76}
+#planner .planner-subject-top{display:flex;align-items:center;justify-content:space-between;gap:8px}#planner .planner-subject-mark{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none}
+#planner .mark-1{background:var(--accent-2)}#planner .mark-2{background:var(--success)}#planner .mark-3{background:var(--warning)}#planner .mark-4{background:var(--info)}#planner .mark-5{background:var(--danger)}
+#planner .planner-subject-status{font-size:8px;letter-spacing:.12em;font-weight:800;color:var(--muted)}
+#planner .planner-subject-card h4{font-size:13px;line-height:1.35;min-height:35px;margin:10px 0 6px;overflow-wrap:anywhere}
+#planner .planner-subject-time{font-size:22px;font-weight:780;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+#planner .planner-subject-meta,#planner .planner-subject-foot{font-size:10px;color:var(--muted)}
+#planner .planner-subject-track{height:5px;background:var(--surface-3);border-radius:10px;overflow:hidden;margin:11px 0 6px}#planner .planner-subject-track span{display:block;height:100%;background:var(--accent);border-radius:inherit}
+#planner .planner-progress-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#planner .planner-chart-panel{min-width:0;margin:0;padding:17px 18px;background:var(--surface);border:1px solid var(--line);box-shadow:none}#planner .planner-chart-panel .planner-section-head{margin-bottom:12px}
+#planner .planner-chart-caption{font-size:10px;color:var(--muted)}
+#planner .planner-consistency{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;min-height:130px;align-items:end}
+#planner .planner-day-column{min-width:0;display:grid;grid-template-rows:17px 82px 18px;gap:5px;justify-items:center;align-items:end}
+#planner .planner-day-value{font-size:9px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+#planner .planner-day-track{width:100%;height:82px;display:flex;align-items:flex-end;justify-content:center;background:var(--surface-2);border-radius:7px;overflow:hidden}
+#planner .planner-day-track span{display:block;width:65%;min-height:0;background:var(--accent);border-radius:6px 6px 2px 2px}
+#planner .planner-day-column small{font-size:10px;color:var(--muted)}#planner .planner-day-column small.is-today{color:var(--accent);font-weight:800}
+#planner .planner-subject-bars{display:grid;gap:12px}
+#planner .planner-subject-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.1fr) auto;align-items:center;gap:9px;min-width:0}
+#planner .planner-subject-bar>span{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#planner .planner-subject-bar>div{height:6px;border-radius:10px;background:var(--surface-3);overflow:hidden}
+#planner .planner-subject-bar i{display:block;height:100%;border-radius:inherit;background:var(--accent)}#planner .planner-subject-bar>b{font-size:10px;font-variant-numeric:tabular-nums}
+#planner .planner-empty-inline{font-size:11px;color:var(--muted)}
+#planner .planner-session-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+#planner .planner-session-filters{display:flex;gap:5px;padding:4px;border-radius:11px;background:var(--surface-2);border:1px solid var(--line)}
+#planner .planner-session-filters button{min-height:34px;padding:6px 12px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:11px;font-weight:700}
+#planner .planner-session-filters button.selected{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+#planner .planner-filter-subject{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10px;font-weight:700}#planner .planner-filter-subject select{min-width:160px;min-height:40px}
+#planner .planner-session-list{display:grid;gap:8px}
+#planner .planner-session{display:grid;grid-template-columns:4px minmax(0,1fr) auto;gap:13px;align-items:center;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface)}
+#planner .planner-session-mark{align-self:stretch;min-height:48px;border-radius:8px;background:var(--accent)}#planner .planner-session.is-completed .planner-session-mark{background:var(--success)}#planner .planner-session.is-overdue .planner-session-mark{background:var(--danger)}
+#planner .planner-session-main{min-width:0}#planner .planner-session-meta{display:flex;flex-wrap:wrap;gap:7px 12px;font-size:9px;color:var(--muted);font-weight:750;letter-spacing:.04em}
+#planner .planner-session.is-completed .planner-session-meta span:first-child{color:var(--success)}#planner .planner-session.is-overdue .planner-session-meta span:first-child{color:var(--danger)}
+#planner .planner-session-main h4{font-size:13px;margin:4px 0 2px;overflow-wrap:anywhere}#planner .planner-session-main p{font-size:10px;color:var(--muted);margin:0;overflow-wrap:anywhere}
+#planner .planner-session-actions{display:flex;align-items:center;gap:4px}#planner .planner-session-actions .small-action{min-height:38px}
+#planner .planner-empty{display:grid;justify-items:start;gap:7px;padding:26px 18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:12px}
+#planner .planner-empty b{color:var(--ink);font-size:14px}#planner .planner-empty button{margin-top:5px}#planner .planner-add-mobile{display:none}
+#manageDialog .planner-subject-manage{display:grid;grid-template-columns:10px minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)}
+#manageDialog .planner-subject-manage input{width:100%;min-width:0;min-height:40px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink)}#manageDialog .planner-subject-manage .small-action{min-height:38px}
+@media(max-width:900px){
+ #planner{gap:18px}#planner .planner-heading{align-items:stretch;flex-direction:column;gap:12px}#planner .planner-heading .primary{display:none}#planner .planner-add-mobile{display:block;min-height:44px}
+ #planner .planner-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#planner .planner-stat{padding:13px}
+ #planner .planner-focus{grid-template-columns:minmax(0,1fr);gap:13px;padding:16px}#planner .planner-focus-controls{grid-template-columns:minmax(0,1fr) auto;gap:10px}
+ #planner .planner-subject-select{grid-column:1/-1}#planner .planner-focus-clock{grid-column:1;grid-row:2}#planner .planner-focus-buttons{grid-column:2;grid-row:2}
+ #planner .planner-subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#planner .planner-subject-card{padding:12px}
+ #planner .planner-progress-grid{grid-template-columns:minmax(0,1fr)}#planner .planner-chart-panel{padding:15px}
+ #planner .planner-session-tools{align-items:stretch;flex-direction:column}#planner .planner-session-filters{width:100%}#planner .planner-session-filters button{flex:1}
+ #planner .planner-filter-subject{justify-content:space-between}#planner .planner-filter-subject select{flex:1;min-width:0;max-width:70%}
+ #planner .planner-session{grid-template-columns:4px minmax(0,1fr);gap:10px;padding:12px}#planner .planner-session-actions{grid-column:2;justify-content:flex-end;flex-wrap:wrap}#planner .planner-session-actions .small-action{min-height:42px}
+ #manageDialog .planner-subject-manage{grid-template-columns:10px minmax(0,1fr) auto}#manageDialog .planner-subject-manage [data-subjectdel]{grid-column:2;justify-self:end}
+}
+@media(max-width:380px){#planner .planner-subject-grid{grid-template-columns:minmax(0,1fr)}#planner .planner-stat strong{font-size:22px}#planner .planner-focus-buttons button{padding:8px 9px}}
