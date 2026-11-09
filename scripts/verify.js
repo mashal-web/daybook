@@ -304,7 +304,7 @@ function smokeTestAppRuntime() {
 smokeTestAppRuntime();
 
 
-assert(app.includes('const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)]'), "App must expose distinct single and multiple selector helpers");
+assert(app.includes('const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)]'), "App must expose distinct single and multiple selector helpers");
 assert(html.includes('id="homeGreeting"') && html.includes('id="homeTaskProgress"') && html.includes('id="todayClasses"'), "Home must provide the welcome, progress and schedule regions");
 assert(html.includes('id="homeStartFocus"') && html.includes('data-add="routine"') && html.includes('data-add="reminder"'), "Home quick actions must expose working focus, activity and reminder actions");
 assert(app.includes("function homeTodayItems(now=new Date())") && app.includes("function renderHomeTimeline(items)"), "Home schedule must derive from saved timetable and routine entries");
