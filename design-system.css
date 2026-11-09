@@ -231,3 +231,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
  .panel-head{align-items:flex-start}
 }
 @media(prefers-reduced-motion:reduce){body{transition:none!important}}
+
+
+/* Unified iconography: Lucide-style inline SVGs, no runtime icon dependency. */
+.ui-icon{width:18px;height:18px;flex:0 0 18px;display:inline-block;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.action-icon{width:15px;height:15px;flex-basis:15px}
+.nav-icon{color:var(--muted);transition:color .16s ease}
+.nav.active .nav-icon,.mobile-nav .nav.active .nav-icon{color:var(--accent)}
+.icon-btn,.week-controls button,.more-close,.small-action,.icon-action{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.icon-btn{min-width:44px;min-height:44px}
+.week-controls button{min-width:42px;min-height:42px}
+.small-action,.icon-action{min-height:36px;padding:7px 10px}
+.icon-action{width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--muted)}
+.small-action .ui-icon,.icon-action .ui-icon{color:currentColor}
+.small-action.danger,.icon-action.danger{color:var(--danger)}
+button .ui-icon{pointer-events:none}
+.more-link>span:first-child{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--accent-soft);color:var(--accent)}
+.more-link>span:first-child .ui-icon{width:19px;height:19px}
+button:active .ui-icon{transform:scale(.94)}
+@media(hover:hover){button:hover .ui-icon{transition:transform .16s ease}button:hover .ui-icon{transform:translateY(-1px)}}
+@media(prefers-reduced-motion:reduce){.nav-icon,.ui-icon{transition:none!important;transform:none!important}}
