@@ -9,7 +9,13 @@ Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS
 - Study planner with editable course subjects and study sessions
 - Task manager with search, filters, priorities, categories, deadlines and notes
 - Focus timer with completed sessions recorded in study history
-- Progress analytics for task completion, study time, subject breakdown and weekly study goal
+- Progress analytics for task completion, study time, subject breakdown, weekly study goal, habit consistency and spending overview
+- Academic command center with course register, credits, assignments, quizzes, exams and completion tracking
+- Daily habit tracker with check-ins, completion rate and streak estimates
+- Personal finance tracker for PKR budgets, income, expenses and category-based transactions
+- Smart planning suggestions using open tasks and approximate free windows from the timetable
+- Weekly grid / today agenda timetable views
+- Complete JSON backup and restore for core and new module data
 - One-time, daily and weekly reminders
 - Browser notification support while the web app is open
 - Android local notifications through Capacitor
@@ -45,7 +51,7 @@ All timetable entries are editable. Existing saved routine entries are preserved
 
 ## Data and backups
 - Planner data is stored locally in the current browser or Android app. It does not automatically sync between devices.
-- Use Export backup to save a JSON file, then Import backup on the destination device.
+- Use Export backup to save a JSON file, then Import backup on the destination device. The complete backup includes academic courses and assessments, habits and check-ins, and finance transactions and budget.
 - Clearing browser or app data can erase local planner data. Keep a backup.
 - Web notifications are checked while Daybook is open; background browser suspension can delay or prevent delivery.
 - Android reminders use local notifications. Daily and weekly repeats are pre-scheduled as individual occurrences (30 daily or 12 weekly) and refreshed when Daybook opens, resumes or saves data. Keep opening the app periodically so the rolling schedule can refresh.
