@@ -35,7 +35,7 @@
  function create(options){
   const storage=options&&options.storage;if(!storage)throw new Error("Scheduling storage is required");
   let events=[],healthy=true,blocked=false,migrated=false;
-  const migrateLegacy=(classes,routine)=>{
+  const migrateLegacy=(classes,routine,sessions)=>{
    const out=[],seen=new Set();
    function add(item,type){
     if(!item||typeof item!=="object")return;
@@ -50,13 +50,25 @@
      createdAt:item.createdAt||now,updatedAt:item.updatedAt||now,source:{kind:type,legacyId},
      metadata:type==="class"?{subject:title,room:item.room||""}:{legacyCategory:item.category||"Personal"}}));
    }
-   (Array.isArray(classes)?classes:[]).forEach(x=>add(x,"class"));(Array.isArray(routine)?routine:[]).forEach(x=>add(x,"routine"));return out.filter(Boolean);
+   (Array.isArray(classes)?classes:[]).forEach(x=>add(x,"class"));(Array.isArray(routine)?routine:[]).forEach(x=>add(x,"routine"));
+   (Array.isArray(sessions)?sessions:[]).forEach(item=>{
+    if(!item||typeof item!=="object"||!validDate(item.date)||!validTime(item.startTime))return;
+    const mins=Number(item.minutes);if(!Number.isInteger(mins)||mins<1||mins>1440)return;
+    const start=item.date+"T"+item.startTime,finish=new Date(parseLocal(start).getTime()+mins*60000);
+    const title=String(item.topic||item.subject||"Study session").trim();if(!title)return;
+    const now=new Date().toISOString();
+    out.push(normalizeEvent({id:"legacy-study-"+String(item.id||uid()),title,category:"Study",type:"study",start,end:localStamp(finish),
+     recurrence:{frequency:"none",weekdays:[]},notes:item.notes||"",priority:"normal",status:item.done?"completed":"scheduled",
+     createdAt:item.createdAt||now,updatedAt:item.updatedAt||now,source:{kind:"study",legacyId:String(item.id||"")},
+     metadata:{subject:item.subject||"",topic:item.topic||"",minutes:mins,done:item.done===true}}));
+   });
+   return out.filter(Boolean);
   };
   const write=()=>{try{storage.setItem(STORAGE_KEY,JSON.stringify({version:VERSION,events}));healthy=true;return true}catch(e){healthy=false;return false}};
   let raw=null;try{raw=storage.getItem(STORAGE_KEY)}catch(e){healthy=false;blocked=true}
   if(raw!==null){try{const parsed=JSON.parse(raw);if(!parsed||parsed.version!==VERSION||!Array.isArray(parsed.events))throw new Error("Unsupported schedule data");events=parsed.events.map(normalizeEvent);if(events.some(x=>!x)||events.length!==parsed.events.length)throw new Error("Invalid schedule records")}
    catch(e){healthy=false;blocked=true;events=migrateLegacy(options.classes||[],options.routine||[])}
-  }else{events=migrateLegacy(options.classes||[],options.routine||[]);migrated=true;if(events.length&&!write())healthy=false}
+  }else{events=migrateLegacy(options.classes||[],options.routine||[],options.sessions||[]);migrated=true;if(events.length&&!write())healthy=false}
   function transact(next){if(blocked)return false;const old=events;events=next;if(!write()){events=old;return false}return true}
   function occurrence(event,baseDate){
    const startTime=event.allDay?"00:00":event.start.slice(11),start=parseLocal(baseDate+"T"+startTime);if(!start)return null;
@@ -80,11 +92,11 @@
   function updateEvent(id,patch){const index=events.findIndex(x=>x.id===String(id));if(index<0)return null;const updated=normalizeEvent({...events[index],...patch,id:events[index].id,updatedAt:new Date().toISOString()});if(!updated)throw new Error("Invalid schedule event");const next=events.slice();next[index]=updated;return transact(next)?clone(updated):null}
   function deleteEvent(id){const next=events.filter(x=>x.id!==String(id));if(next.length===events.length)return false;return transact(next)}
   function duplicateEvent(id,overrides){const source=events.find(x=>x.id===String(id));if(!source)return null;return createEvent({...source,...(overrides||{}),id:uid(),source:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}
-  function syncLegacy(classes,routine){
-   if(blocked)return false;const retained=events.filter(x=>!x.source||!["class","routine"].includes(x.source.kind)),mapped=migrateLegacy(classes,routine);
-   const existing=new Map(events.filter(x=>x.source&&["class","routine"].includes(x.source.kind)).map(x=>[x.source.kind+":"+x.source.legacyId,x]));
+  function syncLegacy(classes,routine,sessions){
+   if(blocked)return false;const retained=events.filter(x=>!x.source||!["class","routine","study"].includes(x.source.kind)),mapped=migrateLegacy(classes,routine,sessions);
+   const existing=new Map(events.filter(x=>x.source&&["class","routine","study"].includes(x.source.kind)).map(x=>[x.source.kind+":"+x.source.legacyId,x]));
    const next=mapped.map(item=>{const old=existing.get(item.source.kind+":"+item.source.legacyId);if(!old)return item;const a={...old,createdAt:"",updatedAt:""},b={...item,id:old.id,createdAt:"",updatedAt:""};return JSON.stringify(a)===JSON.stringify(b)?old:{...item,id:old.id,createdAt:old.createdAt}});
-   const merged=[...retained,...next];if(JSON.stringify(merged)===JSON.stringify(events))return true;return transact(merged);
+   const merged=[...retained,...next];if(JSON.stringify(merged)===JSON.stringify(events))return healthy?true:write();return transact(merged);
   }
   return {version:VERSION,getAll:()=>clone(events),getForDate,getForWeek,getUpcoming,durationMinutes,overlaps,findOverlaps,createEvent,updateEvent,deleteEvent,duplicateEvent,syncLegacy,isHealthy:()=>healthy,wasMigrated:()=>migrated,storageKey:STORAGE_KEY};
  }

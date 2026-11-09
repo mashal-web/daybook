@@ -43,7 +43,7 @@ assert.equal(/(?<!\$)\$\(["\'][^"\']+["\']\)\.(?:forEach|map|filter|find|some|re
 assert.equal(/\${3,}\(/.test(app), false, "Malformed triple-dollar selectors must not exist");
 assert(app.includes("const safeWrite="), "Storage writes must be guarded against unavailable or full storage");
 assert(!app.includes("+c.day!==6"), "Routine version upgrades must not delete custom Saturday classes");
-assert(app.includes("function persist(){const saved="), "Persistence must report storage failures");
+assert(app.includes("function persist(){const scheduleSaved=")&&app.includes("const legacySaved="), "Persistence must report schedule and legacy storage failures without skipping legacy writes");
 assert(app.includes('$("#manageForm").onsubmit='), "Subject manager must handle Enter-key submission");
 assert(app.includes("nextWeekKey"), "Weekly analytics must exclude future weeks");
 assert(app.includes("function refreshDayBoundary()") && app.includes("setInterval(refreshDayBoundary,60000)"), "Dashboard dates must refresh across midnight");
@@ -360,12 +360,13 @@ assert.equal(engine.getAll().find(x=>x.id==="overlap-a").title,"Updated A","Even
 assert(engine.duplicateEvent("overlap-a"),"Event duplication must create a distinct event");
 assert(engine.deleteEvent("overlap-b"),"Event deletion must remove the event");
 const legacyStorage=memoryStorage();
-const legacyEngine=scheduleEngine.create({storage:legacyStorage,classes:[{id:"class-1",day:1,start:"08:00",end:"09:00",subject:"Math",room:"A1"}],routine:[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}]});
-assert.equal(legacyEngine.getForDate("2026-11-09").length,2,"Legacy class and routine data must migrate into the shared schedule");
-legacyEngine.syncLegacy([{id:"class-1",day:1,start:"09:00",end:"10:00",subject:"Math",room:"A1"}],[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}]);
+const legacyEngine=scheduleEngine.create({storage:legacyStorage,classes:[{id:"class-1",day:1,start:"08:00",end:"09:00",subject:"Math",room:"A1"}],routine:[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}],sessions:[{id:"study-1",subject:"Math",topic:"Derivatives",date:"2026-11-09",startTime:"16:00",minutes:45,done:false}]});
+assert.equal(legacyEngine.getForDate("2026-11-09").length,3,"Legacy class, routine and timed study-session data must migrate into the shared schedule");
+assert.equal(legacyEngine.getForDate("2026-11-09").find(x=>x.type==="study").durationMinutes,45,"Study session duration must be represented in the schedule");
+legacyEngine.syncLegacy([{id:"class-1",day:1,start:"09:00",end:"10:00",subject:"Math",room:"A1"}],[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}],[{id:"study-1",subject:"Math",topic:"Derivatives",date:"2026-11-09",startTime:"16:00",minutes:45,done:false}]);
 assert.equal(legacyEngine.getForDate("2026-11-09").find(x=>x.id==="legacy-class-class-1").time,"09:00","Legacy edits must synchronize to canonical schedule records");
 const reloaded=scheduleEngine.create({storage:legacyStorage,classes:[],routine:[]});
-assert.equal(reloaded.getForDate("2026-11-09").length,2,"Canonical schedule must survive reload");
+assert.equal(reloaded.getForDate("2026-11-09").length,3,"Canonical schedule must survive reload");
 const duplicateLegacy=scheduleEngine.create({storage:memoryStorage(),classes:[{id:"same",day:1,start:"08:00",end:"09:00",subject:"A"},{id:"same",day:1,start:"08:00",end:"09:00",subject:"B"}],routine:[]});
 assert.equal(duplicateLegacy.getAll().length,1,"Duplicate legacy IDs must not create duplicate recurring events");
 

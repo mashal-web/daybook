@@ -79,7 +79,7 @@ safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
-const scheduleStore=window.DaybookSchedule.create({storage:localStorage,classes:data.classes,routine:data.routine});
+const scheduleStore=window.DaybookSchedule.create({storage:localStorage,classes:data.classes,routine:data.routine,sessions:data.sessions});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
@@ -125,7 +125,7 @@ $("#homeStartFocus")?.addEventListener("click",()=>$("#focusStart")?.click());
 $("#refreshHome")?.addEventListener("click",()=>{today=new Date();render();toast("Today’s overview refreshed")});
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
-function persist(){const scheduleSaved=scheduleStore.syncLegacy(data.classes,data.routine);const saved=scheduleSaved&&["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
+function persist(){const scheduleSaved=scheduleStore.syncLegacy(data.classes,data.routine,data.sessions);const legacySaved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));const saved=scheduleSaved&&legacySaved;if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
 function save(msg="Saved"){const stored=persist();render();toast(stored?msg:"Could not save changes. Export a backup before closing Daybook.")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
