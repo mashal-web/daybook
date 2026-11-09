@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const read = path => fs.readFileSync(path, "utf8");
 const app = read("app.js");
 const scheduling = read("scheduling.js");
+const persistence = read("persistence.js");
 const html = read("index.html");
 const css = read("styles.css");
 const timetableCss = read("timetable-theme.css");
@@ -406,3 +407,10 @@ assert(persistenceSource.includes("function recover()")&&persistenceSource.inclu
 assert(persistenceSource.includes("version:3")&&persistenceSource.includes("schemaVersion"),"Backups must include an explicit format and schema version");
 assert(html.includes('<script src="persistence.js"></script><script src="scheduling.js"></script>'),"Persistence layer must load before schedule and app modules");
 assert(build.includes('"persistence.js"')&&sw.includes('"./persistence.js"'),"Persistence layer must be packaged for Android and cached offline");
+
+
+const persistenceHarness = (() => { const map=new Map(); let failAt=null,writes=0; const native={get length(){return map.size},key:i=>[...map.keys()][i]??null,getItem:k=>map.has(k)?map.get(k):null,setItem(k,v){writes++;if(failAt&&writes===failAt)throw Error("QuotaExceededError");map.set(k,String(v))},removeItem:k=>map.delete(k)};const window={localStorage:native};new Function("window","Blob",persistence)(window, class BlobMock{constructor(parts,options){this.parts=parts;this.type=options.type}});return {map,native,api:window.DaybookPersistence,setFailure(n){failAt=n;writes=0},clearFailure(){failAt=null;writes=0}};})();
+const ps=persistenceHarness.api.storage;ps.setItem("daybook_tasks",JSON.stringify([{id:"t1",title:"Keep me"}]));assert.equal(JSON.parse(ps.getItem("daybook_tasks"))[0].id,"t1","Central storage must save and retrieve records");
+const backupData=persistenceHarness.api.snapshot();assert(backupData.daybook_tasks&&backupData.daybook_schema_version!==undefined,"Backup snapshot must include user records and schema metadata");
+const validBackup={app:"Daybook",version:3,exportedAt:"2026-11-09T00:00:00.000Z",data:{daybook_tasks:[{id:"t2",title:"Restored"}]}};const entries=persistenceHarness.api.validateBackup(validBackup);assert.equal(JSON.parse(entries.daybook_tasks)[0].id,"t2","Valid backup records must validate");assert.throws(()=>persistenceHarness.api.validateBackup({app:"Daybook",version:99,data:{}}),/Unsupported/,"Unsupported backup versions must be rejected");
+assert(persistence.includes("Refusing to overwrite unreadable stored data")&&persistence.includes("function recover()"),"Corrupt records must be protected and interrupted writes must be recoverable");
