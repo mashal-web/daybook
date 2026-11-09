@@ -244,7 +244,8 @@ function smokeTestAppRuntime() {
     addEventListener(type, callback) { (windowEvents[type] ||= []).push(callback); },
     dispatchEvent(event) { for (const callback of windowEvents[event.type] || []) callback(event); }
   };
-  window.DaybookSchedule = new Function("window", scheduling + "; return window.DaybookSchedule;")({});
+  window.DaybookPersistence = new Function("window","Blob",persistence + "; return window.DaybookPersistence;")(window,Blob);
+  window.DaybookSchedule = new Function("window", scheduling + "; return window.DaybookSchedule;")(window);
   const context = {
     document, window, localStorage, Date, Math, JSON, String, Number, Object, Array, Set, Map,
     RegExp, Promise, Error, Intl, CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } }, confirm: () => true, setInterval: () => 1,
