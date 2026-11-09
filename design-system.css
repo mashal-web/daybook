@@ -122,3 +122,112 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
  input,select,textarea{font-size:16px!important}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.view{animation:none!important}*,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+
+/* Product-wide component language: feature modules share the same semantic surfaces. */
+:root[data-theme="dark"]{
+ --surface-glass:rgba(20,31,45,.82);
+ --surface-hover:#1b2a3b;
+ --accent-gradient:linear-gradient(115deg,#a1e1d7 0%,#78c6bb 100%);
+ --elevation-1:0 5px 16px rgba(0,0,0,.16);
+ --elevation-2:0 14px 34px rgba(0,0,0,.22);
+}
+:root[data-theme="light"]{
+ --surface-glass:rgba(255,255,255,.88);
+ --surface-hover:#edf3f0;
+ --accent-gradient:linear-gradient(115deg,#267e76 0%,#17645e 100%);
+ --elevation-1:0 5px 16px rgba(35,58,53,.06);
+ --elevation-2:0 14px 34px rgba(35,58,53,.09);
+}
+body{min-height:100vh;background:var(--bg);background-image:radial-gradient(ellipse at 82% 0%,color-mix(in srgb,var(--accent) 7%,transparent),transparent 34%);background-attachment:fixed}
+.sidebar{background:var(--bg-elevated);border-right:1px solid var(--line)}
+.nav-icon{display:inline-grid;place-items:center;flex:0 0 22px}
+.ui-icon{width:19px;height:19px;display:block}
+.nav{gap:10px}
+.nav.active{font-weight:720}
+.brand b{display:grid;place-items:center;width:38px;height:38px;font-size:18px}
+.intro{gap:18px}
+.intro .label{margin-bottom:8px}
+.intro h2{max-width:720px}
+.panel,.stats article,.upgrade-stat{box-shadow:var(--elevation-1)}
+.panel:hover,.stats article:hover,.upgrade-stat:hover{border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-head h3{margin:0}
+.row,.upgrade-item,.habit-card,.agenda-row,.table-event,.class,.routine-event{
+ color:var(--ink);background:var(--surface-2);border:1px solid var(--line);box-shadow:none
+}
+.row b,.upgrade-item b,.habit-card b,.agenda-row b,.table-event b,.class b,.routine-event b{color:var(--ink)}
+.row small,.upgrade-item small,.habit-card small,.agenda-row small,.table-event small,.class small,.routine-event small{color:var(--muted)}
+.row:hover,.upgrade-item:hover,.habit-card:hover,.agenda-row:hover{background:var(--surface-hover);border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+.upgrade-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--elevation-1)}
+.upgrade-stats{gap:12px}
+.upgrade-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.upgrade-stat small{color:var(--soft)}
+.upgrade-stat strong{color:var(--ink)}
+.upgrade-stat span{color:var(--muted)}
+.upgrade-form input,.upgrade-form select,.field input,.field select,.field textarea,
+.focus-controls select,.task-tools>input{background:var(--surface-2)!important;color:var(--ink)!important;border:1px solid var(--line)!important;box-shadow:none!important}
+.upgrade-form label,.field label,.focus-controls label{color:var(--muted)}
+.upgrade-item{background:var(--surface-2);border-radius:13px}
+.upgrade-item button{background:var(--surface);color:var(--muted);border-color:var(--line)}
+.upgrade-item button:hover{color:var(--accent);border-color:var(--accent)}
+.habit-card{background:var(--surface-2);border-radius:15px}
+.habit-card.done{background:color-mix(in srgb,var(--success) 10%,var(--surface));border-color:color-mix(in srgb,var(--success) 38%,var(--line))}
+.habit-card.done b{color:var(--success)}
+.habit-check{accent-color:var(--accent);width:24px;height:24px}
+.agenda-row{background:var(--surface-2);border-radius:14px}
+.agenda-time{color:var(--accent)}
+.schedule-mode button,.filters button,.chip,.week-controls button{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.schedule-mode button.active,.filters button.selected,.filters button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.schedule-insights{background:var(--surface);border-color:var(--line);box-shadow:var(--elevation-1)}
+.schedule-count-icon{border-radius:50%}
+.schedule-legend{color:var(--muted)}
+.class-setup-note{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));border-radius:14px;box-shadow:inset 3px 0 var(--accent)}
+.table-scroll{background:var(--surface);border-color:var(--line);box-shadow:var(--elevation-1)}
+.week-table thead th,.week-table tbody th.time-cell{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
+.week-table thead th.is-today{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 -2px var(--accent)}
+.week-table td,.week-table tbody tr:nth-child(even) td{background:var(--surface);border-color:var(--line)}
+.week-table tbody tr:hover td{background:var(--surface-hover)}
+.table-event{background:color-mix(in srgb,var(--accent) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));border-left:3px solid var(--accent);border-radius:11px}
+.table-event .event-kind{color:var(--accent)}
+.table-routine{background:color-mix(in srgb,var(--accent-2) 8%,var(--surface));border-left-color:var(--accent-2)}
+.table-routine .event-kind{color:var(--accent-2)}
+.table-event .small-action{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.class{border-left:3px solid var(--accent)}
+.routine-event{border-left:3px solid var(--accent-2)}
+.progress,.bar-track,.focus-progress,.budget-track{background:var(--surface-3);border:1px solid var(--line);box-shadow:none}
+.progress span,.bar-track span,.focus-progress span,.budget-track span{background:var(--accent-gradient)}
+.finance-positive{color:var(--success)!important}
+.finance-negative{color:var(--danger)!important}
+.goal-panel>strong{color:var(--ink)}
+.next-up-panel{background:linear-gradient(115deg,color-mix(in srgb,var(--accent) 9%,var(--surface)),var(--surface));border-color:color-mix(in srgb,var(--accent) 24%,var(--line))}
+.next-up-content h3{color:var(--ink)}
+.next-up-status{color:var(--accent)}
+.status-dot{background:var(--success);box-shadow:0 0 0 4px color-mix(in srgb,var(--success) 16%,transparent)}
+.focus-panel{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 8%,var(--surface)),var(--surface) 72%);border-color:color-mix(in srgb,var(--accent) 20%,var(--line))}
+.focus-timer,.timer-wrap strong{font-variant-numeric:tabular-nums}
+.live-tag,.focus-state{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 25%,var(--line))}
+dialog{background:var(--bg-elevated);color:var(--ink);border-color:var(--line);box-shadow:var(--elevation-2)}
+dialog::backdrop{background:rgba(4,10,14,.55);backdrop-filter:blur(4px)}
+dialog:not(.mobile-more) .actions{background:var(--bg-elevated)}
+.mobile-nav{background:var(--surface-glass);border-color:var(--line);box-shadow:0 -8px 28px rgba(0,0,0,.1)}
+.mobile-nav .nav{color:var(--muted)}
+.mobile-nav .nav.active{color:var(--accent);background:var(--accent-soft)}
+.mobile-more{background:var(--bg-elevated);color:var(--ink);border-color:var(--line)}
+.more-link{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.more-link>span{background:var(--accent-soft);color:var(--accent)}
+.more-link small{color:var(--muted)}
+.more-close{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+.settings-note{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
+.toast{background:var(--ink);color:var(--bg)}
+button:disabled,input:disabled,select:disabled,textarea:disabled{opacity:.5}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media(max-width:900px){
+ body{background-attachment:scroll}
+ .mobile-nav{min-height:calc(var(--mobile-bar-height) + env(safe-area-inset-bottom))}
+ .mobile-nav .nav{min-height:50px}
+ .mobile-nav .nav-icon .ui-icon{width:21px;height:21px}
+ .schedule-insights{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .panel-head{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){body{transition:none!important}}
