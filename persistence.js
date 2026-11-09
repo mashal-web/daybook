@@ -18,7 +18,9 @@
   setItem(key,value){
    key=String(key);value=String(value);
    if(key===JOURNAL)throw Error("Reserved storage key");
-   const previous=native.getItem(key),journal={version:1,phase:"pending",changes:[{key,previous,next:value}]};
+   const previous=native.getItem(key);
+   if(previous!==null&&key.startsWith(PREFIX)){try{JSON.parse(previous)}catch(e){throw Error("Refusing to overwrite unreadable stored data: "+key)}}
+   const journal={version:1,phase:"pending",changes:[{key,previous,next:value}]};
    try{
     rawSet(JOURNAL,JSON.stringify(journal));rawSet(key,value);
     if(native.getItem(key)!==value)throw Error("Storage read-back verification failed");
@@ -38,7 +40,13 @@
   if(!file||typeof file!=="object"||Array.isArray(file)||file.app!=="Daybook"||![1,2,3].includes(Number(file.version)))throw Error("Unsupported or invalid Daybook backup");
   if(!file.data||typeof file.data!=="object"||Array.isArray(file.data))throw Error("Backup has no data section");
   const entries={};
-  for(const [key,value] of Object.entries(file.data)){
+  const legacy=["subjects","classes","routine","tasks","sessions","reminders","goal","settings","routineVersion"];
+  const source={...file.data};
+  if(Number(file.version)<3){
+   for(const key of legacy)if(Object.prototype.hasOwnProperty.call(source,key)){source[PREFIX+key]=source[key];delete source[key]}
+   if(file.extensions&&typeof file.extensions==="object")for(const key of ["academic_courses","academic_assessments","habits","habit_checks","finance"])if(Object.prototype.hasOwnProperty.call(file.extensions,key))source[PREFIX+key]=file.extensions[key];
+  }
+  for(const [key,value] of Object.entries(source)){
    if(!key.startsWith(PREFIX)||key===JOURNAL)throw Error("Backup contains an unsupported storage key: "+key);
    if(value&&typeof value==="object"&&Object.prototype.hasOwnProperty.call(value,"__rawStorageValue"))throw Error("Backup contains an unreadable record: "+key);
    entries[key]=JSON.stringify(value);
