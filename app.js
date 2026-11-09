@@ -157,7 +157,7 @@ function weekDates(){
  const start=new Date(today);start.setHours(0,0,0,0);start.setDate(start.getDate()-start.getDay()+weekOffset*7);
  return Array.from({length:7},(_,i)=>{const date=new Date(start);date.setDate(start.getDate()+i);return {day:date.getDay(),date}});
 }
-function scheduleEntries(day){const selected=weekDates().find(x=>x.day===day);return scheduleStore.getForDate(selected?selected.date:today).map(item=>({...item,kind:item.type==="class"?"class":item.type==="study"?"study":"routine",title:item.title,location:item.location||"",room:item.metadata?.room||item.location||"",subject:item.metadata?.subject||item.title}));}
+function scheduleEntries(day){const selected=weekDates().find(x=>x.day===day);return scheduleStore.getForDate(selected?selected.date:today).map(item=>({...item,canonicalId:item.id,id:item.source?.legacyId||item.id,kind:item.type==="class"?"class":item.type==="study"?"study":"routine",title:item.title,location:item.location||"",room:item.metadata?.room||item.location||"",subject:item.metadata?.subject||item.title}));}
 function durationMinutes(item){const value=scheduleStore.durationMinutes(item);return Number.isFinite(value)&&value>0?value:0}
 function hasScheduleOverlap(day,start,end,legacyId){
  if(!end||minutes(start)===minutes(end))return false;
