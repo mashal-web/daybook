@@ -79,6 +79,7 @@ safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
+const scheduleStore=window.DaybookSchedule.create({storage:localStorage,classes:data.classes,routine:data.routine});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
@@ -124,7 +125,7 @@ $("#homeStartFocus")?.addEventListener("click",()=>$("#focusStart")?.click());
 $("#refreshHome")?.addEventListener("click",()=>{today=new Date();render();toast("Today’s overview refreshed")});
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
-function persist(){const saved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
+function persist(){const scheduleSaved=scheduleStore.syncLegacy(data.classes,data.routine);const saved=scheduleSaved&&["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
 function save(msg="Saved"){const stored=persist();render();toast(stored?msg:"Could not save changes. Export a backup before closing Daybook.")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
@@ -155,19 +156,17 @@ function weekDates(){
  const start=new Date(today);start.setHours(0,0,0,0);start.setDate(start.getDate()-start.getDay()+weekOffset*7);
  return Array.from({length:7},(_,i)=>{const date=new Date(start);date.setDate(start.getDate()+i);return {day:date.getDay(),date}});
 }
-function scheduleEntries(day){
- return [...data.classes.filter(x=>+x.day===day).map(x=>({...x,kind:"class",time:x.start,title:x.subject,category:"University",end:x.end,location:x.room||""})),...data.routine.filter(x=>+x.day===day).map(x=>({...x,kind:"routine",time:x.time,title:x.title,category:x.category||"Personal",end:x.end||"",location:x.location||""}))].sort((x,y)=>x.time.localeCompare(y.time));
-}
-function durationMinutes(item){return item.end&&minutes(item.end)>minutes(item.time)?minutes(item.end)-minutes(item.time):0}
+function scheduleEntries(day){const selected=weekDates().find(x=>x.day===day);return scheduleStore.getForDate(selected?selected.date:today).map(item=>({...item,kind:item.type==="class"?"class":item.type==="study"?"study":"routine",title:item.title,location:item.location||"",room:item.metadata?.room||item.location||"",subject:item.metadata?.subject||item.title}));}
+function durationMinutes(item){const value=scheduleStore.durationMinutes(item);return Number.isFinite(value)&&value>0?value:0}
 function renderWeek(){
  const days=weekDates(),start=days[0].date,end=days[6].date;
  $("#weekLabel").textContent=start.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+end.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
- const weekClasses=data.classes.filter(x=>days.some(d=>d.day===+x.day)),weekRoutine=data.routine.filter(x=>days.some(d=>d.day===+x.day));
- const totalMinutes=[...weekClasses.map(x=>durationMinutes({...x,time:x.start})),...weekRoutine.map(x=>durationMinutes({...x,time:x.time}))].reduce((n,x)=>n+x,0);
- const studyMinutes=weekRoutine.filter(x=>String(x.category||"").toLowerCase()==="study").reduce((n,x)=>n+durationMinutes({...x,time:x.time}),0);
+ const weekItems=scheduleStore.getForWeek(start),weekClasses=weekItems.filter(x=>x.type==="class"),weekRoutine=weekItems.filter(x=>x.type!=="class");
+ const totalMinutes=weekItems.reduce((n,x)=>n+durationMinutes(x),0);
+ const studyMinutes=weekItems.filter(x=>x.type==="study"||String(x.category||"").toLowerCase()==="study").reduce((n,x)=>n+durationMinutes(x),0);
  $("#weekHours").textContent=(totalMinutes/60).toFixed(1).replace(/\.0$/,"")+"h";
  $("#classCount").textContent=weekClasses.length;$("#studyHours").textContent=(studyMinutes/60).toFixed(1).replace(/\.0$/,"")+"h";$("#routineCount").textContent=weekRoutine.length;
- $("#classSetupNote").style.display=weekClasses.some(x=>x.subject&&x.subject!=="University / campus")?"none":"flex";
+ $("#classSetupNote").style.display=weekClasses.some(x=>(x.metadata?.subject||x.title)&&(x.metadata?.subject||x.title)!=="University / campus")?"none":"flex";
  $("#weekDays").innerHTML=days.map(({day,date})=>{const n=scheduleEntries(day).length,active=day===selectedDay,isToday=iso(date)===iso(today);return '<button type="button" class="week-day '+(active?"is-selected ":"")+(isToday?"is-today":"")+'" role="tab" aria-selected="'+active+'" aria-current="'+(isToday?"date":"false")+'" data-weekday="'+day+'"><span>'+DAYS[day].slice(0,3)+'</span><b>'+date.getDate()+'</b><small>'+n+' '+(n===1?"item":"items")+'</small></button>'}).join("");
  const selected=days.find(x=>x.day===selectedDay)||days[0],items=scheduleEntries(selectedDay),now=new Date(),isCurrentDay=iso(selected.date)===iso(now),current=now.getHours()*60+now.getMinutes();
  $("#selectedDayTitle").textContent=selected.date.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -220,14 +219,8 @@ function renderReminders(){
 }
 function renderAnalytics(){const done=data.tasks.filter(t=>t.done).length,total=data.tasks.length,rate=total?Math.round(done/total*100):0;const thisWeek=new Date(today);thisWeek.setDate(today.getDate()-today.getDay());const weekKey=iso(thisWeek);const nextWeek=new Date(thisWeek);nextWeek.setDate(nextWeek.getDate()+7);const nextWeekKey=iso(nextWeek);const studied=data.sessions.filter(s=>s.done);const weekMinutes=studied.filter(s=>{const completedDate=s.completedAt?iso(new Date(s.completedAt)):s.date;return completedDate>=weekKey&&completedDate<nextWeekKey}).reduce((n,s)=>n+Number(s.minutes||0),0);const allMinutes=studied.reduce((n,s)=>n+Number(s.minutes||0),0);$("#aDone").textContent=done;$("#aHours").textContent=(allMinutes/60).toFixed(1).replace(/\.0$/,"")+"h";$("#aSubjects").textContent=new Set(studied.map(s=>s.subject)).size;$("#progress").style.width=rate+"%";$("#progress").setAttribute("aria-valuenow",String(rate));$("#progressLabel").textContent=rate+"% complete · "+done+" of "+total+" tasks";const goalMins=Number(data.goal)*60;$("#goalValue").textContent=(weekMinutes/60).toFixed(1)+" / "+data.goal+" hours";const goalPercent=Math.min(100,weekMinutes/goalMins*100);$("#goalProgress").style.width=goalPercent+"%";$("#goalProgress").setAttribute("aria-valuenow",String(Math.round(goalPercent)));$("#goalLabel").textContent=Math.max(0,goalMins-weekMinutes)>0?((goalMins-weekMinutes)/60).toFixed(1)+" hours left this week":"Weekly goal reached.";const by={};studied.forEach(s=>by[s.subject]=(by[s.subject]||0)+Number(s.minutes));const max=Math.max(1,...Object.values(by));$("#subjectBars").innerHTML=Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([s,m])=>'<div class="bar"><span>'+esc(s)+'</span><div class="bar-track"><span style="width:'+(m/max*100)+'%"></span></div><small>'+(m/60).toFixed(1)+'h</small></div>').join("")||'<div class="empty">Complete study sessions to see subject progress.</div>'}
 function homeTodayItems(now=new Date()){
- const day=now.getDay(),current=now.getHours()*60+now.getMinutes();
- const classes=data.classes.filter(c=>+c.day===day).map(c=>({id:c.id,kind:"class",time:c.start,end:c.end,title:c.subject,room:c.room||""}));
- const routines=data.routine.filter(r=>+r.day===day&&!classes.some(c=>minutes(r.time)>=minutes(c.time)&&minutes(r.time)<minutes(c.end))).map(r=>({id:r.id,kind:"routine",time:r.time,end:"",title:r.title,room:""}));
- return [...classes,...routines].sort((a,b)=>a.time.localeCompare(b.time)).map((item,index,all)=>{
-  const start=minutes(item.time),end=item.end?minutes(item.end):null,next=all[index+1];
-  const status=item.kind==="class"&&start<=current&&current<end?"current":(item.kind==="class"?end<=current:start<=current)?"past":"upcoming";
-  return {...item,status,currentMinutes:current,nextTime:next?.time||""};
- });
+ const current=now.getTime(),items=scheduleStore.getForDate(now).map(item=>({...item,kind:item.type==="class"?"class":item.type==="study"?"study":"routine",title:item.title,room:item.metadata?.room||item.location||""}));
+ return items.map(item=>{const start=new Date(item.startDateTime).getTime(),end=item.endDateTime?new Date(item.endDateTime).getTime():null;const status=start<=current&&end!==null&&current<end?"current":(end!==null?end<=current:start<=current)?"past":"upcoming";return {...item,status,currentMinutes:now.getHours()*60+now.getMinutes(),nextTime:""};});
 }
 function renderHomeWelcome(now=new Date()){
  const hour=now.getHours(),greeting=hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
@@ -243,7 +236,7 @@ function renderNextUp(items,now=new Date()){
  title.textContent=item.title;
  meta.textContent=(item.kind==="class"?"University class":"Routine activity")+(item.room?" · "+item.room:"")+(active&&item.end?" · Ends "+fmt(item.end):"");
  time.textContent=item.kind==="class"?fmt(item.time)+" – "+fmt(item.end):fmt(item.time);
- if(active){count.textContent=item.end?Math.max(0,minutes(item.end)-current)+" min left":"IN PROGRESS";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
+ if(active){count.textContent=item.endDateTime?Math.max(0,Math.ceil((new Date(item.endDateTime)-now)/60000))+" min left":"IN PROGRESS";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
  else{const remaining=minutes(item.time)-current;count.textContent=remaining<60?"In "+remaining+" min":"In "+Math.floor(remaining/60)+"h "+(remaining%60)+"m";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
 }
 function renderHomeTimeline(items){

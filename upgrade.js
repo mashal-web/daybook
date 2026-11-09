@@ -47,16 +47,14 @@ function renderInsights(){
  host.innerHTML='<div class="upgrade-stats">'+stat("7-DAY HABIT RATE",habitRate+"%","Completed habit check-ins")+stat("THIS MONTH",money(spend),"Recorded expenses")+stat("TODAY'S HABITS",done.length+"/"+habits.length,"Completed check-ins")+'</div>';
 }
 function renderAgenda(){
- const host=$("#scheduleAgenda");if(!host)return;const d=new Date(),day=d.getDay(),fmt=t=>{const [h,m]=t.split(":").map(Number);return (h%12||12)+":"+String(m).padStart(2,"0")+" "+(h>=12?"PM":"AM")};
- const classes=read("classes",[]).filter(x=>+x.day===day).map(x=>({time:x.start,title:x.subject,detail:"University · "+fmt(x.start)+" – "+fmt(x.end)+(x.room?" · "+x.room:"")}));
- const routine=read("routine",[]).filter(x=>+x.day===day).map(x=>({time:x.time,title:x.title,detail:"Daily routine"}));
- const items=[...classes,...routine].sort((a,b)=>a.time.localeCompare(b.time));
+ const host=$("#scheduleAgenda");if(!host)return;const engine=window.DaybookSchedule;if(!engine)return;const fmt=t=>{if(!t)return "";const [h,m]=t.split(":").map(Number);return (h%12||12)+":"+String(m).padStart(2,"0")+" "+(h>=12?"PM":"AM")};
+ const items=engine.getForDate(new Date()).map(x=>({time:x.time,title:x.title,detail:(x.type==="class"?"University":x.category||"Personal")+" · "+fmt(x.time)+(x.end?" – "+fmt(x.end):"")+(x.location?" · "+x.location:"")}));
  host.innerHTML=items.map(x=>'<div class="agenda-row"><span class="agenda-time">'+fmt(x.time)+'</span><div><b>'+esc(x.title)+'</b><small>'+esc(x.detail)+'</small></div></div>').join("")||'<p class="muted">Nothing scheduled today.</p>';
 }
 function renderSmartPlan(){
  const host=$("#smartPlan");if(!host)return;const tasks=read("tasks",[]).filter(t=>!t.done).sort((a,b)=>({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,4);
- const day=new Date().getDay(),busy=[...read("classes",[]).filter(x=>+x.day===day).map(x=>[x.start,x.end]),...read("routine",[]).filter(x=>+x.day===day).map(x=>[x.time,addMinutes(x.time,30)])].sort((a,b)=>a[0].localeCompare(b[0]));
- const gaps=[];let cursor=480;for(const [s,e] of busy){const start=toMin(s),end=toMin(e);if(start-cursor>=45)gaps.push([cursor,start]);cursor=Math.max(cursor,end)}if(1320-cursor>=45)gaps.push([cursor,1320]);
+ const busy=(window.DaybookSchedule?.getForDate(new Date())||[]).slice().sort((a,b)=>a.time.localeCompare(b.time)).map(x=>[x.time,x.end,x.durationMinutes]);
+ const gaps=[];let cursor=480;for(let i=0;i<busy.length;i++){const [s,e,duration]=busy[i],start=toMin(s),next=busy[i+1],end=e&&Number.isFinite(duration)?start+duration:next?Math.max(start,toMin(next[0])):1320;if(start-cursor>=45)gaps.push([cursor,start]);cursor=Math.max(cursor,end)}if(1320-cursor>=45)gaps.push([cursor,1320]);
  const suggestions=gaps.filter(g=>g[1]-g[0]>=45).slice(0,3).map(([a,b])=>'<div class="agenda-row"><span class="agenda-time">'+fromMin(a)+' – '+fromMin(b)+'</span><div><b>Available focus window</b><small>'+Math.floor((b-a)/60)+'h '+((b-a)%60)+'m available</small></div></div>').join("");
  host.innerHTML='<div class="upgrade-columns"><div><p class="label">PRIORITY QUEUE</p><div class="upgrade-list">'+(tasks.map(t=>'<div class="upgrade-item"><div class="item-main"><b>'+esc(t.title)+'</b><small>'+esc(t.priority||"Normal")+(t.due?" · Due "+esc(t.due):"")+'</small></div></div>').join("")||'<p class="muted">No pending tasks. Add tasks to receive planning suggestions.</p>')+'</div></div><div><p class="label">TODAY\'S OPEN WINDOWS</p><div class="upgrade-list">'+(suggestions||'<p class="muted">No clear 45-minute window found in the current timetable.</p>')+'</div></div></div>';
 }

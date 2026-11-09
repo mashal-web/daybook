@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const assert = require("node:assert/strict");
 const read = path => fs.readFileSync(path, "utf8");
 const app = read("app.js");
+const scheduling = read("scheduling.js");
 const html = read("index.html");
 const css = read("styles.css");
 const timetableCss = read("timetable-theme.css");
@@ -35,7 +36,7 @@ assert(app.includes("openView(b.dataset.view)") && app.includes('$("#openMore")?
 const manifest = JSON.parse(read("manifest.webmanifest"));
 const workflow = read(".github/workflows/android.yml");
 
-for (const [name, source] of [["app.js", app], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")], ["upgrade.js", upgrade]]) {
+for (const [name, source] of [["app.js", app], ["scheduling.js", scheduling], ["sw.js", sw], ["build.js", build], ["native.js", native.replace(/^import .*;\s*/gm, "")], ["upgrade.js", upgrade]]) {
   assert.doesNotThrow(() => new Function(source), name + " must parse");
 }
 assert.equal(/(?<!\$)\$\(["\'][^"\']+["\']\)\.(?:forEach|map|filter|find|some|reduce|flatMap|sort)\(/.test(app), false, "querySelector results must not be treated as collections");
@@ -73,7 +74,10 @@ assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "
 assert(app.includes('$("#classCount").textContent=weekClasses.length'), "Weekly timetable must count university classes in the displayed week");
 assert(app.includes("UNIVERSITY CLASS")&&app.includes("HAPPENING NOW"), "Day agenda must distinguish classes and identify ongoing events");
 assert(app.includes("function weekDates()")&&app.includes("function scheduleEntries(day)")&&app.includes("data-weekday"), "Weekly timetable must render seven selectable days and a selected-day agenda");
-assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.routine.filter(x=>+x.day===day)'), "University classes and daily routine must render in the same seven-day grid");
+assert(html.includes('src="scheduling.js"')&&build.includes('"scheduling.js"')&&sw.includes('"./scheduling.js"'), "Scheduling engine must load in web, Android and offline builds");
+assert(scheduling.includes("function getForDate")&&scheduling.includes("function getForWeek")&&scheduling.includes("function getUpcoming")&&scheduling.includes("function findOverlaps"), "Scheduling engine must expose centralized schedule queries");
+assert(app.includes("scheduleStore.getForDate")&&app.includes("scheduleStore.getForWeek"), "Week and day views must read the unified scheduling engine");
+assert(upgrade.includes("engine.getForDate(new Date())"), "Agenda must read the unified scheduling engine");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
 assert(css.includes(".schedule-insights")&&timetableCss.includes(".week-day-strip")&&timetableCss.includes(".day-timeline"), "Weekly routine must style responsive day navigation and timeline");
 
@@ -251,6 +255,7 @@ function smokeTestAppRuntime() {
     addEventListener(type, callback) { (windowEvents[type] ||= []).push(callback); },
     dispatchEvent(event) { for (const callback of windowEvents[event.type] || []) callback(event); }
   };
+  window.DaybookSchedule = new Function("window", scheduling + "; return window.DaybookSchedule;")({});
   const context = {
     document, window, localStorage, Date, Math, JSON, String, Number, Object, Array, Set, Map,
     RegExp, Promise, Error, Intl, CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } }, confirm: () => true, setInterval: () => 1,
@@ -327,6 +332,42 @@ assert(app.includes("function homeTodayItems(now=new Date())") && app.includes("
 assert(app.includes('safeArray("academic_courses")') && app.includes('safeArray("academic_assessments")'), "Home academic snapshot must use saved academic data");
 assert(app.includes('safeRead("habit_checks",{})') && app.includes('function renderHomeInsights(now=new Date())'), "Home insights must use persisted habit and study data");
 assert(app.includes('$("#homeStartFocus")?.addEventListener') && app.includes('$("#refreshHome")?.addEventListener'), "Home focus and refresh controls must be wired");
+
+
+const scheduleWindow = {};
+new Function("window", scheduling)(scheduleWindow);
+const scheduleEngine = scheduleWindow.DaybookSchedule;
+const memoryStorage = () => { const map = new Map(); return { getItem:k=>map.has(k)?map.get(k):null, setItem:(k,v)=>map.set(k,String(v)), map }; };
+const scheduleStorage = memoryStorage();
+const engine = scheduleEngine.create({ storage:scheduleStorage, classes:[], routine:[] });
+const weekly = engine.createEvent({id:"weekly-1",title:"Weekly lecture",type:"class",start:"2026-11-09T08:00",end:"2026-11-09T09:30",recurrence:{frequency:"weekly",weekdays:[1,3],startDate:"2026-11-09",endDate:null}});
+assert(weekly,"Weekly event creation must persist");
+assert.equal(engine.getForDate("2026-11-09").length,1,"Weekly event must appear on its selected weekday");
+assert.equal(engine.getForDate("2026-11-10").length,0,"Weekly event must not appear on an unselected weekday");
+assert.equal(engine.getForDate("2026-11-11").length,1,"Weekly event must appear on the second selected weekday");
+assert.equal(engine.durationMinutes(engine.getForDate("2026-11-09")[0]),90,"Event duration must use actual start and end timestamps");
+const overnight=engine.createEvent({id:"overnight-1",title:"Night shift",type:"event",start:"2026-11-09T23:30",end:"2026-11-10T01:15",recurrence:{frequency:"none",weekdays:[]}});
+assert.equal(engine.getForDate("2026-11-10").some(x=>x.id==="overnight-1"),true,"Midnight-crossing event must appear on the following date");
+assert.equal(engine.durationMinutes(overnight),105,"Midnight-crossing duration must be calculated correctly");
+assert.throws(()=>engine.createEvent({id:"bad-end",title:"Invalid",start:"2026-11-09T10:00",end:"2026-11-09T09:00"}),/Invalid schedule event/,"Invalid durations must be rejected");
+const noEnd=engine.createEvent({id:"no-end",title:"Unspecified end",start:"2026-11-09T12:00",recurrence:{frequency:"none",weekdays:[]}});
+assert.equal(engine.durationMinutes(noEnd),null,"Missing end time must remain an unknown duration");
+engine.createEvent({id:"overlap-a",title:"A",start:"2026-11-09T14:00",end:"2026-11-09T15:00"});
+engine.createEvent({id:"overlap-b",title:"B",start:"2026-11-09T14:30",end:"2026-11-09T15:30"});
+assert(engine.findOverlaps("2026-11-09").some(pair=>pair.some(x=>x.id==="overlap-a")&&pair.some(x=>x.id==="overlap-b")),"Overlapping events must be detected");
+engine.updateEvent("overlap-a",{title:"Updated A"});
+assert.equal(engine.getAll().find(x=>x.id==="overlap-a").title,"Updated A","Event updates must persist");
+assert(engine.duplicateEvent("overlap-a"),"Event duplication must create a distinct event");
+assert(engine.deleteEvent("overlap-b"),"Event deletion must remove the event");
+const legacyStorage=memoryStorage();
+const legacyEngine=scheduleEngine.create({storage:legacyStorage,classes:[{id:"class-1",day:1,start:"08:00",end:"09:00",subject:"Math",room:"A1"}],routine:[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}]});
+assert.equal(legacyEngine.getForDate("2026-11-09").length,2,"Legacy class and routine data must migrate into the shared schedule");
+legacyEngine.syncLegacy([{id:"class-1",day:1,start:"09:00",end:"10:00",subject:"Math",room:"A1"}],[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}]);
+assert.equal(legacyEngine.getForDate("2026-11-09").find(x=>x.id==="legacy-class-class-1").time,"09:00","Legacy edits must synchronize to canonical schedule records");
+const reloaded=scheduleEngine.create({storage:legacyStorage,classes:[],routine:[]});
+assert.equal(reloaded.getForDate("2026-11-09").length,2,"Canonical schedule must survive reload");
+const duplicateLegacy=scheduleEngine.create({storage:memoryStorage(),classes:[{id:"same",day:1,start:"08:00",end:"09:00",subject:"A"},{id:"same",day:1,start:"08:00",end:"09:00",subject:"B"}],routine:[]});
+assert.equal(duplicateLegacy.getAll().length,1,"Duplicate legacy IDs must not create duplicate recurring events");
 
 console.log("Daybook regression checks passed.");
 
