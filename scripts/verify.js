@@ -414,3 +414,15 @@ const ps=persistenceHarness.api.storage;ps.setItem("daybook_tasks",JSON.stringif
 const backupData=persistenceHarness.api.snapshot();assert(backupData.daybook_tasks&&backupData.daybook_schema_version!==undefined,"Backup snapshot must include user records and schema metadata");
 const validBackup={app:"Daybook",version:3,exportedAt:"2026-11-09T00:00:00.000Z",data:{daybook_tasks:[{id:"t2",title:"Restored"}]}};const entries=persistenceHarness.api.validateBackup(validBackup);assert.equal(JSON.parse(entries.daybook_tasks)[0].id,"t2","Valid backup records must validate");assert.throws(()=>persistenceHarness.api.validateBackup({app:"Daybook",version:99,data:{}}),/Unsupported/,"Unsupported backup versions must be rejected");
 assert(persistence.includes("Refusing to overwrite unreadable stored data")&&persistence.includes("function recover()"),"Corrupt records must be protected and interrupted writes must be recoverable");
+
+
+
+const eventUi=read("app.js");
+assert(eventUi.includes('function eventConflicts(candidate,id)')&&eventUi.includes('scheduleStore.createEvent(candidate)')&&eventUi.includes('scheduleStore.updateEvent(id,candidate)'),"Event form must validate conflicts and use the canonical scheduling engine");
+assert(eventUi.includes('scheduleStore.duplicateEvent')===false&&eventUi.includes('openEditor("event",null,id)'),"Event duplication must open a prefilled independent event draft");
+assert(eventUi.includes('data-event-action="delete"')&&eventUi.includes('Delete this event'),"Event deletion must require explicit confirmation");
+assert(eventUi.includes('eventFrequency')&&eventUi.includes('value:"weekly"')&&eventUi.includes('eventWeekday'),"Event form must expose supported weekly recurrence controls");
+assert(eventUi.includes('eventAllDay')&&eventUi.includes('eventStartDate')&&eventUi.includes('eventEndDate'),"Event form must support all-day and date-range fields");
+assert(html.includes('data-add="event"')&&html.includes('id="schedule"')&&html.includes('id="planner"'),"Event creation entry points must exist in Home, Week and Study Planner");
+assert(upgrade.includes('data-event-open')&&upgrade.includes('data-add="event"'),"Agenda and Smart Planner must expose event management entry points");
+assert(css.includes(".event-form-section")&&css.includes("@media(max-width:600px)"),"Event form must have mobile responsive styling");
