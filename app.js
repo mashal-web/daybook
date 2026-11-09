@@ -57,7 +57,7 @@ safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
-function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;}
+function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
 applyTheme(data.settings.theme);
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
