@@ -214,7 +214,7 @@ function renderHomeTasks(){
  $("#homeProgressCaption").textContent=tasks.length?done+" of "+tasks.length+" tasks completed · "+pending+" remaining":"No tasks yet. Add one to start tracking progress.";
  const priority=tasks.filter(t=>!t.done).sort((a,b)=>Number(!!b.due&&b.due<iso(today))-Number(!!a.due&&a.due<iso(today))||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,3);
  $("#priority").innerHTML=priority.map(taskMarkup).join("")||'<div class="home-empty">No pending tasks. Add a task whenever something needs your attention.</div>';
- $$("#priority [data-task]").forEach(input=>input.onchange=()=>{const task=data.tasks.find(t=>String(t.id)===input.dataset.task);if(!task)return;task.done=input.checked;task.completedAt=input.checked?new Date().toISOString():null;save(input.checked?"Task completed":"Task reopened")});
+ $("[data-task]").forEach(input=>input.onchange=()=>{const task=data.tasks.find(t=>String(t.id)===input.dataset.task);if(!task)return;task.done=input.checked;task.completedAt=input.checked?new Date().toISOString():null;save(input.checked?"Task completed":"Task reopened")});
 }
 function renderHomeAcademics(now=new Date()){
  const courses=safeArray("academic_courses"),assessments=safeArray("academic_assessments");
