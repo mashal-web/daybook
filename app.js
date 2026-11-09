@@ -162,7 +162,7 @@ function eventActions(item){return '<div class="agenda-event-actions"><button cl
 function eventDateLabel(value){return new Date(value+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}
 function eventConflicts(candidate,id){
  const start=new Date(candidate.start),end=candidate.end?new Date(candidate.end):candidate.allDay?new Date(new Date(candidate.start).getTime()+86400000):null;if(!end)return [];
- const conflicts=[],limit=candidate.recurrence.frequency==="weekly"?56:0;
+ const conflicts=[],limit=candidate.recurrence.frequency==="weekly"?366:0;
  for(let offset=0;offset<=limit;offset++){
   const date=new Date(start);date.setDate(start.getDate()+offset);const key=iso(date);
   if(key<candidate.start.slice(0,10)||candidate.recurrence.endDate&&key>candidate.recurrence.endDate)continue;
