@@ -9,6 +9,7 @@ const sw = read("sw.js");
 const build = read("scripts/build.js");
 const native = read("native.js");
 const upgrade = read("upgrade.js");
+const mobile = read("mobile-app.css");
 const manifest = JSON.parse(read("manifest.webmanifest"));
 const workflow = read(".github/workflows/android.yml");
 

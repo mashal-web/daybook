@@ -107,12 +107,15 @@ function openView(v){
  const target=document.getElementById(v);
  if(!target||!target.classList.contains("view")){toast("This section is unavailable");return}
  activeView=v;
- $$(".view").forEach(x=>x.classList.toggle("active",x===target));
+ document.getElementById("moreDialog")?.close();
+ $(".view").forEach(x=>x.classList.toggle("active",x===target));
  $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Weekly routine",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders",academics:"Academic management",habits:"Habits & routines",finance:"Personal finance"})[v]||"Daybook";
  render();
 }
-$$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$(".nav").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$("#openMore")?.addEventListener("click",()=>$("#moreDialog")?.showModal());
+$("#closeMore")?.addEventListener("click",()=>$("#moreDialog")?.close());
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
