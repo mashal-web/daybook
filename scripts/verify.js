@@ -351,7 +351,8 @@ assert.equal(engine.durationMinutes(engine.getForDate("2026-11-09")[0]),90,"Even
 const overnight=engine.createEvent({id:"overnight-1",title:"Night shift",type:"event",start:"2026-11-09T23:30",end:"2026-11-10T01:15",recurrence:{frequency:"none",weekdays:[]}});
 assert.equal(engine.getForDate("2026-11-10").some(x=>x.id==="overnight-1"),true,"Midnight-crossing event must appear on the following date");
 assert.equal(engine.durationMinutes(overnight),105,"Midnight-crossing duration must be calculated correctly");
-assert(engine.getForWeek("2026-11-09").some(x=>x.id==="overnight-1"),"Week query must include an event that starts in the prior day and crosses into the week");
+const sundayOvernight=engine.createEvent({id:"sunday-overnight",title:"Sunday night event",start:"2026-11-08T23:30",end:"2026-11-09T01:15"});
+assert(engine.getForWeek("2026-11-09").some(x=>x.id==="sunday-overnight"),"Week query must include an event that starts in the prior day and crosses into the week");
 assert.throws(()=>engine.createEvent({id:"bad-end",title:"Invalid",start:"2026-11-09T10:00",end:"2026-11-09T09:00"}),/Invalid schedule event/,"Invalid durations must be rejected");
 const noEnd=engine.createEvent({id:"no-end",title:"Unspecified end",start:"2026-11-09T12:00",recurrence:{frequency:"none",weekdays:[]}});
 assert.equal(engine.durationMinutes(noEnd),null,"Missing end time must remain an unknown duration");
