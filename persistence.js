@@ -2,7 +2,7 @@
 (function(root){
  const PREFIX="daybook_",JOURNAL=PREFIX+"write_journal_v1",SCHEMA=PREFIX+"schema_version",VERSION=1;
  const native=root.localStorage;
- let healthy=true,recovered=false;
+ let healthy=true,recovered=false,blocked=false;
  function rawSet(key,value){native.setItem(key,value)}
  function recover(){
   let raw;try{raw=native.getItem(JOURNAL)}catch(e){healthy=false;return}
@@ -10,13 +10,14 @@
   try{const j=JSON.parse(raw);if(!j||j.version!==1||!Array.isArray(j.changes))throw Error("Invalid recovery journal");
    if(j.phase!=="committed")for(const c of j.changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}
    native.removeItem(JOURNAL);recovered=true;
-  }catch(e){healthy=false}
+  }catch(e){healthy=false;blocked=true}
  }
- try{recover()}catch(e){healthy=false}
+ try{recover()}catch(e){healthy=false;blocked=true}
  const storage={
   getItem(key){return native.getItem(String(key))},
   setItem(key,value){
    key=String(key);value=String(value);
+   if(blocked)throw Error("Storage writes are paused because recovery needs attention");
    if(key===JOURNAL)throw Error("Reserved storage key");
    const previous=native.getItem(key);
    if(previous!==null&&key.startsWith(PREFIX)){try{JSON.parse(previous)}catch(e){throw Error("Refusing to overwrite unreadable stored data: "+key)}}
@@ -78,5 +79,5 @@
   apply(entries);return {cancelled:false,count};
  }
  try{if(native.getItem(SCHEMA)===null)storage.setItem(SCHEMA,JSON.stringify(VERSION))}catch(e){healthy=false}
- root.DaybookPersistence={storage,snapshot,exportFile,importFile,validateBackup,getHealth:()=>({healthy,recovered,version:VERSION}),storageKeys:keys};
+ root.DaybookPersistence={storage,snapshot,exportFile,importFile,validateBackup,getHealth:()=>({healthy,blocked,recovered,version:VERSION}),storageKeys:keys};
 })(window);
