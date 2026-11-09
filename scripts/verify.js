@@ -304,3 +304,9 @@ function smokeTestAppRuntime() {
 smokeTestAppRuntime();
 
 console.log("Daybook regression checks passed.");
+
+assert(app.includes("window.daybookIcon") && app.includes("const ICONS="), "Shared icon set must be defined centrally");
+assert(upgrade.includes("window.daybookIcon(\"trash\")") && upgrade.includes("window.daybookIcon(\"check\")"), "Academic, habit and finance actions must use the shared icon set");
+assert(html.includes("aria-label=\"Previous week\"") && html.includes("aria-label=\"Next week\"") && html.includes("aria-label=\"Close settings\""), "Icon-only controls must retain accessible labels");
+assert(!/[＋←→×]/u.test(html) && !/[×]/u.test(app+upgrade), "Action controls must not use raw Unicode icon substitutes");
+assert(read("design-system.css").includes(".action-icon"), "Unified icon sizing and interaction styles must be present");
