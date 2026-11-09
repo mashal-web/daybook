@@ -41,6 +41,9 @@ assert(native.includes("reminderSyncQueue = reminderSyncQueue.catch"), "Android 
 assert(sw.includes("const response=await fetch(request)"), "Service worker should prefer current network assets");
 assert(sw.includes('key.startsWith("daybook-")'), "Service worker must not delete caches owned by other apps");
 assert.equal(app.includes("function renderScheduleConflicts"), false, "Obsolete conflict renderer should be removed");
+assert(app.includes("data-duplicate=")&&app.includes("function openEditor(type,id=null,duplicateFrom=null)"), "Classes and activities must support duplication");
+assert(app.includes("End time (optional)")&&app.includes("This activity overlaps another scheduled item"), "Activities must support durations and warn about overlaps");
+assert(app.includes('setInterval(()=>{if(activeView==="schedule")renderWeek()},60000)'), "Selected-day time status should refresh once per minute");
 
 const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
 assert(html.includes('<dialog id="goalDialog" aria-labelledby="goalDialogTitle"') && html.includes('<h3 id="goalDialogTitle">Weekly study goal</h3>'), "Goal dialog must label itself with its own heading");
@@ -55,11 +58,11 @@ for (const target of navTargets) assert(viewIds.has(target), "Missing view for n
 assert.equal(viewIds.size, 9, "Expected nine main views");
 assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "Weekly routine must include university schedule summary and setup guidance");
 assert(app.includes('$("#classCount").textContent=data.classes.length'), "Weekly routine must summarize saved university entries");
-assert(app.includes('UNIVERSITY CLASS')&&app.includes('DAILY ROUTINE'), "Weekly timetable events must visually distinguish classes from routine activities");
-assert(app.includes('const times=[...new Set(columns.flatMap(items=>items.map(x=>x.time)))].sort'), "Repeated daily activities must share one timetable row per start time");
+assert(app.includes("UNIVERSITY CLASS")&&app.includes("HAPPENING NOW"), "Day agenda must distinguish classes and identify ongoing events");
+assert(app.includes("function weekDates()")&&app.includes("function scheduleEntries(day)")&&app.includes("data-weekday"), "Weekly timetable must render seven selectable days and a selected-day agenda");
 assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.routine.filter(x=>+x.day===day)'), "University classes and daily routine must render in the same seven-day grid");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
-assert(css.includes(".schedule-insights")&&css.includes(".class-setup-note"), "Weekly routine must style its class summary and setup note");
+assert(css.includes(".schedule-insights")&&css.includes(".week-day-strip")&&css.includes(".day-timeline"), "Weekly routine must style responsive day navigation and timeline");
 
 assert(html.includes('id="academics"') && html.includes('id="habits"') && html.includes('id="finance"'), "Academic, habit and finance modules must be present");
 assert(build.includes('"upgrade.js"') && build.includes('"upgrade.css"') && build.includes('"timetable-theme.css"'), "Android build must package every stylesheet and extension module");
@@ -70,10 +73,10 @@ assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$(
 assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
 assert(app.includes('$("#overdue").textContent=data.tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length'), "Dashboard must show overdue task count");
 assert(app.includes("function dueMeta(t)"), "Tasks must show relative due-date labels");
-assert(app.includes('aria-label="Weekly timetable with timing and seven days"'), "Weekly table should describe its eight columns");
+assert(html.includes('id="weekDays" role="tablist"')&&html.includes('id="dayTimeline"'), "Mobile timetable must expose day tabs and a selected-day timeline");
 assert(!app.includes('<div class="table-scroll"><table'), "Timetable must not create nested scroll containers");
-assert(html.includes('class="table-scroll" role="region"'), "Outer timetable region should own horizontal scrolling");
-assert(app.includes('colspan="8"'), "Empty timetable row should span all eight columns");
+assert(!html.includes('class="table-scroll"'), "Timetable must not require a wide horizontally scrolling table");
+assert(app.includes("A clear day")&&app.includes("Add an activity"), "Empty days should provide an add-activity action");
 assert(/data-id=.*esc\(id\)/.test(app), "Record IDs must be HTML escaped before rendering");
 assert(build.includes('"sw.js"'), "Android build must copy the service worker");
 assert(workflow.includes("node scripts/verify.js"), "Android workflow must run regression tests");
