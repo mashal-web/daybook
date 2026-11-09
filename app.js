@@ -120,6 +120,8 @@ $("#focusStart").onclick=()=>{
  else{if(focusState.remaining<=0)focusState.remaining=focusState.duration;focusState.running=true;focusState.endsAt=Date.now()+focusState.remaining*1000;focusState.subject=$("#focusSubject").value||focusState.subject;storeFocus();renderFocus()}
 };
 $("#focusReset").onclick=()=>{focusState.running=false;focusState.endsAt=null;focusState.duration=focusState.mode==="focus"?1500:300;focusState.remaining=focusState.duration;storeFocus();renderFocus()};
+$("#homeStartFocus")?.addEventListener("click",()=>$("#focusStart")?.click());
+$("#refreshHome")?.addEventListener("click",()=>{today=new Date();render();toast("Today’s overview refreshed")});
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
 function persist(){const saved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
@@ -172,8 +174,75 @@ function renderReminders(){
  wireActions();
 }
 function renderAnalytics(){const done=data.tasks.filter(t=>t.done).length,total=data.tasks.length,rate=total?Math.round(done/total*100):0;const thisWeek=new Date(today);thisWeek.setDate(today.getDate()-today.getDay());const weekKey=iso(thisWeek);const nextWeek=new Date(thisWeek);nextWeek.setDate(nextWeek.getDate()+7);const nextWeekKey=iso(nextWeek);const studied=data.sessions.filter(s=>s.done);const weekMinutes=studied.filter(s=>{const completedDate=s.completedAt?iso(new Date(s.completedAt)):s.date;return completedDate>=weekKey&&completedDate<nextWeekKey}).reduce((n,s)=>n+Number(s.minutes||0),0);const allMinutes=studied.reduce((n,s)=>n+Number(s.minutes||0),0);$("#done").textContent=$("#aDone").textContent=done;$("#total").textContent=total+" tasks created";$("#rate").textContent=rate+"%";$("#hours").textContent=$("#aHours").textContent=(allMinutes/60).toFixed(1).replace(/\.0$/,"")+"h";const reminderNow=new Date();$("#reminderCount").textContent=data.reminders.filter(r=>r.repeat==="daily"||r.repeat==="weekly"||new Date(r.date+"T"+r.time+":00")>=reminderNow).length;$("#overdue").textContent=data.tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length;$("#aSubjects").textContent=new Set(studied.map(s=>s.subject)).size;$("#progress").style.width=rate+"%";$("#progress").setAttribute("aria-valuenow",String(rate));$("#progressLabel").textContent=rate+"% complete · "+done+" of "+total+" tasks";const goalMins=Number(data.goal)*60;$("#goalValue").textContent=(weekMinutes/60).toFixed(1)+" / "+data.goal+" hours";const goalPercent=Math.min(100,weekMinutes/goalMins*100);$("#goalProgress").style.width=goalPercent+"%";$("#goalProgress").setAttribute("aria-valuenow",String(Math.round(goalPercent)));$("#goalLabel").textContent=Math.max(0,goalMins-weekMinutes)>0?((goalMins-weekMinutes)/60).toFixed(1)+" hours left this week":"Weekly goal reached.";const by={};studied.forEach(s=>by[s.subject]=(by[s.subject]||0)+Number(s.minutes));const max=Math.max(1,...Object.values(by));$("#subjectBars").innerHTML=Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([s,m])=>'<div class="bar"><span>'+esc(s)+'</span><div class="bar-track"><span style="width:'+(m/max*100)+'%"></span></div><small>'+(m/60).toFixed(1)+'h</small></div>').join("")||'<div class="empty">Complete study sessions to see subject progress.</div>'}
-function renderNextUp(){const now=new Date(),day=now.getDay(),current=now.getHours()*60+now.getMinutes();const classes=data.classes.filter(c=>+c.day===day).map(c=>({kind:"class",time:c.start,end:c.end,title:c.subject,room:c.room||""}));const routine=data.routine.filter(r=>+r.day===day&&!classes.some(c=>minutes(r.time)>=minutes(c.time)&&minutes(r.time)<minutes(c.end))).map(r=>({kind:"routine",time:r.time,title:r.title}));const active=classes.find(c=>minutes(c.time)<=current&&current<minutes(c.end));const upcoming=[...classes,...routine].filter(x=>minutes(x.time)>current).sort((a,b)=>a.time.localeCompare(b.time));const el=$("#nextUp");if(active){el.innerHTML='<div class="next-up-status"><span class="status-dot"></span>HAPPENING NOW</div><h3>'+esc(active.title)+'</h3><p>Started '+fmt(active.time)+' · Ends '+fmt(active.end)+(active.room?' · '+esc(active.room):'')+'</p>'}else if(upcoming.length){const item=upcoming[0];el.innerHTML='<div class="next-up-status">UP NEXT</div><h3>'+esc(item.title)+'</h3><p>'+fmt(item.time)+(item.end?' – '+fmt(item.end):'')+(item.room?' · '+esc(item.room):'')+'</p>'}else{el.innerHTML='<div class="next-up-status">DAY COMPLETE</div><h3>No more scheduled activities</h3><p>You have no remaining timetable or routine items today.</p>'}}
-function render(){renderFocus();renderNextUp();const todayItems=[...data.classes.filter(c=>+c.day===today.getDay()).map(c=>({time:c.start,end:c.end,title:c.subject,kind:"class",room:c.room||""})),...data.routine.filter(r=>+r.day===today.getDay()).map(r=>({time:r.time,title:r.title,kind:"routine"}))].sort((a,b)=>a.time.localeCompare(b.time));$("#todayClasses").innerHTML=todayItems.map(item=>'<div class="row"><span class="time">'+fmt(item.time)+'</span><div class="grow"><b>'+esc(item.title)+'</b><small>'+(item.kind==="class"?"Class · "+fmt(item.end)+(item.room?" · "+esc(item.room):""):"Routine activity")+'</small></div></div>').join("")||'<div class="empty">No activities scheduled for today.</div>';const open=data.tasks.filter(t=>!t.done).sort((a,b)=>(a.due||"9999").localeCompare(b.due||"9999"));$("#priority").innerHTML=open.slice(0,4).map(taskMarkup).join("")||'<div class="empty">No pending tasks.</div>';wireActions();renderWeek();renderTasks();renderPlanner();renderReminders();renderAnalytics()}
+function homeTodayItems(now=new Date()){
+ const day=now.getDay(),current=now.getHours()*60+now.getMinutes();
+ const classes=data.classes.filter(c=>+c.day===day).map(c=>({id:c.id,kind:"class",time:c.start,end:c.end,title:c.subject,room:c.room||""}));
+ const routines=data.routine.filter(r=>+r.day===day&&!classes.some(c=>minutes(r.time)>=minutes(c.time)&&minutes(r.time)<minutes(c.end))).map(r=>({id:r.id,kind:"routine",time:r.time,end:"",title:r.title,room:""}));
+ return [...classes,...routines].sort((a,b)=>a.time.localeCompare(b.time)).map((item,index,all)=>{
+  const start=minutes(item.time),end=item.end?minutes(item.end):null,next=all[index+1];
+  const status=item.kind==="class"&&start<=current&&current<end?"current":(item.kind==="class"?end<=current:start<=current)?"past":"upcoming";
+  return {...item,status,currentMinutes:current,nextTime:next?.time||""};
+ });
+}
+function renderHomeWelcome(now=new Date()){
+ const hour=now.getHours(),greeting=hour<12?"Good morning":hour<17?"Good afternoon":"Good evening";
+ $("#homeGreeting").textContent=greeting+", Mashal.";
+ $("#homeDate").textContent=now.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
+ $("#homeDateChip").textContent=now.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+function renderNextUp(items,now=new Date()){
+ const current=now.getHours()*60+now.getMinutes(),active=items.find(x=>x.status==="current"),next=items.find(x=>x.status==="upcoming");
+ const item=active||next,label=$("#nextUpLabel"),title=$("#nextUpTitle"),meta=$("#nextUpMeta"),time=$("#nextUpTime"),count=$("#nextUpCountdown"),category=$("#nextUpCategory");
+ if(!item){label.textContent="YOU'RE ALL CAUGHT UP";title.textContent="No more activities today";meta.textContent="Your schedule is clear for the rest of the day.";time.textContent="—";count.textContent="";category.textContent="DAY PLAN";return}
+ label.textContent=active?"HAPPENING NOW":"NEXT UP";
+ title.textContent=item.title;
+ meta.textContent=(item.kind==="class"?"University class":"Routine activity")+(item.room?" · "+item.room:"")+(active&&item.end?" · Ends "+fmt(item.end):"");
+ time.textContent=item.kind==="class"?fmt(item.time)+" – "+fmt(item.end):fmt(item.time);
+ if(active){count.textContent=item.end?Math.max(0,minutes(item.end)-current)+" min left":"IN PROGRESS";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
+ else{const remaining=minutes(item.time)-current;count.textContent=remaining<60?"In "+remaining+" min":"In "+Math.floor(remaining/60)+"h "+(remaining%60)+"m";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
+}
+function renderHomeTimeline(items){
+ const host=$("#todayClasses"),current=items.find(x=>x.status==="current");
+ $("#homeActivityCount").textContent=items.length;
+ $("#homeScheduleSummary").textContent=items.length?items.length+" scheduled activities"+(current?" · "+current.title+" is in progress":""):"Nothing scheduled for today.";
+ host.innerHTML=items.slice(0,7).map(item=>'<div class="home-timeline-item is-'+item.status+'"><span class="home-timeline-rail"><i></i></span><time>'+esc(fmt(item.time))+'</time><div class="home-timeline-content"><b>'+esc(item.title)+'</b><small>'+(item.kind==="class"?"Class":"Routine")+(item.end?" · "+esc(fmt(item.end)):"")+(item.room?" · "+esc(item.room):"")+'</small></div><span class="home-timeline-status">'+(item.status==="current"?"NOW":item.status==="past"?"PAST":"UPCOMING")+'</span></div>').join("")||'<div class="home-empty">Your day is open. Add an activity or class to build your timeline.</div>';
+}
+function renderHomeTasks(){
+ const tasks=data.tasks.slice(),done=tasks.filter(t=>t.done).length,pending=tasks.length-done,rate=tasks.length?Math.round(done/tasks.length*100):0;
+ $("#homeDoneTasks").textContent=done;$("#homePendingTasks").textContent=pending;
+ $("#homeTaskProgress").style.width=rate+"%";$("#homeProgressValue").textContent=tasks.length?rate+"%":"—";
+ $("#homeProgressCaption").textContent=tasks.length?done+" of "+tasks.length+" tasks completed · "+pending+" remaining":"No tasks yet. Add one to start tracking progress.";
+ const priority=tasks.filter(t=>!t.done).sort((a,b)=>({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,3);
+ $("#priority").innerHTML=priority.map(taskMarkup).join("")||'<div class="home-empty">No pending tasks. Add a task whenever something needs your attention.</div>';
+ $$("#priority [data-task]").forEach(input=>input.onchange=()=>{const task=data.tasks.find(t=>String(t.id)===input.dataset.task);if(!task)return;task.done=input.checked;task.completedAt=input.checked?new Date().toISOString():null;save(input.checked?"Task completed":"Task reopened")});
+}
+function renderHomeAcademics(now=new Date()){
+ const courses=safeArray("academic_courses"),assessments=safeArray("academic_assessments");
+ const pending=assessments.filter(a=>!a.done).sort((a,b)=>(a.due||"9999").localeCompare(b.due||"9999"));
+ const todayKey=iso(now),sessions=data.sessions.filter(s=>s.done&&(s.completedAt?iso(new Date(s.completedAt)):s.date)===todayKey);
+ const minutesToday=sessions.reduce((sum,s)=>sum+Number(s.minutes||0),0);
+ $("#homeCourseCount").textContent=courses.length||data.subjects.length;
+ $("#homeAssessmentCount").textContent=pending.length;
+ $("#homeStudyToday").textContent=minutesToday>=60?(minutesToday/60).toFixed(1).replace(/\.0$/,"")+"h":minutesToday+"m";
+ const next=pending[0];
+ $("#homeAcademicNote").textContent=next?"Next deadline: "+next.title+" · "+(next.due||"Date not set"):(courses.length?"No pending course assessments. Keep your study sessions consistent.":"Add your courses in Academics to see your academic snapshot.");
+}
+function renderHomeInsights(now=new Date()){
+ const start=new Date(now);start.setDate(now.getDate()-now.getDay());const weekStart=iso(start),end=new Date(start);end.setDate(end.getDate()+7);const weekEnd=iso(end);
+ const studied=data.sessions.filter(s=>s.done).filter(s=>{const date=s.completedAt?iso(new Date(s.completedAt)):s.date;return date>=weekStart&&date<weekEnd}).reduce((sum,s)=>sum+Number(s.minutes||0),0);
+ const goal=Number(data.goal)||10;
+ $("#homeWeeklyStudy").textContent=(studied/60).toFixed(1).replace(/\.0$/,"")+" / "+goal+"h";
+ $("#homeWeeklyStudyNote").textContent=studied>=goal*60?"Weekly study goal reached.":((goal*60-studied)/60).toFixed(1).replace(/\.0$/,"")+"h remaining this week";
+ const habits=safeArray("habits"),checks=safeRead("habit_checks",{});
+ if(habits.length){let possible=0,complete=0;for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-i);const key=iso(d);possible+=habits.length;complete+=(Array.isArray(checks[key])?checks[key]:[]).filter(id=>habits.some(h=>h.id===id)).length}
+ const rate=possible?Math.round(complete/possible*100):0;$("#homeHabitRate").textContent=rate+"%";$("#homeHabitNote").textContent="Last 7 days · "+complete+" of "+possible+" check-ins";
+ }else{$("#homeHabitRate").textContent="—";$("#homeHabitNote").textContent="Add habits to track consistency"}
+}
+function render(){
+ const now=new Date();renderFocus();renderHomeWelcome(now);
+ const items=homeTodayItems(now);renderNextUp(items,now);renderHomeTimeline(items);renderHomeTasks();renderHomeAcademics(now);renderHomeInsights(now);
+ renderWeek();renderTasks();renderPlanner();renderReminders();renderAnalytics();
+}
 function wireActions(){$$("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit,b.dataset.id));$$("[data-delete]").forEach(b=>b.onclick=()=>removeItem(b.dataset.delete,b.dataset.id))}
 function removeItem(type,id){const key=({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type];if(!key)return;if(!confirm("Delete this "+type+"?"))return;data[key]=data[key].filter(x=>String(x.id)!==String(id));save("Deleted")}
 function field(label,name,kind="text",value="",extra=""){const optional=extra==="optional";return '<div class="field"><label for="'+esc(name)+'">'+esc(label)+'</label><input id="'+esc(name)+'" name="'+esc(name)+'" type="'+kind+'" value="'+esc(value)+'" '+(optional?"":extra)+(optional?"":" required")+'></div>'}
