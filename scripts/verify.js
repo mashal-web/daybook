@@ -310,3 +310,8 @@ assert(upgrade.includes("window.daybookIcon(\"trash\")") && upgrade.includes("wi
 assert(html.includes("aria-label=\"Previous week\"") && html.includes("aria-label=\"Next week\"") && html.includes("aria-label=\"Close settings\""), "Icon-only controls must retain accessible labels");
 assert(!/[＋←→×]/u.test(html) && !/[×]/u.test(app+upgrade), "Action controls must not use raw Unicode icon substitutes");
 assert(read("design-system.css").includes(".action-icon"), "Unified icon sizing and interaction styles must be present");
+
+assert(/main>header\{[^}]*position:relative;inset:auto;z-index:auto;[\s\S]*?background:transparent;[\s\S]*?box-shadow:none;backdrop-filter:none/s.test(design), "Shared app bar must be integrated, non-floating and non-sticky");
+assert(!css.includes("header{position:sticky") && !css.includes("header{border:1px solid var(--line);background:rgba(9,16,29,.88)"), "Legacy floating header rules must be removed");
+assert(mobile.includes("main{") && design.includes("@media(max-width:900px)") && design.includes("main>header .icon-btn{width:44px"), "Compact mobile header and accessible action targets must be defined");
+assert(html.includes("<main><header>") && html.includes("id=\"settingsBtn\"") && html.includes("id=\"today\""), "Integrated shared header must preserve its existing settings and date elements");
