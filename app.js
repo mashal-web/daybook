@@ -1,5 +1,5 @@
 "use strict";
-const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const ICONS={
  edit:'<path d="m16 4 4 4M5 19l4-.8L20 7a2.1 2.1 0 0 0-3-3L6 15l-1 4Z"/>',
  trash:'<path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/>',
