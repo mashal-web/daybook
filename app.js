@@ -257,9 +257,9 @@ function renderNextUp(items,now=new Date()){
  if(!item){label.textContent="YOU'RE ALL CAUGHT UP";title.textContent="No more activities today";meta.textContent="Your schedule is clear for the rest of the day.";time.textContent="—";count.textContent="";category.textContent="DAY PLAN";return}
  label.textContent=active?"HAPPENING NOW":"NEXT UP";
  title.textContent=item.title;
- meta.textContent=(item.kind==="class"?"University class":"Routine activity")+(item.room?" · "+item.room:"")+(active&&item.end?" · Ends "+fmt(item.end):"");
+ meta.textContent=(item.kind==="class"?"University class":item.kind==="event"?"Scheduled event":item.kind==="study"?"Study session":"Routine activity")+(item.room?" · "+item.room:"")+(active&&item.end?" · Ends "+fmt(item.end):"");
  time.textContent=item.kind==="class"?fmt(item.time)+" – "+fmt(item.end):fmt(item.time);
- if(active){count.textContent=item.endDateTime?Math.max(0,Math.ceil((new Date(item.endDateTime)-now)/60000))+" min left":"IN PROGRESS";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
+ if(active){count.textContent=item.endDateTime?Math.max(0,Math.ceil((new Date(item.endDateTime)-now)/60000))+" min left":"IN PROGRESS";category.textContent=item.kind==="class"?"CLASS":item.kind==="event"?"EVENT":item.kind==="study"?"STUDY":"ROUTINE"}
  else{const remaining=minutes(item.time)-current;count.textContent=remaining<60?"In "+remaining+" min":"In "+Math.floor(remaining/60)+"h "+(remaining%60)+"m";category.textContent=item.kind==="class"?"CLASS":"ROUTINE"}
 }
 function renderHomeTimeline(items){
@@ -318,7 +318,7 @@ function openEditor(type,id=null,duplicateFrom=null){edit={type,id};const source
  field("Location (optional)","eventLocation","text",old.location||"","optional")+
  '<div class="event-form-section"><b>Date and time</b><div class="two">'+field("Start date","eventStartDate","date",startDate)+field("Start time","eventStartTime","time",startTime)+'</div>'+
  '<label class="event-check"><input type="checkbox" id="eventAllDay" name="eventAllDay" value="yes" '+(old.allDay?"checked":"")+'> All-day event</label>'+
- '<div class="two" id="eventEndFields">'+field("End date (optional)","eventEndDate","date",endDate,"optional")+field("End time (optional)","eventEndTime","time",endTime,"optional")+'</div></div>'+
+ '<div class="two" id="eventEndFields">'+field("End date","eventEndDate","date",endDate)+field("End time","eventEndTime","time",endTime)+'</div></div>'+
  '<div class="event-form-section"><b>Repeat</b>'+selectField("Recurrence","eventFrequency",[{value:"none",label:"Does not repeat"},{value:"weekly",label:"Weekly"}],freq)+
  '<div id="eventWeekdays" class="event-weekdays">'+DAYS.map((d,i)=>'<label><input type="checkbox" name="eventWeekday" value="'+i+'" '+(days.includes(i)?"checked":"")+'><span>'+d.slice(0,3)+'</span></label>').join("")+'</div>'+
  field("Repeat until (optional)","eventRecurrenceEnd","date",old.recurrence?.endDate||"","optional")+
@@ -352,7 +352,7 @@ $("#form").onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormDa
   if(!title){toast("Enter an event title");$("#eventTitle").focus();return}
   if(!validDate(startDate)){toast("Choose a valid start date");return}
   if(!allDay&&!validTime(startTime)){toast("Choose a valid start time");return}
-  if((endDate&&!validDate(endDate))||(endTime&&!validTime(endTime))||Boolean(endDate)!==Boolean(endTime)){toast("Enter both a valid end date and end time, or leave both empty");return}
+  if(!allDay&&(!validDate(endDate)||!validTime(endTime))){toast("Enter a valid end date and end time");return}if(allDay&&((endDate&&!validDate(endDate))||(endTime&&!validTime(endTime)))){toast("Enter a valid end date and end time, or clear both");return}
   const start=startDate+"T"+startTime,end=endDate?endDate+"T"+endTime:null;
   if(end&&new Date(end)<=new Date(start)){toast("The event end must be after its start");return}
   if(allDay&&endDate&&endDate!==startDate){toast("Multi-day all-day events are not supported yet");return}
