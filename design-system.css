@@ -1,7 +1,7 @@
 /* DAYBOOK DESIGN SYSTEM
    Art direction: precision workspace / warm porcelain + midnight graphite.
    Tokens are the source of truth for every surface and component. */
-:root{
+:root[data-theme="dark"]{
  color-scheme:dark;
  --bg:#0b1018;--bg-elevated:#101925;--surface:#141f2d;--surface-2:#1a2939;--surface-3:#213246;
  --ink:#f1f5f8;--muted:#a1afbd;--soft:#77899b;--line:rgba(194,211,226,.13);
