@@ -348,6 +348,8 @@ assert(weekly,"Weekly event creation must persist");
 assert.equal(engine.getForDate("2026-11-09").length,1,"Weekly event must appear on its selected weekday");
 assert.equal(engine.getForDate("2026-11-10").length,0,"Weekly event must not appear on an unselected weekday");
 assert.equal(engine.getForDate("2026-11-11").length,1,"Weekly event must appear on the second selected weekday");
+engine.updateEvent("weekly-1",{title:"Updated weekly lecture"});
+assert.equal(engine.getForDate("2026-11-11")[0].title,"Updated weekly lecture","Editing a recurring event must update its complete series");
 assert.equal(engine.durationMinutes(engine.getForDate("2026-11-09")[0]),90,"Event duration must use actual start and end timestamps");
 const overnight=engine.createEvent({id:"overnight-1",title:"Night shift",type:"event",start:"2026-11-09T23:30",end:"2026-11-10T01:15",recurrence:{frequency:"none",weekdays:[]}});
 assert.equal(engine.getForDate("2026-11-10").some(x=>x.id==="overnight-1"),true,"Midnight-crossing event must appear on the following date");
@@ -357,6 +359,8 @@ assert(engine.getForWeek("2026-11-09").some(x=>x.id==="sunday-overnight"),"Week 
 assert.throws(()=>engine.createEvent({id:"bad-end",title:"Invalid",start:"2026-11-09T10:00",end:"2026-11-09T09:00"}),/Invalid schedule event/,"Invalid durations must be rejected");
 const noEnd=engine.createEvent({id:"no-end",title:"Unspecified end",start:"2026-11-09T12:00",recurrence:{frequency:"none",weekdays:[]}});
 assert.equal(engine.durationMinutes(noEnd),null,"Missing end time must remain an unknown duration");
+const allDay=engine.createEvent({id:"all-day",title:"Holiday",start:"2026-11-12T00:00",allDay:true});
+assert.equal(engine.durationMinutes(engine.getForDate("2026-11-12").find(x=>x.id==="all-day")),1440,"All-day events must span one complete local day");
 engine.createEvent({id:"overlap-a",title:"A",start:"2026-11-09T14:00",end:"2026-11-09T15:00"});
 engine.createEvent({id:"overlap-b",title:"B",start:"2026-11-09T14:30",end:"2026-11-09T15:30"});
 assert(engine.findOverlaps("2026-11-09").some(pair=>pair.some(x=>x.id==="overlap-a")&&pair.some(x=>x.id==="overlap-b")),"Overlapping events must be detected");
@@ -364,6 +368,8 @@ engine.updateEvent("overlap-a",{title:"Updated A"});
 assert.equal(engine.getAll().find(x=>x.id==="overlap-a").title,"Updated A","Event updates must persist");
 assert(engine.duplicateEvent("overlap-a"),"Event duplication must create a distinct event");
 assert(engine.deleteEvent("overlap-b"),"Event deletion must remove the event");
+assert(engine.deleteEvent("weekly-1"),"Deleting a recurring event must remove its complete series");
+assert.equal(engine.getForDate("2026-11-11").some(x=>x.id==="weekly-1"),false,"Deleted recurring events must not reappear on later dates");
 const legacyStorage=memoryStorage();
 const legacyEngine=scheduleEngine.create({storage:legacyStorage,classes:[{id:"class-1",day:1,start:"08:00",end:"09:00",subject:"Math",room:"A1"}],routine:[{id:"routine-1",day:1,time:"06:00",title:"Prayer"}],sessions:[{id:"study-1",subject:"Math",topic:"Derivatives",date:"2026-11-09",startTime:"16:00",minutes:45,done:false}]});
 assert.equal(legacyEngine.getForDate("2026-11-09").length,3,"Legacy class, routine and timed study-session data must migrate into the shared schedule");
@@ -374,6 +380,12 @@ const reloaded=scheduleEngine.create({storage:legacyStorage,classes:[],routine:[
 assert.equal(reloaded.getForDate("2026-11-09").length,3,"Canonical schedule must survive reload");
 const duplicateLegacy=scheduleEngine.create({storage:memoryStorage(),classes:[{id:"same",day:1,start:"08:00",end:"09:00",subject:"A"},{id:"same",day:1,start:"08:00",end:"09:00",subject:"B"}],routine:[]});
 assert.equal(duplicateLegacy.getAll().length,1,"Duplicate legacy IDs must not create duplicate recurring events");
+const corruptStorage=memoryStorage();corruptStorage.setItem("daybook_schedule_v1","not-json");
+const protectedEngine=scheduleEngine.create({storage:corruptStorage,classes:[{id:"keep",day:1,start:"08:00",end:"09:00",subject:"Preserved"}],routine:[]});
+assert.equal(protectedEngine.isHealthy(),false,"Malformed canonical data must be reported as unhealthy");
+assert.equal(protectedEngine.syncLegacy([{id:"keep",day:1,start:"08:00",end:"09:00",subject:"Preserved"}],[]),false,"Malformed canonical data must block automatic overwrite");
+assert.equal(corruptStorage.getItem("daybook_schedule_v1"),"not-json","Malformed canonical data must remain untouched");
+assert.equal(protectedEngine.getForDate("2026-11-09").length,1,"Legacy records must remain readable when canonical data is malformed");
 
 console.log("Daybook regression checks passed.");
 
