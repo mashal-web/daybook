@@ -380,7 +380,7 @@ main>header .icon-btn:hover{background:var(--accent-soft);border-color:var(--acc
 .home-action:active{transform:scale(.98)}
 .home-empty{padding:15px 12px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:11px;line-height:1.5}
 @media(max-width:700px){
- .home-view{gap:14px}
+ .view.home-view.active{gap:14px}
  .home-overview{grid-template-columns:minmax(0,1fr);gap:15px;padding:16px}
  .home-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
  .home-metric{gap:6px}
