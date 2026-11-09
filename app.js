@@ -28,8 +28,8 @@ const DAYS=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturda
 const SUBJECTS=["Applied Physics & Electro Mechanical Fundamental","Engineering Mathematics","Islamiat","Functional English","Quantitative Reasoning","Engineering Drawing","Foundation Mathematics"];
 let today=new Date();
 const uid=()=>Math.random().toString(36).slice(2,10), iso=d=>{const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
-const safeRead=(k,f)=>{try{const v=JSON.parse(localStorage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
-const safeSet=(key,value)=>{try{localStorage.setItem(key,typeof value==="string"?value:JSON.stringify(value));return true}catch{return false}};
+const safeRead=(k,f)=>{try{const v=JSON.parse(window.DaybookPersistence.storage.getItem("daybook_"+k));return v===null?f:v}catch{return f}};
+const safeSet=(key,value)=>{try{window.DaybookPersistence.storage.setItem(key,typeof value==="string"?value:JSON.stringify(value));return true}catch{return false}};
 const safeWrite=(key,value)=>safeSet("daybook_"+key,value);
 const safeArray=(k,f=[])=>{const value=safeRead(k,f);return Array.isArray(value)?value.filter(item=>item&&typeof item==="object"&&!Array.isArray(item)):f};
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"}].map(x=>({...x,id:uid()}));
@@ -79,14 +79,14 @@ safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
-const scheduleStore=window.DaybookSchedule.create({storage:localStorage,classes:data.classes,routine:data.routine,sessions:data.sessions});
+const scheduleStore=window.DaybookSchedule.create({storage:window.DaybookPersistence.storage,classes:data.classes,routine:data.routine,sessions:data.sessions});
 window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
 function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
 applyTheme(data.settings.theme);
 const FOCUS_KEY="daybook_focus";
-function readFocus(){try{const v=JSON.parse(localStorage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
+function readFocus(){try{const v=JSON.parse(window.DaybookPersistence.storage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
 const savedFocus=readFocus()||{};
 const focusMode=savedFocus.mode==="break"?"break":"focus";
 const defaultDuration=focusMode==="break"?300:1500;
@@ -315,42 +315,8 @@ function renderSubjectManager(){
 $("#addSubject").onclick=e=>{e.preventDefault();const value=$("#newSubject").value.trim();if(!value)return;if(data.subjects.some(s=>s.toLowerCase()===value.toLowerCase())){toast("Subject already exists");return}data.subjects.push(value);window.dispatchEvent(new CustomEvent("daybook-subjects-updated",{detail:data.subjects.slice()}));$("#newSubject").value="";persist();renderSubjectManager();render();toast("Subject added")};
 $("#settingsBtn").onclick=()=>{$("#timeFormatSetting").value=data.settings.timeFormat||"12h";$("#themeSetting").value=data.settings.theme||"dark";$("#settingsDialog").showModal()};$("#settingsForm").onsubmit=e=>{e.preventDefault();data.settings={...data.settings,timeFormat:$("#timeFormatSetting").value,theme:$("#themeSetting").value};applyTheme(data.settings.theme);$("#settingsDialog").close();save("Appearance and settings saved")};$("#settingsExport").onclick=exportBackup;$("#settingsImport").onclick=()=>$("#importFile").click();
 $("#goalEdit").onclick=()=>{$("#goalInput").value=data.goal;$("#goalDialog").showModal()};$("#goalForm").onsubmit=e=>{e.preventDefault();data.goal=Math.min(100,Math.max(1,Number($("#goalInput").value)));$("#goalDialog").close();save("Weekly goal updated")};$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());
-function exportBackup(){persist();const blob=new Blob([JSON.stringify({app:"Daybook",version:1,exportedAt:new Date().toISOString(),data},null,2)],{type:"application/json"});const a=document.createElement("a");const url=URL.createObjectURL(blob);a.href=url;a.download="daybook-backup-"+iso(today)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Backup exported")}
-function validateBackup(parsed){
- if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid backup structure");
- const incoming=parsed.data&&typeof parsed.data==="object"?parsed.data:parsed;
- const keys=["subjects","classes","routine","tasks","sessions","reminders"];
- if(!keys.some(k=>Object.prototype.hasOwnProperty.call(incoming,k)))throw new Error("No Daybook data found");
- const result={};
- for(const key of keys){
-  if(!Object.prototype.hasOwnProperty.call(incoming,key))continue;
-  if(!Array.isArray(incoming[key]))throw new Error("Invalid "+key+" data");
-  const seenIds=new Set();
-  result[key]=incoming[key].map((item,index)=>{
-   if(key==="subjects"){if(typeof item!=="string"||!item.trim())throw new Error("Invalid subject");return item.trim()}
-   if(!item||typeof item!=="object"||Array.isArray(item))throw new Error("Invalid "+key+" entry "+(index+1));
-   const copy={...item};
-   if(!copy.id)copy.id=uid();
-   if(typeof copy.id!=="string"&&typeof copy.id!=="number")throw new Error("Invalid record ID");
-   copy.id=String(copy.id);
-   if(seenIds.has(copy.id))throw new Error("Duplicate record ID in "+key);
-   seenIds.add(copy.id);
-   if(["tasks","routine","reminders"].includes(key)&&(!String(copy.title||"").trim()))throw new Error("A "+key+" entry has no title");
-   if(key==="classes"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.start||"")||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.end||"")||minutes(copy.end)<=minutes(copy.start)))throw new Error("Invalid class entry");
-   if(key==="routine"&&(copy.day!==undefined&&(!Number.isInteger(Number(copy.day))||Number(copy.day)<0||Number(copy.day)>6)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")))throw new Error("Invalid routine entry");
-   if(["sessions","reminders"].includes(key)&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.date||"")||iso(new Date(copy.date+"T12:00:00"))!==copy.date))throw new Error("Invalid date in "+key);
-   if(key==="sessions"&&(!String(copy.subject||"").trim()||!Number.isInteger(Number(copy.minutes))||Number(copy.minutes)<1||Number(copy.minutes)>1440))throw new Error("Invalid study session");
-   if(key==="reminders"&&(!/^([01]\d|2[0-3]):[0-5]\d$/.test(copy.time||"")||!["none","daily","weekly",undefined].includes(copy.repeat)))throw new Error("Invalid reminder");
-   if(key==="tasks"&&copy.due&&(!/^\d{4}-\d{2}-\d{2}$/.test(copy.due)||iso(new Date(copy.due+"T12:00:00"))!==copy.due))throw new Error("Invalid task due date");
-   return copy;
-  });
-  if(key==="routine")result[key]=result[key].flatMap(item=>item.day===undefined?DAYS.map((_,day)=>({...item,id:uid(),day})): [item]);
- }
- if(incoming.goal!==undefined&&(!Number.isFinite(Number(incoming.goal))||Number(incoming.goal)<1||Number(incoming.goal)>100))throw new Error("Invalid weekly goal");
- if(incoming.settings!==undefined&&(!incoming.settings||typeof incoming.settings!=="object"||!["12h","24h"].includes(incoming.settings.timeFormat)))throw new Error("Invalid settings");
- return {incoming,result};
-}
-$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5*1024*1024)throw new Error("Backup file is larger than 5 MB");const parsed=JSON.parse(await file.text());const {incoming,result}=validateBackup(parsed);if(!confirm("Import this backup and replace matching Daybook data currently stored on this device?"))return;Object.assign(data,result);if(incoming.goal!==undefined)data.goal=Number(incoming.goal);if(incoming.settings)data.settings={...data.settings,...incoming.settings};save("Backup imported")}catch(err){toast(err.message==="Backup file is larger than 5 MB"?err.message:"Backup rejected: "+(err.message||"invalid data"))}finally{e.target.value=""}};
+function exportBackup(){try{const blob=window.DaybookPersistence.exportFile(),a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download="daybook-complete-backup-"+iso(today)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Complete backup exported")}catch(error){toast("Backup export failed: "+(error.message||"storage error"))}}
+$("#importFile").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const result=await window.DaybookPersistence.importFile(file,message=>confirm(message));if(result.cancelled){toast("Import cancelled; current data was not changed");return}location.reload()}catch(error){toast("Backup rejected: "+(error.message||"invalid data"))}finally{e.target.value=""}};save("Backup imported")}catch(err){toast(err.message==="Backup file is larger than 5 MB"?err.message:"Backup rejected: "+(err.message||"invalid data"))}finally{e.target.value=""}};
 $("#notify").onclick=async()=>{try{if(window.DaybookNative?.isNative()){const p=await window.DaybookNative.requestPermission();if(p.display==="granted")await window.DaybookNative.syncReminders(data.reminders);const exactNote=p.exactAlarm==="denied"?" (reminders may be delayed)":"";$("#notifyStatus").textContent="Android notifications: "+p.display+" · exact alarm access: "+p.exactAlarm+exactNote;return}if(!("Notification"in window)){$("#notifyStatus").textContent="Notifications are not supported by this browser.";return}const p=await Notification.requestPermission();$("#notifyStatus").textContent="Notification permission: "+p}catch(error){$("#notifyStatus").textContent="Could not enable notifications: "+(error.message||"Please check app permissions.")}};
 function showWebReminder(title){const options={body:title,icon:"./icon.svg"};if("serviceWorker"in navigator){navigator.serviceWorker.ready.then(reg=>reg.showNotification("Daybook reminder",options)).catch(()=>{try{new Notification("Daybook reminder",options)}catch{}});return}try{new Notification("Daybook reminder",options)}catch{toast("A reminder could not be displayed")}}
 function checkReminders(){if(window.DaybookNative?.isNative())return;if(!("Notification"in window)||Notification.permission!=="granted")return;const now=new Date(),grace=5*60*1000;let changed=false;data.reminders.forEach(r=>{const due=new Date(r.date+"T"+r.time+":00");if(Number.isNaN(due.getTime()))return;const stamp=r.date+"T"+r.time,late=now-due,repeat=r.repeat==="daily"||r.repeat==="weekly",step=r.repeat==="daily"?1:7;if(repeat&&late>grace){const next=new Date(due);while(next<=now)next.setDate(next.getDate()+step);r.date=iso(next);changed=true;return}if(late>=0&&late<=grace&&r.lastFired!==stamp){showWebReminder(r.title);r.lastFired=stamp;if(repeat){const next=new Date(due);while(next<=now)next.setDate(next.getDate()+step);r.date=iso(next)}changed=true}});if(changed){persist();renderReminders()}}
