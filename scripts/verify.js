@@ -57,7 +57,7 @@ const navTargets = new Set([...html.matchAll(/data-view=["']([^"']+)["']/g)].map
 for (const target of navTargets) assert(viewIds.has(target), "Missing view for navigation target: " + target);
 assert.equal(viewIds.size, 9, "Expected nine main views");
 assert(html.includes('id="classCount"')&&html.includes('id="classSetupNote"'), "Weekly routine must include university schedule summary and setup guidance");
-assert(app.includes('$("#classCount").textContent=data.classes.length'), "Weekly routine must summarize saved university entries");
+assert(app.includes('$("#classCount").textContent=weekClasses.length'), "Weekly timetable must count university classes in the displayed week");
 assert(app.includes("UNIVERSITY CLASS")&&app.includes("HAPPENING NOW"), "Day agenda must distinguish classes and identify ongoing events");
 assert(app.includes("function weekDates()")&&app.includes("function scheduleEntries(day)")&&app.includes("data-weekday"), "Weekly timetable must render seven selectable days and a selected-day agenda");
 assert(app.includes('data.classes.filter(x=>+x.day===day)')&&app.includes('data.routine.filter(x=>+x.day===day)'), "University classes and daily routine must render in the same seven-day grid");
