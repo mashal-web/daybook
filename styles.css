@@ -762,3 +762,19 @@ dialog{background:linear-gradient(150deg,#142139,#0b1424);color:var(--text);box-
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
 .backup-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+/* Step 4 — unified event management */
+.event-form-section{display:grid;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.event-form-section>b{font-size:12px;letter-spacing:.04em}
+.event-check,.event-weekdays label{display:flex;align-items:center;gap:9px;min-height:42px;font-size:13px;color:var(--text)}
+.event-check input,.event-weekdays input{width:18px;height:18px;accent-color:var(--cyan)}
+.event-weekdays{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.event-weekdays label{justify-content:center;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.event-weekdays label:has(input:checked){border-color:var(--line-bright);background:rgba(114,229,255,.09)}
+.event-weekdays input{width:16px;height:16px}
+.event-series-note{margin:0;padding:10px 12px;border-radius:10px;background:var(--surface);color:var(--muted);font-size:12px;line-height:1.5}
+.event-form-section [hidden]{display:none!important}
+#fields textarea{width:100%;min-height:76px;resize:vertical;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);font:inherit}
+.planner-heading-actions{display:flex;gap:8px;flex-wrap:wrap}
+.home-timeline-item .small-action{min-width:40px;min-height:40px}
+@media(max-width:600px){.event-weekdays{grid-template-columns:repeat(4,minmax(0,1fr))}.event-weekdays label{font-size:11px}.planner-heading-actions{width:100%}.planner-heading-actions button{flex:1}.event-form-section .two{grid-template-columns:1fr 1fr}}
