@@ -152,12 +152,12 @@ assert(native.includes("checkExactNotificationSetting"), "Android exact-alarm pe
 assert(native.includes("LocalNotifications.cancel"), "Reminder sync must cancel stale scheduled notifications");
 assert(app.includes('JSON.stringify(data.reminders)!==lastSyncedReminders'), "Unrelated edits must not reschedule Android reminders");
 assert(app.includes("lastSyncedReminders=snapshot"), "Successful reminder sync must advance its snapshot");
-assert(app.includes("function renderPlanner()")&&app.includes("s.done=!s.done"), "Study sessions must be reopenable after completion");
-const sessionToggleMatch = app.match(/\$\$\("\[data-sessiondone\]"\)\.forEach\(b=>b\.onclick=\(\)=>\{([\s\S]*?)\}\);/);
+assert(app.includes("function renderPlanner()")&&app.includes("session.done=!session.done"), "Study sessions must be reopenable after completion");
+const sessionToggleMatch = app.match(/\$\$\("\[data-sessiondone\]"\)\.forEach\(button=>button\.onclick=\(\)=>\{([\s\S]*?)\}\);/);
 assert(sessionToggleMatch, "Study-session completion handler must be wired");
 const sessionState = { sessions: [{ id: "session-1", done: false }] };
 let sessionMessage = "";
-const toggleSession = new Function("data", "b", "save", sessionToggleMatch[1]);
+const toggleSession = new Function("data", "button", "save", sessionToggleMatch[1]);
 toggleSession(sessionState, { dataset: { sessiondone: "session-1" } }, message => { sessionMessage = message; });
 assert.equal(sessionState.sessions[0].done, true);
 assert.equal(typeof sessionState.sessions[0].completedAt, "string");
