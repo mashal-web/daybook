@@ -203,7 +203,7 @@ function renderWeek(){
  const mix=new Map();weekClasses.forEach(x=>mix.set("University",(mix.get("University")||0)+durationMinutes({...x,time:x.start})));weekRoutine.forEach(x=>{const c=x.category||"Personal";mix.set(c,(mix.get(c)||0)+durationMinutes({...x,time:x.time}))});
  const groups=[...mix.entries()].filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);$("#distributionTotal").textContent=totalMinutes?Math.round(totalMinutes/60*10)/10+" scheduled hours":"No timed durations available";
  $("#weekDistribution").innerHTML=groups.length?groups.map(([name,value])=>'<div class="distribution-row"><span>'+esc(name)+'</span><div class="distribution-track"><i style="width:'+Math.round(value/Math.max(1,totalMinutes)*100)+'%"></i></div><b>'+Math.floor(value/60)+'h '+(value%60?value%60+"m":"")+'</b></div>').join(""):'<p class="muted">Add end times to activities to see an accurate weekly distribution.</p>';
- $("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek()});wireEventActions();$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
+ $$("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek()});wireEventActions();$$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
 }
 $("#prev").onclick=()=>{weekOffset--;renderWeek()};$("#next").onclick=()=>{weekOffset++;renderWeek()};$("#thisWeek").onclick=()=>{weekOffset=0;selectedDay=today.getDay();renderWeek()};
 function renderTasks(){const q=($("#taskSearch")?.value||"").trim().toLowerCase();let list=data.tasks.filter(t=>(filter==="all"||(filter==="done"?t.done:filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today):!t.done))&&(!q||(t.title+" "+t.category+" "+t.notes).toLowerCase().includes(q)));list.sort((a,b)=>Number(a.done)-Number(b.done)||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999"));$("#allTasks").innerHTML=list.map(taskMarkup).join("")||'<div class="empty">No tasks match this view. Add a task to get started.</div>';$$("[data-filter]").forEach(b=>{const selected=b.dataset.filter===filter;b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected))});wireActions();$$("[data-task]").forEach(e=>e.onchange=()=>{const t=data.tasks.find(x=>String(x.id)===e.dataset.task);if(t){t.done=e.checked;t.completedAt=e.checked?new Date().toISOString():null;save(e.checked?"Task completed":"Task reopened")}})}
@@ -338,7 +338,7 @@ $("#dialogTitle").textContent=title;$("#fields").innerHTML=body;$("#editor").sho
   allDay.onchange=sync;frequency.onchange=sync;sync();
   if(id&&old.recurrence?.frequency==="weekly")$("#fields").insertAdjacentHTML("beforeend",'<p class="event-series-note">This is a recurring series. Saving changes updates every matching occurrence in the series.</p>');
  }}
-$("[data-add]").forEach(button=>button.onclick=()=>openEditor(button.dataset.add));window.DaybookOpenEventForm=(id=null)=>openEditor("event",id);
+$$("[data-add]").forEach(button=>button.onclick=()=>openEditor(button.dataset.add));window.DaybookOpenEventForm=(id=null)=>openEditor("event",id);
 $("#close").onclick=$("#cancel").onclick=()=>$("#editor").close();
 function handleEventAction(action){
  const id=action.dataset.id;
