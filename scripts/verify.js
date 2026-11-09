@@ -399,3 +399,10 @@ assert(/main>header\{[^}]*position:relative;inset:auto;z-index:auto;[\s\S]*?back
 assert(!css.includes("header{position:sticky") && !css.includes("header{border:1px solid var(--line);background:rgba(9,16,29,.88)"), "Legacy floating header rules must be removed");
 assert(mobile.includes("main{") && design.includes("@media(max-width:900px)") && design.includes("main>header .icon-btn{width:44px"), "Compact mobile header and accessible action targets must be defined");
 assert(html.includes("<main><header>") && html.includes("id=\"settingsBtn\"") && html.includes("id=\"today\""), "Integrated shared header must preserve its existing settings and date elements");
+
+
+const persistenceSource=read("persistence.js");
+assert(persistenceSource.includes("function recover()")&&persistenceSource.includes("function apply(entries)"),"Persistence must recover interrupted writes and apply multi-key restores transactionally");
+assert(persistenceSource.includes("version:3")&&persistenceSource.includes("schemaVersion"),"Backups must include an explicit format and schema version");
+assert(html.includes('<script src="persistence.js"></script><script src="scheduling.js"></script>'),"Persistence layer must load before schedule and app modules");
+assert(build.includes('"persistence.js"')&&sw.includes('"./persistence.js"'),"Persistence layer must be packaged for Android and cached offline");
