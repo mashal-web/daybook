@@ -212,7 +212,7 @@ function renderHomeTasks(){
  $("#homeDoneTasks").textContent=done;$("#homePendingTasks").textContent=pending;
  $("#homeTaskProgress").style.width=rate+"%";$("#homeProgressValue").textContent=tasks.length?rate+"%":"—";
  $("#homeProgressCaption").textContent=tasks.length?done+" of "+tasks.length+" tasks completed · "+pending+" remaining":"No tasks yet. Add one to start tracking progress.";
- const priority=tasks.filter(t=>!t.done).sort((a,b)=>({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,3);
+ const priority=tasks.filter(t=>!t.done).sort((a,b)=>Number(!!b.due&&b.due<iso(today))-Number(!!a.due&&a.due<iso(today))||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999")).slice(0,3);
  $("#priority").innerHTML=priority.map(taskMarkup).join("")||'<div class="home-empty">No pending tasks. Add a task whenever something needs your attention.</div>';
  $$("#priority [data-task]").forEach(input=>input.onchange=()=>{const task=data.tasks.find(t=>String(t.id)===input.dataset.task);if(!task)return;task.done=input.checked;task.completedAt=input.checked?new Date().toISOString():null;save(input.checked?"Task completed":"Task reopened")});
 }
@@ -240,7 +240,7 @@ function renderHomeInsights(now=new Date()){
 }
 function render(){
  const now=new Date();renderFocus();renderHomeWelcome(now);
- const items=homeTodayItems(now);renderNextUp(items,now);renderHomeTimeline(items);renderHomeTasks();renderHomeAcademics(now);renderHomeInsights(now);
+ const items=homeTodayItems(now);$("#homeContext").textContent=items.length+" activities scheduled · "+data.tasks.filter(t=>!t.done).length+" tasks remaining";renderNextUp(items,now);renderHomeTimeline(items);renderHomeTasks();renderHomeAcademics(now);renderHomeInsights(now);
  renderWeek();renderTasks();renderPlanner();renderReminders();renderAnalytics();
 }
 function wireActions(){$$("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit,b.dataset.id));$$("[data-delete]").forEach(b=>b.onclick=()=>removeItem(b.dataset.delete,b.dataset.id))}
