@@ -287,6 +287,7 @@ main>header .icon-btn:hover{background:var(--accent-soft);border-color:var(--acc
 
 
 /* HOME — command-centre composition */
+.view.home-view.active{display:flex;flex-direction:column;gap:18px}
 .home-view{display:flex;flex-direction:column;gap:18px}
 .home-welcome{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:2px 1px 4px}
 .home-welcome .label{margin:0 0 7px}
