@@ -10,6 +10,11 @@ const build = read("scripts/build.js");
 const native = read("native.js");
 const upgrade = read("upgrade.js");
 const mobile = read("mobile-app.css");
+assert(build.includes('"mobile-app.css"'), "Android build must package mobile stylesheet");
+assert(sw.includes('"./mobile-app.css"'), "Offline shell must cache mobile stylesheet");
+assert(html.includes('id="moreDialog"') && html.includes('id="openMore"'), "Mobile navigation must provide a More sheet");
+assert(mobile.includes("env(safe-area-inset-bottom)") && mobile.includes("grid-template-columns:repeat(5"), "Mobile layout must respect safe areas and use a five-item bottom bar");
+assert(app.includes('$("[data-view]").forEach') && app.includes('$("#openMore")?.addEventListener'), "Mobile navigation targets and More sheet must be wired");
 const manifest = JSON.parse(read("manifest.webmanifest"));
 const workflow = read(".github/workflows/android.yml");
 
