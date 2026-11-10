@@ -414,3 +414,65 @@ assert(html.includes('data-add="event"')&&html.includes('id="schedule"')&&html.i
 assert(upgrade.includes('data-event-open')&&upgrade.includes('data-add="event"')&&upgrade.includes('window.DaybookOpenEventForm'),"Agenda and Smart Planner must expose working event management entry points");
 assert(eventUi.includes('window.DaybookOpenEventForm=(id=null)=>openEditor("event",id)')&&eventUi.includes('$("[data-add]")'),"Home, Week and Study Planner event buttons must open the shared editor");
 assert(css.includes(".event-form-section")&&css.includes("@media(max-width:600px)"),"Event form must have mobile responsive styling");
+
+ 
+// Step 5A.1 — occurrence identity, exception persistence and backup compatibility.
+const occurrenceStorage=memoryStorage();
+const occurrenceEngine=scheduleEngine.create({storage:occurrenceStorage,classes:[],routine:[]});
+const seriesA=occurrenceEngine.createEvent({id:"series:A",title:"Recurring lecture",start:"2026-11-09T08:00",end:"2026-11-09T09:00",recurrence:{frequency:"weekly",weekdays:[1],startDate:"2026-11-09",endDate:null}});
+const seriesB=occurrenceEngine.createEvent({id:"series-B",title:"Another lecture",start:"2026-11-09T10:00",end:"2026-11-09T11:00",recurrence:{frequency:"weekly",weekdays:[1],startDate:"2026-11-09",endDate:null}});
+const identityA=occurrenceEngine.getOccurrenceId(seriesA.id,"2026-11-09");
+assert.equal(identityA,"occ:series%3AA:2026-11-09","Occurrence identity must deterministically encode series ID and original date");
+assert.notEqual(identityA,occurrenceEngine.getOccurrenceId(seriesB.id,"2026-11-09"),"Different series on the same date must have different identities");
+assert.equal(occurrenceEngine.getOccurrenceId(seriesA.id,"2026-11-09"),identityA,"Repeated identity generation must be deterministic");
+assert.equal(occurrenceEngine.getForDate("2026-11-09").find(x=>x.id===seriesA.id).occurrenceId,identityA,"Occurrence queries must expose stable identities");
+const modifiedException=occurrenceEngine.createException({seriesId:seriesA.id,originalDate:"2026-11-09",type:"modified",override:{title:"Revised lecture"}});
+assert.equal(modifiedException.occurrenceId,identityA,"Exception must retain the original occurrence identity");
+assert.equal(occurrenceEngine.getForDate("2026-11-09").find(x=>x.id===seriesA.id).title,"Revised lecture","Modified exception must override the generated occurrence");
+assert.throws(()=>occurrenceEngine.createException({seriesId:seriesA.id,originalDate:"2026-11-09",type:"cancelled"}),/Duplicate occurrence exception/,"Duplicate exception identities must be rejected");
+assert.throws(()=>occurrenceEngine.createException({seriesId:seriesA.id,originalDate:"2026-11-10",type:"cancelled"}),/Invalid recurring occurrence reference/,"Dates outside the recurrence rule must be rejected");
+assert.throws(()=>occurrenceEngine.createException({seriesId:seriesA.id,originalDate:"2026-11-16",type:"modified",override:{startDateTime:"not-a-date"}}),/Invalid occurrence exception/,"Invalid override dates must be rejected");
+assert.throws(()=>occurrenceEngine.createException({seriesId:"missing-series",originalDate:"2026-11-09",type:"cancelled"}),/Invalid recurring occurrence reference/,"Unknown parent series references must be rejected");
+const rescheduled=occurrenceEngine.createException({seriesId:seriesB.id,originalDate:"2026-11-09",type:"rescheduled",override:{startDateTime:"2026-11-12T12:00",endDateTime:"2026-11-12T13:00"}});
+assert.equal(occurrenceEngine.getForDate("2026-11-12").find(x=>x.occurrenceId===rescheduled.occurrenceId).startDateTime,"2026-11-12T12:00","Rescheduled occurrence must appear on its override date");
+const cancelled=occurrenceEngine.createException({seriesId:seriesA.id,originalDate:"2026-11-16",type:"cancelled"});
+assert.equal(occurrenceEngine.getForDate("2026-11-16").some(x=>x.occurrenceId===cancelled.occurrenceId),false,"Cancelled occurrence must be suppressed");
+const reloadedOccurrence=scheduleEngine.create({storage:occurrenceStorage,classes:[],routine:[]});
+assert.equal(reloadedOccurrence.getExceptions().length,3,"Exception records must survive schedule reload");
+assert.equal(reloadedOccurrence.getOccurrenceId(seriesA.id,"2026-11-09"),identityA,"Occurrence identity must remain stable after reload");
+assert.equal(reloadedOccurrence.getForDate("2026-11-09").find(x=>x.id===seriesA.id).title,"Revised lecture","Occurrence overrides must survive reload");
+assert.equal(reloadedOccurrence.getForDate("2026-11-12").find(x=>x.occurrenceId===rescheduled.occurrenceId).startDateTime,"2026-11-12T12:00","Rescheduled overrides must survive reload");
+assert.equal(JSON.parse(occurrenceStorage.getItem("daybook_schedule_v1")).version,2,"Schedule writes must use schema version 2");
+const legacyScheduleStorage=memoryStorage();
+legacyScheduleStorage.setItem("daybook_schedule_v1",JSON.stringify({version:1,events:[{id:"v1-series",title:"Legacy recurring",type:"event",start:"2026-11-09T08:00",end:"2026-11-09T09:00",recurrence:{frequency:"weekly",weekdays:[1],startDate:"2026-11-09",endDate:null}}]}));
+const migratedSchedule=scheduleEngine.create({storage:legacyScheduleStorage,classes:[],routine:[]});
+assert.equal(migratedSchedule.wasMigrated(),true,"Version 1 schedule data must report migration");
+assert.equal(migratedSchedule.getAll()[0].id,"v1-series","Schedule migration must preserve existing event IDs");
+assert.deepEqual(migratedSchedule.getExceptions(),[],"Version 1 schedules must migrate with an empty exception collection");
+assert.equal(JSON.parse(legacyScheduleStorage.getItem("daybook_schedule_v1")).version,2,"Version 1 schedule migration must persist version 2");
+const corruptExceptionStorage=memoryStorage();
+corruptExceptionStorage.setItem("daybook_schedule_v1",JSON.stringify({version:2,events:[{id:"safe-series",title:"Safe",type:"event",start:"2026-11-09T08:00",recurrence:{frequency:"weekly",weekdays:[1]}}],exceptions:[{seriesId:"missing",occurrenceId:"bad",originalDate:"2026-11-09",type:"cancelled",override:null,modifiedAt:"2026-11-09T00:00:00.000Z"}]}));
+const protectedExceptionEngine=scheduleEngine.create({storage:corruptExceptionStorage,classes:[],routine:[]});
+assert.equal(protectedExceptionEngine.isHealthy(),false,"Invalid exception records must mark canonical schedule storage unhealthy");
+assert.equal(protectedExceptionEngine.syncLegacy([],[]),false,"Invalid exception storage must block automatic overwrite");
+assert.equal(JSON.parse(corruptExceptionStorage.getItem("daybook_schedule_v1")).exceptions[0].seriesId,"missing","Invalid exception data must remain recoverable and untouched");
+const scheduleBackupEngine=scheduleEngine.create({storage:persistenceHarness.api.storage,classes:[],routine:[]});
+scheduleBackupEngine.createEvent({id:"backup-series",title:"Backup series",start:"2026-11-09T07:00",recurrence:{frequency:"weekly",weekdays:[1],startDate:"2026-11-09",endDate:null}});
+scheduleBackupEngine.createException({seriesId:"backup-series",originalDate:"2026-11-09",type:"cancelled"});
+const scheduleSnapshot=persistenceHarness.api.snapshot();
+assert(scheduleSnapshot.daybook_schedule_v1&&scheduleSnapshot.daybook_schedule_v1.exceptions.length===1,"Existing backup snapshots must include occurrence exceptions");
+const scheduleBackupEntries=persistenceHarness.api.validateBackup({app:"Daybook",version:3,data:scheduleSnapshot});
+assert(JSON.parse(scheduleBackupEntries.daybook_schedule_v1).exceptions[0].seriesId==="backup-series","Backup validation must retain occurrence exception records");
+(async()=>{
+ const backupJson=JSON.stringify({app:"Daybook",version:3,data:scheduleSnapshot});
+ await persistenceHarness.api.importFile({size:backupJson.length,text:async()=>backupJson},()=>true);
+ const restoredSchedule=scheduleEngine.create({storage:persistenceHarness.api.storage,classes:[],routine:[]});
+ assert.equal(restoredSchedule.getExceptions().length,1,"Backup restore must preserve occurrence exceptions");
+ assert.equal(restoredSchedule.getForDate("2026-11-09").some(x=>x.id==="backup-series"),false,"Restored cancellation exceptions must remain effective");
+ console.log("Step 5A.1 occurrence identity and exception checks passed.");
+})().catch(error=>{console.error(error);process.exitCode=1});
+
+assert.throws(()=>reloadedOccurrence.updateEvent(seriesA.id,{recurrence:{frequency:"weekly",weekdays:[2],startDate:"2026-11-10",endDate:null}}),/Cannot change recurrence while occurrence exceptions exist/,"Series edits must not orphan existing occurrence exceptions");
+assert.equal(reloadedOccurrence.getExceptions().length,3,"Rejected series edits must preserve exceptions");
+assert(reloadedOccurrence.deleteEvent(seriesB.id),"Deleting a series must succeed");
+assert.equal(reloadedOccurrence.getExceptions().some(x=>x.seriesId===seriesB.id),false,"Deleting a series must remove its dependent exceptions atomically");

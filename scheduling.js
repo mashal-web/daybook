@@ -1,6 +1,6 @@
 "use strict";
 (function(root){
- const STORAGE_KEY="daybook_schedule_v1",VERSION=1;
+ const STORAGE_KEY="daybook_schedule_v1",VERSION=2;
  const pad=n=>String(n).padStart(2,"0");
  const dateKey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
  const validDate=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(new Date(s+"T12:00:00").getTime())&&dateKey(new Date(s+"T12:00:00"))===s;
@@ -34,7 +34,7 @@
  }
  function create(options){
   const storage=options&&options.storage;if(!storage)throw new Error("Scheduling storage is required");
-  let events=[],healthy=true,blocked=false,migrated=false;
+  let events=[],exceptions=[],healthy=true,blocked=false,migrated=false;
   const migrateLegacy=(classes,routine,sessions)=>{
    const out=[],seen=new Set();
    function add(item,type){
@@ -64,41 +64,82 @@
    });
    return out.filter(Boolean);
   };
-  const write=()=>{try{storage.setItem(STORAGE_KEY,JSON.stringify({version:VERSION,events}));healthy=true;return true}catch(e){healthy=false;return false}};
+  const write=()=>{try{storage.setItem(STORAGE_KEY,JSON.stringify({version:VERSION,events,exceptions}));healthy=true;return true}catch(e){healthy=false;return false}};
+  const EXCEPTION_TYPES=["modified","rescheduled","cancelled"],OVERRIDE_FIELDS=["title","category","type","startDateTime","endDateTime","allDay","description","notes","location","priority","status","reminder"];
+  function occurrenceId(seriesId,originalDate){if(typeof seriesId!=="string"||!seriesId||!validDate(originalDate))return null;return "occ:"+encodeURIComponent(seriesId)+":"+originalDate}
+  function normalizeException(input,seriesList){
+   if(!input||typeof input!=="object"||Array.isArray(input))return null;
+   const seriesId=String(input.seriesId||""),originalDate=String(input.originalDate||""),series=(seriesList||events).find(x=>x.id===seriesId);
+   if(!series||series.recurrence.frequency!=="weekly"||!validDate(originalDate)||!matches(series,originalDate))return null;
+   const identity=occurrenceId(seriesId,originalDate),type=input.type;
+   if(!EXCEPTION_TYPES.includes(type)||input.occurrenceId!==identity)return null;
+   let override=null;
+   if(type==="cancelled"){if(input.override!=null&&(!input.override||typeof input.override!=="object"||Array.isArray(input.override)||Object.keys(input.override).length))return null}
+   else{
+    if(!input.override||typeof input.override!=="object"||Array.isArray(input.override))return null;
+    override={};for(const [key,value] of Object.entries(input.override)){if(!OVERRIDE_FIELDS.includes(key))return null;override[key]=value}
+    if("title" in override&&(!String(override.title).trim()))return null;
+    if("type" in override&&!["class","routine","study","event"].includes(override.type))return null;
+    if("startDateTime" in override&&!parseLocal(override.startDateTime))return null;
+    if("endDateTime" in override&&override.endDateTime!==null&&override.endDateTime!==""&&!parseLocal(override.endDateTime))return null;
+    if(override.startDateTime&&override.endDateTime&&parseLocal(override.endDateTime)<=parseLocal(override.startDateTime))return null;
+    if("allDay" in override&&typeof override.allDay!=="boolean")return null;
+    if("priority" in override&&!["low","normal","high","urgent"].includes(override.priority))return null;
+    if("status" in override&&!["scheduled","completed","cancelled"].includes(override.status))return null;
+    if("reminder" in override){const r=override.reminder;if(!r||typeof r!=="object"||typeof r.enabled!=="boolean"||!Number.isFinite(Number(r.minutesBefore))||Number(r.minutesBefore)<0||Number(r.minutesBefore)>10080)return null;override.reminder={enabled:r.enabled,minutesBefore:Number(r.minutesBefore)}}
+    for(const key of ["category","description","notes","location"])if(key in override&&typeof override[key]!=="string")return null;
+    if(type==="rescheduled"&&!override.startDateTime)return null;
+   }
+   const modifiedAt=typeof input.modifiedAt==="string"&&Number.isFinite(Date.parse(input.modifiedAt))?input.modifiedAt:null;if(!modifiedAt)return null;
+   return {seriesId,occurrenceId:identity,originalDate,type,override,modifiedAt};
+  }
   let raw=null;try{raw=storage.getItem(STORAGE_KEY)}catch(e){healthy=false;blocked=true}
-  if(raw!==null){try{const parsed=JSON.parse(raw);if(!parsed||parsed.version!==VERSION||!Array.isArray(parsed.events))throw new Error("Unsupported schedule data");events=parsed.events.map(normalizeEvent);if(events.some(x=>!x)||events.length!==parsed.events.length)throw new Error("Invalid schedule records")}
-   catch(e){healthy=false;blocked=true;events=migrateLegacy(options.classes||[],options.routine||[])}
-  }else{events=migrateLegacy(options.classes||[],options.routine||[],options.sessions||[]);migrated=true;if(events.length&&!write())healthy=false}
+  if(raw!==null){try{const parsed=JSON.parse(raw);if(!parsed||![1,VERSION].includes(parsed.version)||!Array.isArray(parsed.events))throw new Error("Unsupported schedule data");events=parsed.events.map(normalizeEvent);if(events.some(x=>!x)||events.length!==parsed.events.length)throw new Error("Invalid schedule records");if(parsed.version===1){exceptions=[];migrated=true}else{if(!Array.isArray(parsed.exceptions))throw new Error("Invalid schedule exceptions");exceptions=parsed.exceptions.map(x=>normalizeException(x,events));if(exceptions.some(x=>!x)||exceptions.length!==parsed.exceptions.length)throw new Error("Invalid schedule exceptions");if(new Set(exceptions.map(x=>x.occurrenceId)).size!==exceptions.length)throw new Error("Duplicate schedule exceptions")}}
+   catch(e){healthy=false;blocked=true;events=migrateLegacy(options.classes||[],options.routine||[]);exceptions=[]}
+  }else{events=migrateLegacy(options.classes||[],options.routine||[],options.sessions||[]);exceptions=[];migrated=true;if(events.length&&!write())healthy=false}
   function transact(next,origin){if(blocked)return false;const old=events;events=next;if(!write()){events=old;return false}if(root.dispatchEvent){const detail={origin:origin||"api"};const event=typeof root.CustomEvent==="function"?new root.CustomEvent("daybook-schedule-updated",{detail}):{type:"daybook-schedule-updated",detail};root.dispatchEvent(event)}return true}
+  function transactWithExceptions(nextEvents,nextExceptions){if(blocked)return false;const oldEvents=events,oldExceptions=exceptions;events=nextEvents;exceptions=nextExceptions;if(!write()){events=oldEvents;exceptions=oldExceptions;return false}if(root.dispatchEvent){const detail={origin:"api"};const event=typeof root.CustomEvent==="function"?new root.CustomEvent("daybook-schedule-updated",{detail}):{type:"daybook-schedule-updated",detail};root.dispatchEvent(event)}return true}
   function occurrence(event,baseDate){
    const startTime=event.allDay?"00:00":event.start.slice(11),start=parseLocal(baseDate+"T"+startTime);if(!start)return null;
    let duration=null;if(event.allDay)duration=1440;else if(event.end){const a=parseLocal(event.start),b=parseLocal(event.end);if(a&&b&&b>a)duration=Math.round((b-a)/60000)}
    const end=duration===null?null:new Date(start.getTime()+duration*60000);
-   return {...clone(event),occurrenceDate:baseDate,startDateTime:localStamp(start),endDateTime:end?localStamp(end):null,time:pad(start.getHours())+":"+pad(start.getMinutes()),end:end?pad(end.getHours())+":"+pad(end.getMinutes()):"",durationMinutes:duration};
+   return {...clone(event),occurrenceDate:baseDate,occurrenceId:occurrenceId(event.id,baseDate),startDateTime:localStamp(start),endDateTime:end?localStamp(end):null,time:pad(start.getHours())+":"+pad(start.getMinutes()),end:end?pad(end.getHours())+":"+pad(end.getMinutes()):"",durationMinutes:duration};
   }
   function matches(event,baseDate){const rec=event.recurrence;if(rec.frequency==="weekly"){const weekday=new Date(baseDate+"T12:00:00").getDay();return rec.weekdays.includes(weekday)&&(!rec.startDate||baseDate>=rec.startDate)&&(!rec.endDate||baseDate<=rec.endDate)}return event.start.slice(0,10)===baseDate}
+  function materializeOccurrence(event,baseDate){
+   const item=occurrence(event,baseDate);if(!item)return null;const exception=exceptions.find(x=>x.occurrenceId===item.occurrenceId);if(exception&&exception.type==="cancelled")return null;
+   if(exception&&exception.override){const originalStart=parseLocal(item.startDateTime),originalEnd=item.endDateTime?parseLocal(item.endDateTime):null,duration=originalStart&&originalEnd?originalEnd-originalStart:null;Object.assign(item,clone(exception.override));item.exceptionType=exception.type;item.exceptionModifiedAt=exception.modifiedAt;if(item.startDateTime){const d=parseLocal(item.startDateTime);item.time=pad(d.getHours())+":"+pad(d.getMinutes());if(!("endDateTime" in exception.override)&&duration!==null)item.endDateTime=localStamp(new Date(d.getTime()+duration))}if(item.endDateTime){const d=parseLocal(item.endDateTime);item.end=pad(d.getHours())+":"+pad(d.getMinutes())}else item.end="";item.durationMinutes=durationMinutes(item)}
+   return item;
+  }
   function getForDate(value){
    const key=value instanceof Date?dateKey(value):String(value).slice(0,10);if(!validDate(key))return [];
    const result=[],dayStart=parseLocal(key+"T00:00"),dayEnd=parseLocal(plusDays(key,1)+"T00:00");
-   for(const event of events){if(event.status==="cancelled")continue;for(const base of [plusDays(key,-1),key]){if(!matches(event,base))continue;const item=occurrence(event,base);if(!item)continue;const start=parseLocal(item.startDateTime),end=item.endDateTime?parseLocal(item.endDateTime):null;if(base===key||end&&start<dayEnd&&end>dayStart)result.push(item)}}
-   const unique=new Map();result.forEach(x=>unique.set(x.id+"@"+x.occurrenceDate,x));return [...unique.values()].sort((a,b)=>a.startDateTime.localeCompare(b.startDateTime)||a.title.localeCompare(b.title));
+   for(const event of events){if(event.status==="cancelled")continue;for(const base of [plusDays(key,-1),key]){if(!matches(event,base))continue;const item=materializeOccurrence(event,base);if(!item)continue;const start=parseLocal(item.startDateTime),end=item.endDateTime?parseLocal(item.endDateTime):null;if(start&&start<dayEnd&&(!end||end>dayStart))result.push(item)}}
+   for(const exception of exceptions){if(exception.type!=="rescheduled"||!exception.override||!exception.override.startDateTime||exception.override.startDateTime.slice(0,10)!==key)continue;const series=events.find(x=>x.id===exception.seriesId);if(!series||series.status==="cancelled")continue;const item=materializeOccurrence(series,exception.originalDate);if(item&&!result.some(x=>x.occurrenceId===item.occurrenceId))result.push(item)}
+   const unique=new Map();result.forEach(x=>unique.set(x.occurrenceId,x));return [...unique.values()].sort((a,b)=>a.startDateTime.localeCompare(b.startDateTime)||a.title.localeCompare(b.title));
   }
-  function getForWeek(value){const start=value instanceof Date?dateKey(value):String(value).slice(0,10);if(!validDate(start))return [];const all=[];for(let i=0;i<7;i++)all.push(...getForDate(plusDays(start,i)));const unique=new Map();all.forEach(x=>unique.set(x.id+"@"+x.occurrenceDate,x));return [...unique.values()].sort((a,b)=>a.startDateTime.localeCompare(b.startDateTime))}
+  function getForWeek(value){const start=value instanceof Date?dateKey(value):String(value).slice(0,10);if(!validDate(start))return [];const all=[];for(let i=0;i<7;i++)all.push(...getForDate(plusDays(start,i)));const unique=new Map();all.forEach(x=>unique.set(x.occurrenceId||x.id+"@"+x.occurrenceDate,x));return [...unique.values()].sort((a,b)=>a.startDateTime.localeCompare(b.startDateTime))}
   function getUpcoming(from,limit){const start=from instanceof Date?from:new Date(from||Date.now()),count=Math.max(1,Math.min(500,Number(limit)||50)),out=[];for(let i=0;i<366&&out.length<count;i++){const d=new Date(start);d.setDate(start.getDate()+i);getForDate(d).forEach(x=>{if(parseLocal(x.startDateTime)>=start)out.push(x)})}return out.sort((a,b)=>a.startDateTime.localeCompare(b.startDateTime)).slice(0,count)}
   function durationMinutes(item){if(!item)return null;if(Number.isFinite(item.durationMinutes))return item.durationMinutes;const start=parseLocal(item.startDateTime||item.start),end=parseLocal(item.endDateTime||item.end);return start&&end&&end>start?Math.round((end-start)/60000):null}
   function overlaps(a,b){if(!a||!b)return false;const xs=parseLocal(a.startDateTime||a.start),ys=parseLocal(b.startDateTime||b.start),xe=parseLocal(a.endDateTime||a.end),ye=parseLocal(b.endDateTime||b.end);return !!(xs&&ys&&xe&&ye&&xe>xs&&ye>ys&&xs<ye&&ys<xe)}
   function findOverlaps(value){const list=Array.isArray(value)?value:getForDate(value||new Date()),conflicts=[];for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)if(overlaps(list[i],list[j]))conflicts.push([list[i],list[j]]);return conflicts}
   function createEvent(input){const event=normalizeEvent({...input,id:input&&input.id||uid()});if(!event)throw new Error("Invalid schedule event");if(events.some(x=>x.id===event.id))throw new Error("Duplicate schedule event ID");return transact([...events,event])?clone(event):null}
-  function updateEvent(id,patch){const index=events.findIndex(x=>x.id===String(id));if(index<0)return null;const updated=normalizeEvent({...events[index],...patch,id:events[index].id,updatedAt:new Date().toISOString()});if(!updated)throw new Error("Invalid schedule event");const next=events.slice();next[index]=updated;return transact(next)?clone(updated):null}
-  function deleteEvent(id){const next=events.filter(x=>x.id!==String(id));if(next.length===events.length)return false;return transact(next)}
+  function getOccurrenceId(seriesId,originalDate){const series=events.find(x=>x.id===String(seriesId));if(!series||series.recurrence.frequency!=="weekly"||!validDate(originalDate)||!matches(series,originalDate))return null;return occurrenceId(series.id,originalDate)}
+  function createException(input){const series=events.find(x=>x.id===String(input&&input.seriesId||""));const identity=series&&getOccurrenceId(series.id,String(input.originalDate||""));if(!identity)throw new Error("Invalid recurring occurrence reference");if(exceptions.some(x=>x.occurrenceId===identity))throw new Error("Duplicate occurrence exception");const record=normalizeException({...input,occurrenceId:identity,modifiedAt:new Date().toISOString()},events);if(!record)throw new Error("Invalid occurrence exception");return transactExceptions([...exceptions,record])?clone(record):null}
+  function updateException(identity,patch){const index=exceptions.findIndex(x=>x.occurrenceId===String(identity));if(index<0)return null;const candidate=normalizeException({...exceptions[index],...patch,seriesId:exceptions[index].seriesId,originalDate:exceptions[index].originalDate,occurrenceId:exceptions[index].occurrenceId,modifiedAt:new Date().toISOString()},events);if(!candidate)throw new Error("Invalid occurrence exception");const next=exceptions.slice();next[index]=candidate;return transactExceptions(next)?clone(candidate):null}
+  function deleteException(identity){const next=exceptions.filter(x=>x.occurrenceId!==String(identity));if(next.length===exceptions.length)return false;return transactExceptions(next)}
+  function transactExceptions(next){if(blocked)return false;const old=exceptions;exceptions=next;if(!write()){exceptions=old;return false}if(root.dispatchEvent){const detail={origin:"occurrence-exception"};const event=typeof root.CustomEvent==="function"?new root.CustomEvent("daybook-schedule-updated",{detail}):{type:"daybook-schedule-updated",detail};root.dispatchEvent(event)}return true}
+  function updateEvent(id,patch){const index=events.findIndex(x=>x.id===String(id));if(index<0)return null;const updated=normalizeEvent({...events[index],...patch,id:events[index].id,updatedAt:new Date().toISOString()});if(!updated)throw new Error("Invalid schedule event");if(exceptions.some(x=>x.seriesId===updated.id&&!matches(updated,x.originalDate)))throw new Error("Cannot change recurrence while occurrence exceptions exist");const next=events.slice();next[index]=updated;return transact(next)?clone(updated):null}
+  function deleteEvent(id){const next=events.filter(x=>x.id!==String(id));if(next.length===events.length)return false;const remaining=exceptions.filter(x=>x.seriesId!==String(id));return transactWithExceptions(next,remaining)}
   function duplicateEvent(id,overrides){const source=events.find(x=>x.id===String(id));if(!source)return null;return createEvent({...source,...(overrides||{}),id:uid(),source:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}
   function syncLegacy(classes,routine,sessions){
    if(blocked)return false;const retained=events.filter(x=>!x.source||!["class","routine","study"].includes(x.source.kind)),mapped=migrateLegacy(classes,routine,sessions);
    const existing=new Map(events.filter(x=>x.source&&["class","routine","study"].includes(x.source.kind)).map(x=>[x.source.kind+":"+x.source.legacyId,x]));
    const next=mapped.map(item=>{const old=existing.get(item.source.kind+":"+item.source.legacyId);if(!old)return item;const a={...old,createdAt:"",updatedAt:""},b={...item,id:old.id,createdAt:"",updatedAt:""};return JSON.stringify(a)===JSON.stringify(b)?old:{...item,id:old.id,createdAt:old.createdAt}});
-   const merged=[...retained,...next];if(JSON.stringify(merged)===JSON.stringify(events))return healthy?true:write();return transact(merged,"legacy-sync");
+   const merged=[...retained,...next];if(exceptions.some(x=>{const series=merged.find(e=>e.id===x.seriesId);return !series||!matches(series,x.originalDate)}))return false;if(JSON.stringify(merged)===JSON.stringify(events))return healthy?true:write();return transact(merged,"legacy-sync");
   }
-  return {version:VERSION,getAll:()=>clone(events),getForDate,getForWeek,getUpcoming,durationMinutes,overlaps,findOverlaps,createEvent,updateEvent,deleteEvent,duplicateEvent,syncLegacy,isHealthy:()=>healthy,wasMigrated:()=>migrated,storageKey:STORAGE_KEY};
+  if(migrated&&raw!==null&&!blocked&&!write())healthy=false;
+  return {version:VERSION,getAll:()=>clone(events),getForDate,getForWeek,getUpcoming,durationMinutes,overlaps,findOverlaps,createEvent,updateEvent,deleteEvent,duplicateEvent,syncLegacy,getOccurrenceId,createException,updateException,deleteException,getExceptions:()=>clone(exceptions),getException:id=>clone(exceptions.find(x=>x.occurrenceId===String(id))||null),isHealthy:()=>healthy,wasMigrated:()=>migrated,storageKey:STORAGE_KEY};
  }
  root.DaybookSchedule={create};
 })(window);
