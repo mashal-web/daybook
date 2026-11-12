@@ -1,5 +1,5 @@
-const CACHE="daybook-v38";
-const CORE=["./","./index.html","./styles.css","./timetable-theme.css","./upgrade.css","./upgrade.js","./mobile-app.css","./design-system.css","./study-planner.css","./persistence.js","./scheduling.js","./app.js","./native.js","./manifest.webmanifest","./icon.svg","./icon-192.png","./icon-512.png"];
+const CACHE="daybook-v39";
+const CORE=["./","./index.html","./styles.css","./timetable-theme.css","./upgrade.css","./upgrade.js","./mobile-app.css","./design-system.css","./study-planner.css","./planning.css","./prayer-times.js","./flexible-activities.js","./persistence.js","./scheduling.js","./app.js","./native.js","./manifest.webmanifest","./icon.svg","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()));
 });
