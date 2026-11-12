@@ -85,7 +85,11 @@
  <div class="day-agenda-head"><div><p class="label">SELECTED DAY</p><h3 id="selectedDayTitle">Today</h3><p class="muted" id="selectedDaySummary">Your schedule, in time order.</p></div>
   <div class="live-clock"><span class="live-dot"></span><span id="currentClock">--:--</span><small>LOCAL TIME</small></div>
  </div>
- <div id="dayTimeline" class="day-timeline" aria-live="polite"></div>
+ <div class="schedule-view-switch" role="group" aria-label="Timetable viewing mode"><button type="button" data-schedule-mode="timeline" aria-pressed="true">Timeline</button><button type="button" data-schedule-mode="agenda" aria-pressed="false">Daily agenda</button><button type="button" data-schedule-mode="flexible" aria-pressed="false">Flexible tasks</button><button type="button" data-schedule-mode="week" aria-pressed="false">Weekly overview</button></div>
+ <div id="dayTimeline" class="day-timeline schedule-mode-panel" data-mode-panel="timeline" aria-live="polite"></div>
+ <div id="scheduleAgenda" class="schedule-mode-panel" data-mode-panel="agenda" hidden aria-live="polite"></div>
+ <div id="scheduleFlexible" class="schedule-mode-panel" data-mode-panel="flexible" hidden></div>
+ <div id="scheduleWeekOverview" class="schedule-mode-panel" data-mode-panel="week" hidden></div>
 </section>
 <section class="week-distribution" aria-label="Weekly activity distribution"><div class="week-distribution-head"><div><p class="label">WEEKLY MIX</p><h3>Activity distribution</h3></div><span class="muted" id="distributionTotal">Based on saved entries</span></div><div id="weekDistribution" class="distribution-bars"></div></section>
 </div></section>
