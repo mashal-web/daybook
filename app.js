@@ -81,6 +81,7 @@ safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 const scheduleStore=window.DaybookSchedule.create({storage:window.DaybookPersistence.storage,classes:data.classes,routine:data.routine,sessions:data.sessions});
 window.DaybookScheduleStore=scheduleStore;
+scheduleStore.syncLegacy(data.classes,data.routine,data.sessions);
 window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
