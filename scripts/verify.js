@@ -389,6 +389,13 @@ assert(dailyIdentity,"Daily recurring occurrences must have stable occurrence id
 dailySeriesEngine.createException({seriesId:"daily-series",originalDate:"2026-11-10",type:"cancelled",override:null});
 assert.equal(dailySeriesEngine.getForDate("2026-11-10").length,0,"A single daily occurrence can be skipped without deleting its series");
 assert.equal(dailySeriesEngine.getForDate("2026-11-11").length,1,"Skipping one daily occurrence must preserve later occurrences");
+const overnightPlanEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+overnightPlanEngine.createEvent({id:"cross-midnight",title:"Overnight commitment",start:"2026-11-09T23:30",end:"2026-11-10T01:15"});
+const morningSlots=overnightPlanEngine.getDayPlan("2026-11-10",{dayStart:0,dayEnd:360}).available;
+assert.equal(morningSlots[0].startTime,"01:15","Available-time calculation must clip an overnight fixed event to the next local day");
+dailySeriesEngine.updateEvent("daily-series",{title:"Updated daily review"});
+assert.equal(dailySeriesEngine.getExceptions().length,1,"Editing a recurring series must preserve existing occurrence exceptions");
+assert.equal(dailySeriesEngine.getForDate("2026-11-11")[0].title,"Daily review","A per-occurrence override must remain intact after a series edit");
 const taskStorage=memoryStorage(),taskEngine=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
 const flexibleTask=taskEngine.createTask({id:"flex-study",title:"Review derivatives",durationMinutes:75,priority:"high",kind:"flexible",repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",dueDate:"2026-11-20"});
 assert(flexibleTask,"Flexible activities must be stored without an exact start time");
@@ -515,6 +522,8 @@ assert(scheduling.includes('["daily","weekly"].includes(recurrence.frequency)')&
 assert(app.includes("function openOccurrenceEditor")&&app.includes('data-event-action="skip-occurrence"')&&app.includes("updateException"),"Users must be able to edit or skip one occurrence without modifying its series");
 assert(html.includes('id="defaultDurationSetting"')&&html.includes('id="weekStartSetting"')&&app.includes("data.settings.defaultDuration")&&app.includes("data.settings.weekStart"),"Default activity duration and week-start preferences must persist");
 assert(app.includes('field("Estimated duration (minutes)","durationMinutes"')&&app.includes("scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks)"),"Deadline tasks must retain estimated duration in the canonical schedule store");
+assert(["overview","schedule","planner","tasks","analytics","reminders","academics","habits","finance"].every(id=>html.includes('id="'+id+'"')),"Every existing application page must remain present in the page inventory");
+assert(html.includes("Timetable")&&html.includes("deadline")&&html.includes("Finance"),"Page introductions must describe their actual content and purpose");
 assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-schedule-mode="agenda"')&&html.includes('data-schedule-mode="flexible"')&&html.includes('data-schedule-mode="week"'),"All four timetable modes must be available in the schedule workspace");
 assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
 assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
