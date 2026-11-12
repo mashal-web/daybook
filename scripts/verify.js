@@ -407,6 +407,11 @@ assert.equal(taskEngine.getTasksForDate("2026-11-10").length,0,"Selected weekday
 taskEngine.updateTask("flex-study",{completedDates:["2026-11-09"]});
 assert.equal(taskEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring task completion must be retained per occurrence");
 assert.equal(taskEngine.getTasksForDate("2026-11-11")[0].occurrenceStatus,"open","Completing one recurrence must not complete later occurrences");
+taskEngine.createTask({id:"daily-task",title:"Daily reading",durationMinutes:30,repeat:"daily",repeatStart:"2026-11-09"});
+taskEngine.updateTask("daily-task",{postponedFrom:"2026-11-09",postponedTo:"2026-11-10"});
+assert.equal(taskEngine.getTasksForDate("2026-11-09").some(x=>x.id==="daily-task"),false,"Postponing a recurring task must hide the original occurrence");
+assert.equal(taskEngine.getTasksForDate("2026-11-10").filter(x=>x.id==="daily-task").length,1,"Postponing a recurring task must create one next-day occurrence without duplication");
+assert.equal(taskEngine.getTasksForDate("2026-11-11").filter(x=>x.id==="daily-task").length,1,"Recurring task must resume its normal cadence after a postponed occurrence");
 const dayPlan=taskEngine.getDayPlan("2026-11-09",{anchors:[{id:"prayer-fajr",title:"Fajr",start:"2026-11-09T05:30",end:"2026-11-09T05:45"}]});
 assert(dayPlan&&dayPlan.activities.length===1&&dayPlan.anchors.length===1,"Unified day plan must combine events, flexible activities and time anchors");
 assert(dayPlan.available.length>0,"Unified day plan must calculate available time intervals");
