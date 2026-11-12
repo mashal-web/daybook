@@ -81,7 +81,7 @@ safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 const scheduleStore=window.DaybookSchedule.create({storage:window.DaybookPersistence.storage,classes:data.classes,routine:data.routine,sessions:data.sessions});
 window.DaybookScheduleStore=scheduleStore;
-scheduleStore.syncLegacy(data.classes,data.routine,data.sessions);
+scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks);
 window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
@@ -128,7 +128,7 @@ $("#homeStartFocus")?.addEventListener("click",()=>$("#focusStart")?.click());
 $("#refreshHome")?.addEventListener("click",()=>{today=new Date();render();toast("Today’s overview refreshed")});
 function tickFocus(){if(!focusState.running)return;focusState.remaining=Math.max(0,Math.ceil((focusState.endsAt-Date.now())/1000));if(focusState.remaining===0)finishFocus();else renderFocus()}
 setInterval(tickFocus,1000);
-function persist(){const scheduleSaved=scheduleStore.syncLegacy(data.classes,data.routine,data.sessions);const legacySaved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));const saved=scheduleSaved&&legacySaved;if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
+function persist(){const scheduleSaved=scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks);const legacySaved=["subjects","classes","routine","tasks","sessions","reminders","goal","settings"].every(k=>safeWrite(k,data[k]));const saved=scheduleSaved&&legacySaved;if(window.DaybookNative?.isNative()&&JSON.stringify(data.reminders)!==lastSyncedReminders)syncNativeReminders();return saved}
 function save(msg="Saved"){const stored=persist();render();toast(stored?msg:"Could not save changes. Export a backup before closing Daybook.")}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function minutes(t){if(!t)return 0;const [h,m]=t.split(":").map(Number);return h*60+m}
