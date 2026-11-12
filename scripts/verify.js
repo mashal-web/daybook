@@ -380,6 +380,26 @@ assert.equal(protectedEngine.syncLegacy([{id:"keep",day:1,start:"08:00",end:"09:
 assert.equal(corruptStorage.getItem("daybook_schedule_v1"),"not-json","Malformed canonical data must remain untouched");
 assert.equal(protectedEngine.getForDate("2026-11-09").length,1,"Legacy records must remain readable when canonical data is malformed");
 
+const taskStorage=memoryStorage(),taskEngine=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
+const flexibleTask=taskEngine.createTask({id:"flex-study",title:"Review derivatives",durationMinutes:75,priority:"high",kind:"flexible",repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",dueDate:"2026-11-20"});
+assert(flexibleTask,"Flexible activities must be stored without an exact start time");
+assert.equal(flexibleTask.scheduledStart,null,"Flexible activities must not require an exact start time");
+assert.equal(taskEngine.getTasksForDate("2026-11-09").length,1,"Selected weekday recurrence must produce a task occurrence");
+assert.equal(taskEngine.getTasksForDate("2026-11-10").length,0,"Selected weekday recurrence must skip unselected days");
+taskEngine.updateTask("flex-study",{completedDates:["2026-11-09"]});
+assert.equal(taskEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring task completion must be retained per occurrence");
+assert.equal(taskEngine.getTasksForDate("2026-11-11")[0].occurrenceStatus,"open","Completing one recurrence must not complete later occurrences");
+const dayPlan=taskEngine.getDayPlan("2026-11-09",{anchors:[{id:"prayer-fajr",title:"Fajr",start:"2026-11-09T05:30",end:"2026-11-09T05:45"}]});
+assert(dayPlan&&dayPlan.activities.length===1&&dayPlan.anchors.length===1,"Unified day plan must combine events, flexible activities and time anchors");
+assert(dayPlan.available.length>0,"Unified day plan must calculate available time intervals");
+const midnightSlots=taskEngine.getDayPlan("2026-11-10",{anchors:[]});
+assert(midnightSlots.available.length>0,"Day plan must return available intervals across dates");
+const taskReload=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
+assert.equal(taskReload.getTasks()[0].id,"flex-study","Canonical flexible activities must survive reload");
+const legacyTaskStorage=memoryStorage(),legacyTaskEngine=scheduleEngine.create({storage:legacyTaskStorage,classes:[],routine:[]});
+legacyTaskEngine.syncLegacy([],[],[],[{id:"old-task",title:"Legacy task",due:"2026-11-12",priority:"High",done:false}]);
+assert.equal(legacyTaskEngine.getTasks().find(x=>x.id==="old-task").title,"Legacy task","Existing task manager records must synchronize into canonical scheduling storage");
+assert.equal(JSON.parse(legacyTaskStorage.getItem("daybook_schedule_v1")).version,3,"Task synchronization must persist schema version 3");
 console.log("Daybook regression checks passed.");
 
 assert(app.includes("window.daybookIcon") && app.includes("const ICONS="), "Shared icon set must be defined centrally");
@@ -447,14 +467,14 @@ assert.equal(reloadedOccurrence.getExceptions().length,3,"Exception records must
 assert.equal(reloadedOccurrence.getOccurrenceId(seriesA.id,"2026-11-09"),identityA,"Occurrence identity must remain stable after reload");
 assert.equal(reloadedOccurrence.getForDate("2026-11-09").find(x=>x.id===seriesA.id).title,"Revised lecture","Occurrence overrides must survive reload");
 assert.equal(reloadedOccurrence.getForDate("2026-11-12").find(x=>x.occurrenceId===rescheduled.occurrenceId).startDateTime,"2026-11-12T12:00","Rescheduled overrides must survive reload");
-assert.equal(JSON.parse(occurrenceStorage.getItem("daybook_schedule_v1")).version,2,"Schedule writes must use schema version 2");
+assert.equal(JSON.parse(occurrenceStorage.getItem("daybook_schedule_v1")).version,3,"Schedule writes must use schema version 3");
 const legacyScheduleStorage=memoryStorage();
 legacyScheduleStorage.setItem("daybook_schedule_v1",JSON.stringify({version:1,events:[{id:"v1-series",title:"Legacy recurring",type:"event",start:"2026-11-09T08:00",end:"2026-11-09T09:00",recurrence:{frequency:"weekly",weekdays:[1],startDate:"2026-11-09",endDate:null}}]}));
 const migratedSchedule=scheduleEngine.create({storage:legacyScheduleStorage,classes:[],routine:[]});
 assert.equal(migratedSchedule.wasMigrated(),true,"Version 1 schedule data must report migration");
 assert.equal(migratedSchedule.getAll()[0].id,"v1-series","Schedule migration must preserve existing event IDs");
 assert.deepEqual(migratedSchedule.getExceptions(),[],"Version 1 schedules must migrate with an empty exception collection");
-assert.equal(JSON.parse(legacyScheduleStorage.getItem("daybook_schedule_v1")).version,2,"Version 1 schedule migration must persist version 2");
+assert.equal(JSON.parse(legacyScheduleStorage.getItem("daybook_schedule_v1")).version,3,"Version 1 schedule migration must persist version 3");
 const corruptExceptionStorage=memoryStorage();
 corruptExceptionStorage.setItem("daybook_schedule_v1",JSON.stringify({version:2,events:[{id:"safe-series",title:"Safe",type:"event",start:"2026-11-09T08:00",recurrence:{frequency:"weekly",weekdays:[1]}}],exceptions:[{seriesId:"missing",occurrenceId:"bad",originalDate:"2026-11-09",type:"cancelled",override:null,modifiedAt:"2026-11-09T00:00:00.000Z"}]}));
 const protectedExceptionEngine=scheduleEngine.create({storage:corruptExceptionStorage,classes:[],routine:[]});
@@ -481,6 +501,12 @@ assert.throws(()=>reloadedOccurrence.updateEvent(seriesA.id,{recurrence:{frequen
 assert.equal(reloadedOccurrence.getExceptions().length,3,"Rejected series edits must preserve exceptions");
 assert(reloadedOccurrence.deleteEvent(seriesB.id),"Deleting a series must succeed");
 assert.equal(reloadedOccurrence.getExceptions().some(x=>x.seriesId===seriesB.id),false,"Deleting a series must remove its dependent exceptions atomically");
+
+assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-schedule-mode="agenda"')&&html.includes('data-schedule-mode="flexible"')&&html.includes('data-schedule-mode="week"'),"All four timetable modes must be available in the schedule workspace");
+assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
+assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
+assert(flexible.includes("DaybookScheduleStore")&&flexible.includes("createTask")&&flexible.includes("updateTask")&&flexible.includes("deleteTask"),"Flexible activity CRUD must use canonical schedule storage");
+assert(planningCss.includes(".schedule-week-grid")&&planningCss.includes("@media(max-width:560px)")&&planningCss.includes(".schedule-prayer-markers"),"Timetable modes must include responsive weekly and prayer marker styles");
 
 assert(app.includes("const ROUTINE_VERSION=3")&&app.includes('?"22:30":r.time'),"Routine migration must move the old sleep default to 10:30 PM without discarding saved activities");
 assert(html.includes('href="planning.css"')&&html.includes('src="prayer-times.js"')&&html.includes('src="flexible-activities.js"'),"Prayer and flexible-planning modules must load in the web app");
