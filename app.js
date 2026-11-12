@@ -196,8 +196,8 @@ function scheduleAnchors(day){
 }
 function renderScheduleModes(){
  const selected=weekDates().find(x=>x.day===selectedDay),day=iso(selected?.date||today),anchors=scheduleAnchors(day),plan=scheduleStore.getDayPlan(day,{anchors}),now=new Date(),todayKey=iso(now);
- $("[data-schedule-mode]").forEach(b=>{const active=b.dataset.scheduleMode===scheduleMode;b.setAttribute("aria-pressed",String(active));b.classList.toggle("selected",active)});
- $("[data-mode-panel]").forEach(p=>{p.hidden=p.dataset.modePanel!==scheduleMode});
+ $$("[data-schedule-mode]").forEach(b=>{const active=b.dataset.scheduleMode===scheduleMode;b.setAttribute("aria-pressed",String(active));b.classList.toggle("selected",active)});
+ $$("[data-mode-panel]").forEach(p=>{p.hidden=p.dataset.modePanel!==scheduleMode});
  if(scheduleMode==="timeline"){
   const host=$("#dayTimeline");if(host){const prayer=anchors.filter(x=>x.category==="Prayer"),sleep=anchors.filter(x=>x.category==="Sleep");const status=day===todayKey?"Current time · "+now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"Selected day · "+new Date(day+"T12:00:00").toLocaleDateString([],{weekday:"long",month:"short",day:"numeric"});host.insertAdjacentHTML("afterbegin",'<div class="timeline-context"><b>'+esc(status)+'</b><span>'+plan.conflicts.length+' detected conflict(s)</span>'+(sleep.length?'<small>Sleep '+esc(fmt(settingsTime(sleep[0].start)))+' – '+esc(fmt(settingsTime(sleep[0].end)))+'</small>':"")+'</div><div class="timeline-prayer-markers">'+prayer.map(x=>'<span><b>'+esc(x.title.replace(" prayer",""))+'</b> '+esc(fmt(x.start.slice(11)))+'</span>').join("")+'</div>');
   const activities=plan.activities.filter(x=>x.kind==="flexible"||x.kind==="optional"||x.kind==="task");
@@ -219,7 +219,7 @@ function renderScheduleModes(){
 }
 function settingsTime(value){return value||"00:00"}
 function plusDayKey(day){const d=new Date(day+"T12:00:00");d.setDate(d.getDate()+1);return iso(d)}
-$("[data-schedule-mode]").forEach(b=>b.addEventListener("click",()=>{scheduleMode=b.dataset.scheduleMode;renderScheduleModes()}));
+$$("[data-schedule-mode]").forEach(b=>b.addEventListener("click",()=>{scheduleMode=b.dataset.scheduleMode;renderScheduleModes()}));
 function renderWeek(){
  const days=weekDates(),start=days[0].date,end=days[6].date;
  $("#weekLabel").textContent=start.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+end.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
@@ -242,7 +242,7 @@ function renderWeek(){
  const mix=new Map();weekClasses.forEach(x=>mix.set("University",(mix.get("University")||0)+durationMinutes({...x,time:x.start})));weekRoutine.forEach(x=>{const c=x.category||"Personal";mix.set(c,(mix.get(c)||0)+durationMinutes({...x,time:x.time}))});
  const groups=[...mix.entries()].filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);$("#distributionTotal").textContent=totalMinutes?Math.round(totalMinutes/60*10)/10+" scheduled hours":"No timed durations available";
  $("#weekDistribution").innerHTML=groups.length?groups.map(([name,value])=>'<div class="distribution-row"><span>'+esc(name)+'</span><div class="distribution-track"><i style="width:'+Math.round(value/Math.max(1,totalMinutes)*100)+'%"></i></div><b>'+Math.floor(value/60)+'h '+(value%60?value%60+"m":"")+'</b></div>').join(""):'<p class="muted">Add end times to activities to see an accurate weekly distribution.</p>';
- $("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek();renderScheduleModes()});wireEventActions();$$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
+ $$("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek();renderScheduleModes()});wireEventActions();$$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
 }
 $("#prev").onclick=()=>{weekOffset--;renderWeek();renderScheduleModes()};$("#next").onclick=()=>{weekOffset++;renderWeek();renderScheduleModes()};$("#thisWeek").onclick=()=>{weekOffset=0;selectedDay=today.getDay();renderWeek();renderScheduleModes()};
 function renderTasks(){const q=($("#taskSearch")?.value||"").trim().toLowerCase();let list=data.tasks.filter(t=>(filter==="all"||(filter==="done"?t.done:filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today):!t.done))&&(!q||(t.title+" "+t.category+" "+t.notes).toLowerCase().includes(q)));list.sort((a,b)=>Number(a.done)-Number(b.done)||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999"));$("#allTasks").innerHTML=list.map(taskMarkup).join("")||'<div class="empty">No tasks match this view. Add a task to get started.</div>';$$("[data-filter]").forEach(b=>{const selected=b.dataset.filter===filter;b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected))});wireActions();$$("[data-task]").forEach(e=>e.onchange=()=>{const t=data.tasks.find(x=>String(x.id)===e.dataset.task);if(t){t.done=e.checked;t.completedAt=e.checked?new Date().toISOString():null;save(e.checked?"Task completed":"Task reopened")}})}
