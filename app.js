@@ -75,6 +75,7 @@ const data={
  tasks:safeArray("tasks"),sessions:safeArray("sessions"),reminders:safeArray("reminders"),
  goal:(()=>{const value=Number(safeRead("goal",10));return Number.isFinite(value)&&value>=1&&value<=100?value:10})(),settings:(()=>{const value=safeRead("settings",{timeFormat:"12h",theme:"dark"});return value&&typeof value==="object"?{...value,timeFormat:["12h","24h"].includes(value.timeFormat)?value.timeFormat:"12h",theme:["dark","light"].includes(value.theme)?value.theme:"dark",defaultDuration:[30,45,60,90,120].includes(Number(value.defaultDuration))?Number(value.defaultDuration):60,weekStart:[0,1,6].includes(Number(value.weekStart))?Number(value.weekStart):0}:{timeFormat:"12h",theme:"dark",defaultDuration:60,weekStart:0}})()
 };
+window.DaybookAppSettings={get defaultDuration(){return data.settings.defaultDuration||60}};
 safeWrite("subjects",data.subjects);
 safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
