@@ -372,9 +372,9 @@ if(type==="reminder"){title=id?"Edit reminder":"Add reminder";body=field("Remind
 $("#dialogTitle").textContent=title;$("#fields").innerHTML=body;$("#editor").showModal();
  if(type==="event"){
   const allDay=document.getElementById("eventAllDay"),endFields=document.getElementById("eventEndFields"),frequency=document.getElementById("eventFrequency"),weekdays=document.getElementById("eventWeekdays"),endDate=document.getElementById("eventEndDate"),endTime=document.getElementById("eventEndTime");
-  const sync=()=>{const disabled=allDay.checked;document.getElementById("eventStartTime").disabled=disabled;endDate.disabled=disabled;endTime.disabled=disabled;endFields.hidden=disabled;weekdays.hidden=frequency.value!=="weekly";document.getElementById("eventRecurrenceEnd").closest(".field").hidden=frequency.value!=="weekly"};
+  const sync=()=>{const disabled=allDay.checked;document.getElementById("eventStartTime").disabled=disabled;endDate.disabled=disabled;endTime.disabled=disabled;endFields.hidden=disabled;weekdays.hidden=frequency.value!=="weekly";document.getElementById("eventRecurrenceEnd").closest(".field").hidden=frequency.value==="none"};
   allDay.onchange=sync;frequency.onchange=sync;sync();
-  if(id&&old.recurrence?.frequency==="weekly")$("#fields").insertAdjacentHTML("beforeend",'<p class="event-series-note">This is a recurring series. Saving changes updates every matching occurrence in the series.</p>');
+  if(id&&old.recurrence?.frequency!=="none")$("#fields").insertAdjacentHTML("beforeend",'<p class="event-series-note">This is a recurring series. Saving changes updates every matching occurrence in the series.</p>');
  }}
 $$("[data-add]").forEach(button=>button.onclick=()=>openEditor(button.dataset.add));window.DaybookOpenEventForm=(id=null)=>openEditor("event",id);
 $("#close").onclick=$("#cancel").onclick=()=>$("#editor").close();
