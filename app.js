@@ -167,7 +167,7 @@ function eventActions(item){const id=item.canonicalId||item.id,recurring=item.re
 function eventDateLabel(value){return new Date(value+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}
 function eventConflicts(candidate,id){
  const start=new Date(candidate.start),end=candidate.end?new Date(candidate.end):candidate.allDay?new Date(new Date(candidate.start).getTime()+86400000):null;if(!end)return [];
- const conflicts=[],limit=candidate.recurrence.frequency==="weekly"?366:0;
+ const conflicts=[],limit=candidate.recurrence.frequency!=="none"?366:0;
  for(let offset=0;offset<=limit;offset++){
   const date=new Date(start);date.setDate(start.getDate()+offset);const key=iso(date);
   if(key<candidate.start.slice(0,10)||candidate.recurrence.endDate&&key>candidate.recurrence.endDate)continue;
@@ -358,10 +358,10 @@ function openEditor(type,id=null,duplicateFrom=null){edit={type,id};const source
  '<div class="event-form-section"><b>Date and time</b><div class="two">'+field("Start date","eventStartDate","date",startDate)+field("Start time","eventStartTime","time",startTime)+'</div>'+
  '<label class="event-check"><input type="checkbox" id="eventAllDay" name="eventAllDay" value="yes" '+(old.allDay?"checked":"")+'> All-day event</label>'+
  '<div class="two" id="eventEndFields">'+field("End date","eventEndDate","date",endDate)+field("End time","eventEndTime","time",endTime)+'</div></div>'+
- '<div class="event-form-section"><b>Repeat</b>'+selectField("Recurrence","eventFrequency",[{value:"none",label:"Does not repeat"},{value:"weekly",label:"Weekly"}],freq)+
+ '<div class="event-form-section"><b>Repeat</b>'+selectField("Recurrence","eventFrequency",[{value:"none",label:"Does not repeat"},{value:"daily",label:"Daily"},{value:"weekly",label:"Weekly / selected days"}],freq)+
  '<div id="eventWeekdays" class="event-weekdays">'+DAYS.map((d,i)=>'<label><input type="checkbox" name="eventWeekday" value="'+i+'" '+(days.includes(i)?"checked":"")+'><span>'+d.slice(0,3)+'</span></label>').join("")+'</div>'+
  field("Repeat until (optional)","eventRecurrenceEnd","date",old.recurrence?.endDate||"","optional")+
- (freq==="weekly"?'<p class="event-series-note">Use “This occurrence” from the timetable to change one date only. Editing this form changes the recurring series.</p>':'')+'</div>'+
+ (freq!=="none"?'<p class="event-series-note">Use “This occurrence” from the timetable to change one date only. Editing this form changes the recurring series.</p>':'')+'</div>'+
  '<div class="two">'+selectField("Priority","eventPriority",["low","normal","high","urgent"].map(x=>({value:x,label:x[0].toUpperCase()+x.slice(1)})),old.priority||"normal")+
  selectField("Reminder", "eventReminder",[{value:"off",label:"No reminder"},{value:"5",label:"5 minutes before"},{value:"10",label:"10 minutes before"},{value:"15",label:"15 minutes before"},{value:"30",label:"30 minutes before"},{value:"60",label:"1 hour before"},{value:"1440",label:"1 day before"}],old.reminder?.enabled?String(old.reminder.minutesBefore):"off")+"</div><p class=\"event-series-note\">Reminder preference is saved with the event. Notification delivery is not connected yet.</p>";
  }if(type==="class"){title=id?"Edit class":duplicateFrom?"Duplicate class":"Add university class";body=selectField("Subject","subject",subjectOpts,old.subject||data.subjects[0]||"")+selectField("Day","day",DAYS.map((d,i)=>({value:String(i),label:d})),String(old.day??1))+'<div class="two">'+field("Start time","start","time",old.start||"08:00")+field("End time","end","time",old.end||"09:00")+'</div>'+field("Room / location (optional)","room","text",old.room||"","optional")}
@@ -419,7 +419,7 @@ $("#form").onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormDa
   if(frequency==="weekly"&&(!weekdays.length||weekdays.some(n=>!Number.isInteger(n)||n<0||n>6))){toast("Choose at least one repeat day");return}
   const recurrenceEnd=v.eventRecurrenceEnd||null;
   if(recurrenceEnd&&(!validDate(recurrenceEnd)||recurrenceEnd<startDate)){toast("Repeat-until date must be valid and not before the start date");return}
-  const candidate={id:id||undefined,title,category:v.eventCategory||"Personal",type:"event",start,end,allDay,recurrence:{frequency,weekdays:frequency==="weekly"?weekdays:[],startDate:frequency==="weekly"?startDate:null,endDate:frequency==="weekly"?recurrenceEnd:null},description:String(v.eventDescription||"").trim(),location:String(v.eventLocation||"").trim(),priority:v.eventPriority||"normal",reminder:{enabled:v.eventReminder!=="off",minutesBefore:v.eventReminder==="off"?0:Number(v.eventReminder)||0}};
+  const candidate={id:id||undefined,title,category:v.eventCategory||"Personal",type:"event",start,end,allDay,recurrence:{frequency,weekdays:frequency==="weekly"?weekdays:[],startDate:frequency!=="none"?startDate:null,endDate:frequency!=="none"?recurrenceEnd:null},description:String(v.eventDescription||"").trim(),location:String(v.eventLocation||"").trim(),priority:v.eventPriority||"normal",reminder:{enabled:v.eventReminder!=="off",minutesBefore:v.eventReminder==="off"?0:Number(v.eventReminder)||0}};
   const conflicts=eventConflicts(candidate,id);
   if(conflicts.length&&!confirm("This event overlaps "+conflicts.slice(0,3).map(x=>x.title+" on "+eventDateLabel(x.date)).join(", ")+(conflicts.length>3?" and "+(conflicts.length-3)+" more":"")+". Save anyway?"))return;
   try{const saved=id?scheduleStore.updateEvent(id,candidate):scheduleStore.createEvent(candidate);if(!saved){toast("Could not save the event. Check available device storage.");return}$("#editor").close();toast(id?"Event updated":"Event created");render()}catch(error){toast(error.message||"Could not save event")}
