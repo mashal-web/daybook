@@ -410,6 +410,8 @@ assert.equal(taskEngine.getTasksForDate("2026-11-11")[0].occurrenceStatus,"open"
 const dayPlan=taskEngine.getDayPlan("2026-11-09",{anchors:[{id:"prayer-fajr",title:"Fajr",start:"2026-11-09T05:30",end:"2026-11-09T05:45"}]});
 assert(dayPlan&&dayPlan.activities.length===1&&dayPlan.anchors.length===1,"Unified day plan must combine events, flexible activities and time anchors");
 assert(dayPlan.available.length>0,"Unified day plan must calculate available time intervals");
+assert(taskEngine.getDayPlan("2026-11-09",{priorityProfile:"deadline-first"}).priorityOrder.indexOf("urgent")<taskEngine.getDayPlan("2026-11-09",{priorityProfile:"deadline-first"}).priorityOrder.indexOf("scheduled"),"Deadline-first profile must prioritize urgent flexible work after protected anchors");
+assert(taskEngine.getDayPlan("2026-11-09",{priorityProfile:"protected"}).priorityOrder.indexOf("scheduled")<taskEngine.getDayPlan("2026-11-09",{priorityProfile:"protected"}).priorityOrder.indexOf("urgent"),"Protected profile must preserve scheduled commitments ahead of flexible work");
 const midnightSlots=taskEngine.getDayPlan("2026-11-10",{anchors:[]});
 assert(midnightSlots.available.length>0,"Day plan must return available intervals across dates");
 const taskReload=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
@@ -522,7 +524,7 @@ assert.equal(reloadedOccurrence.getExceptions().some(x=>x.seriesId===seriesB.id)
 
 assert(scheduling.includes('["daily","weekly"].includes(recurrence.frequency)')&&scheduling.includes('function getOccurrenceId'),"Canonical event recurrence must support daily and selected-weekday series with stable occurrence identity");
 assert(app.includes("function openOccurrenceEditor")&&app.includes('data-event-action="skip-occurrence"')&&app.includes("updateException"),"Users must be able to edit or skip one occurrence without modifying its series");
-assert(html.includes('id="defaultDurationSetting"')&&html.includes('id="weekStartSetting"')&&app.includes("data.settings.defaultDuration")&&app.includes("data.settings.weekStart"),"Default activity duration and week-start preferences must persist");
+assert(html.includes('id="defaultDurationSetting"')&&html.includes('id="weekStartSetting"')&&html.includes('id="priorityProfileSetting"')&&app.includes("data.settings.defaultDuration")&&app.includes("data.settings.weekStart")&&app.includes("data.settings.priorityProfile"),"Default activity duration and week-start preferences must persist");
 assert(app.includes('field("Estimated duration (minutes)","durationMinutes"')&&app.includes("scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks)"),"Deadline tasks must retain estimated duration in the canonical schedule store");
 assert(["overview","schedule","planner","tasks","analytics","reminders","academics","habits","finance"].every(id=>html.includes('id="'+id+'"')),"Every existing application page must remain present in the page inventory");
 assert(html.includes("Timetable")&&html.includes("deadline")&&html.includes("Finance"),"Page introductions must describe their actual content and purpose");
