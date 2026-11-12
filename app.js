@@ -33,7 +33,7 @@ const safeSet=(key,value)=>{try{window.DaybookPersistence.storage.setItem(key,ty
 const safeWrite=(key,value)=>safeSet("daybook_"+key,value);
 const safeArray=(k,f=[])=>{const value=safeRead(k,f);return Array.isArray(value)?value.filter(item=>item&&typeof item==="object"&&!Array.isArray(item)):f};
 const classSeed=[{day:1,start:"08:05",end:"15:30",subject:"University / campus"},{day:3,start:"08:00",end:"10:30",subject:"University / campus"},{day:4,start:"08:00",end:"13:00",subject:"University / campus"},{day:5,start:"08:00",end:"13:00",subject:"University / campus"}].map(x=>({...x,id:uid()}));
-const ROUTINE_VERSION=2;
+const ROUTINE_VERSION=3;
 const oldRoutine=safeRead("routine",null);
 const routineTemplate=Array.from({length:7},(_,day)=>[
  {time:"05:30",title:"Wake up, Fajr prayer and freshen up"},
@@ -47,7 +47,7 @@ const routineTemplate=Array.from({length:7},(_,day)=>[
  {time:"20:00",title:"Dinner (8:00–8:30 PM)"},
  {time:"20:30",title:"Prepare for tomorrow / light revision"},
  {time:"21:00",title:"Wind down; put phone away"},
- {time:"21:30",title:"Sleep"}
+ {time:"22:30",title:"Sleep"}
 ].map(x=>({...x,day,id:uid()}))).flat();
 routineTemplate.push(...[
  [1,"07:30","Leave for university"],[3,"07:30","Leave for university"],[4,"07:30","Leave for university"],[5,"07:30","Leave for university"],
@@ -61,7 +61,7 @@ const routineData=(()=>{
  const existing=oldRoutine.filter(r=>r&&typeof r==="object"&&/^([01]\d|2[0-3]):[0-5]\d$/.test(r.time||"")&&String(r.title||"").trim()).flatMap(r=>{
   const day=Number(r.day);
   const days=Number.isInteger(day)&&day>=0&&day<=6?[day]:DAYS.map((_,i)=>i);
-  return days.map(d=>({...r,id:days.length===1&&r.id?String(r.id):uid(),day:d,title:String(r.title).trim()}));
+  return days.map(d=>({...r,time:(storedRoutineVersion<3&&String(r.title).toLowerCase()==="sleep"&&r.time==="21:30"?"22:30":r.time),id:days.length===1&&r.id?String(r.id):uid(),day:d,title:String(r.title).trim()}));
  });
  if(storedRoutineVersion>=ROUTINE_VERSION)return existing;
  const occupied=new Set(existing.map(r=>r.day+"|"+r.time));
@@ -80,6 +80,7 @@ safeWrite("routine",data.routine);
 safeWrite("routineVersion",ROUTINE_VERSION);
 safeWrite("classes",data.classes);
 const scheduleStore=window.DaybookSchedule.create({storage:window.DaybookPersistence.storage,classes:data.classes,routine:data.routine,sessions:data.sessions});
+window.DaybookScheduleStore=scheduleStore;
 window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
@@ -385,7 +386,7 @@ $("#settingsBtn").onclick=()=>{$("#timeFormatSetting").value=data.settings.timeF
 $("#goalEdit").onclick=()=>{$("#goalInput").value=data.goal;$("#goalDialog").showModal()};$("#goalForm").onsubmit=e=>{e.preventDefault();data.goal=Math.min(100,Math.max(1,Number($("#goalInput").value)));$("#goalDialog").close();save("Weekly goal updated")};$$("[data-close]").forEach(b=>b.onclick=()=>$("#"+b.dataset.close).close());
 function exportBackup(){try{const blob=window.DaybookPersistence.exportFile(),a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download="daybook-complete-backup-"+iso(today)+".json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast("Complete backup exported")}catch(error){toast("Backup export failed: "+(error.message||"storage error"))}}
 $("#importFile").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const result=await window.DaybookPersistence.importFile(file,message=>confirm(message));if(result.cancelled){toast("Import cancelled; current data was not changed");return}location.reload()}catch(error){toast("Backup rejected: "+(error.message||"invalid data"))}finally{e.target.value=""}};
-$("#notify").onclick=async()=>{try{if(window.DaybookNative?.isNative()){const p=await window.DaybookNative.requestPermission();if(p.display==="granted")await window.DaybookNative.syncReminders(data.reminders);const exactNote=p.exactAlarm==="denied"?" (reminders may be delayed)":"";$("#notifyStatus").textContent="Android notifications: "+p.display+" · exact alarm access: "+p.exactAlarm+exactNote;return}if(!("Notification"in window)){$("#notifyStatus").textContent="Notifications are not supported by this browser.";return}const p=await Notification.requestPermission();$("#notifyStatus").textContent="Notification permission: "+p}catch(error){$("#notifyStatus").textContent="Could not enable notifications: "+(error.message||"Please check app permissions.")}};
+$("#notify").onclick=async()=>{try{if(window.DaybookNative?.isNative()){const p=await window.DaybookNative.requestPermission();if(p.display==="granted")await window.DaybookNative.syncReminders([...data.reminders,...(window.DaybookPrayer?.getNativeReminders?.()||[])]);const exactNote=p.exactAlarm==="denied"?" (reminders may be delayed)":"";$("#notifyStatus").textContent="Android notifications: "+p.display+" · exact alarm access: "+p.exactAlarm+exactNote;return}if(!("Notification"in window)){$("#notifyStatus").textContent="Notifications are not supported by this browser.";return}const p=await Notification.requestPermission();$("#notifyStatus").textContent="Notification permission: "+p}catch(error){$("#notifyStatus").textContent="Could not enable notifications: "+(error.message||"Please check app permissions.")}};
 function showWebReminder(title){const options={body:title,icon:"./icon.svg"};if("serviceWorker"in navigator){navigator.serviceWorker.ready.then(reg=>reg.showNotification("Daybook reminder",options)).catch(()=>{try{new Notification("Daybook reminder",options)}catch{}});return}try{new Notification("Daybook reminder",options)}catch{toast("A reminder could not be displayed")}}
 function checkReminders(){if(window.DaybookNative?.isNative())return;if(!("Notification"in window)||Notification.permission!=="granted")return;const now=new Date(),grace=5*60*1000;let changed=false;data.reminders.forEach(r=>{const due=new Date(r.date+"T"+r.time+":00");if(Number.isNaN(due.getTime()))return;const stamp=r.date+"T"+r.time,late=now-due,repeat=r.repeat==="daily"||r.repeat==="weekly",step=r.repeat==="daily"?1:7;if(repeat&&late>grace){const next=new Date(due);while(next<=now)next.setDate(next.getDate()+step);r.date=iso(next);changed=true;return}if(late>=0&&late<=grace&&r.lastFired!==stamp){showWebReminder(r.title);r.lastFired=stamp;if(repeat){const next=new Date(due);while(next<=now)next.setDate(next.getDate()+step);r.date=iso(next)}changed=true}});if(changed){persist();renderReminders()}}
 setInterval(checkReminders,15000);
@@ -404,6 +405,7 @@ function refreshDayBoundary(){
 setInterval(refreshDayBoundary,60000);
 setInterval(()=>{if(activeView==="schedule")renderWeek()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshDayBoundary()});
-const syncNativeReminders=()=>{if(!window.DaybookNative?.isNative())return Promise.resolve();const snapshot=JSON.stringify(data.reminders);return window.DaybookNative.syncReminders(data.reminders).then(()=>{lastSyncedReminders=snapshot}).catch(()=>toast("Could not sync Android reminders"))};
+const syncNativeReminders=()=>{if(!window.DaybookNative?.isNative())return Promise.resolve();const all=[...data.reminders,...(window.DaybookPrayer?.getNativeReminders?.()||[])];const snapshot=JSON.stringify(all);return window.DaybookNative.syncReminders(all).then(()=>{lastSyncedReminders=snapshot}).catch(()=>toast("Could not sync Android reminders"))};
 window.addEventListener("daybook-native-ready",syncNativeReminders);
 window.addEventListener("daybook-native-resume",syncNativeReminders);
+window.addEventListener("daybook-prayer-updated",syncNativeReminders);
