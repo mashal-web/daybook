@@ -84,7 +84,7 @@ window.DaybookScheduleStore=scheduleStore;
 scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks);
 window.addEventListener("daybook-schedule-updated",event=>{if(event.detail?.origin!=="legacy-sync")render()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
-let activeView="overview",filter="all",weekOffset=0,edit={type:null,id:null};
+let activeView="overview",filter="all",weekOffset=0,scheduleMode="timeline",edit={type:null,id:null};
 function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
 applyTheme(data.settings.theme);
 const FOCUS_KEY="daybook_focus";
@@ -183,6 +183,35 @@ function hasScheduleOverlap(day,start,end,legacyId){
  const others=[...scheduleStore.getForDate(selected),...scheduleStore.getForDate(nextDate)];
  return others.some(item=>item.source?.legacyId!==String(legacyId||"")&&item.endDateTime&&startAt<new Date(item.endDateTime)&&new Date(item.startDateTime)<endAt);
 }
+function scheduleLocalStamp(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+"T"+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+function scheduleAnchors(day){
+ const out=[],prayer=window.DaybookPrayer,settings=prayer?.getSettings?.();
+ (prayer?.getPrayerIntervals?.(day)||[]).forEach(p=>out.push({id:"prayer-"+p.name,title:p.name+" prayer",start:scheduleLocalStamp(p.start),end:scheduleLocalStamp(p.end),kind:"anchor",category:"Prayer"}));
+ if(settings?.bedtime&&settings?.wakeTime){const [bh,bm]=settings.bedtime.split(":").map(Number),[wh,wm]=settings.wakeTime.split(":").map(Number),start=new Date(day+"T00:00:00"),end=new Date(day+"T00:00:00");start.setDate(start.getDate()-1);start.setHours(bh,bm,0,0);end.setHours(wh,wm,0,0);out.push({id:"sleep-"+day,title:"Sleep",start:scheduleLocalStamp(start),end:scheduleLocalStamp(end),kind:"anchor",category:"Sleep"})}
+ return out;
+}
+function renderScheduleModes(){
+ const selected=weekDates().find(x=>x.day===selectedDay),day=iso(selected?.date||today),anchors=scheduleAnchors(day),plan=scheduleStore.getDayPlan(day,{anchors}),now=new Date(),todayKey=iso(now);
+ $("[data-schedule-mode]").forEach(b=>{const active=b.dataset.scheduleMode===scheduleMode;b.setAttribute("aria-pressed",String(active));b.classList.toggle("selected",active)});
+ $("[data-mode-panel]").forEach(p=>{p.hidden=p.dataset.modePanel!==scheduleMode});
+ if(scheduleMode==="timeline"){
+  const host=$("#dayTimeline");if(host){const prayer=anchors.filter(x=>x.category==="Prayer"),sleep=anchors.filter(x=>x.category==="Sleep");const status=day===todayKey?"Current time · "+now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}):"Selected day · "+new Date(day+"T12:00:00").toLocaleDateString([],{weekday:"long",month:"short",day:"numeric"});host.insertAdjacentHTML("afterbegin",'<div class="timeline-context"><b>'+esc(status)+'</b><span>'+prayer.map(x=>esc(x.title)+" "+esc(fmt(x.start.slice(11)))).join(" · ")+'</span>'+(sleep.length?'<small>Sleep '+esc(fmt(settingsTime(sleep[0].start)))+' – '+esc(fmt(settingsTime(sleep[0].end)))+'</small>':"")+'</div>')}}
+ if(scheduleMode==="agenda"){
+  const host=$("#scheduleAgenda");if(host){const group=(title,items,empty)=>'<section class="agenda-group"><div class="agenda-group-head"><h4>'+title+'</h4><span>'+items.length+'</span></div>'+(items.length?items.map(x=>{const start=x.startDateTime||x.start||x.scheduled?.start||"",end=x.endDateTime||x.end||x.scheduled?.end||"",time=start?fmt(start.slice(11))+(end?" – "+fmt(end.slice(11)):""):"No fixed time";return '<article class="agenda-row"><div><b>'+esc(x.title)+'</b><p>'+esc(time)+' · '+esc(x.category||x.kind||"Activity")+'</p></div>'+(x.planKind==="event"?eventActions({...x,canonicalId:x.id}):x.planKind==="task"?'<div class="agenda-row-actions"><button type="button" data-agenda-complete="'+esc(x.id)+'">Complete</button><button type="button" data-agenda-postpone="'+esc(x.id)+'">Tomorrow</button></div>':'')+'</article>'}).join(""):'<p class="muted">'+empty+'</p>')+'</section>';
+   const fixed=plan.events.filter(x=>x.type==="class"||x.type==="event"||x.type==="routine"||x.type==="study"),prayers=anchors.filter(x=>x.category==="Prayer"),sleep=anchors.filter(x=>x.category==="Sleep"),flex=plan.activities.filter(x=>x.kind==="flexible"||x.kind==="optional"),tasks=plan.activities.filter(x=>x.kind==="task");
+   host.innerHTML='<div class="agenda-summary"><b>'+new Date(day+"T12:00:00").toLocaleDateString([],{weekday:"long",month:"long",day:"numeric"})+'</b><span>'+fixed.length+' commitments · '+(flex.length+tasks.length)+' activities/tasks · '+plan.conflicts.length+' conflicts</span></div>'+group("Prayer and sleep", [...prayers,...sleep],"No prayer or sleep anchors available for this date.")+group("Fixed commitments",fixed,"No fixed commitments. This time is available for flexible work.")+group("Flexible activities",flex,"No flexible activities planned for this day.")+group("Tasks and deadlines",tasks,"No tasks due or planned for this day.")+(plan.conflicts.length?'<p class="schedule-conflict-note">'+plan.conflicts.length+' overlapping time conflict(s) detected. Review the affected items before rescheduling.</p>':"");
+   host.querySelectorAll("[data-agenda-complete]").forEach(b=>b.onclick=()=>{const x=scheduleStore.getTasks().find(t=>t.id===b.dataset.agendaComplete);if(x){if(x.repeat!=="none")scheduleStore.updateTask(x.id,{completedDates:[...x.completedDates,day]});else scheduleStore.updateTask(x.id,{status:"completed"})}});
+   host.querySelectorAll("[data-agenda-postpone]").forEach(b=>b.onclick=()=>{const x=scheduleStore.getTasks().find(t=>t.id===b.dataset.agendaPostpone);if(x)scheduleStore.updateTask(x.id,{postponedTo:plusDayKey(day),planDate:x.repeat==="none"?plusDayKey(day):x.planDate})});
+   wireEventActions();
+  }}
+ if(scheduleMode==="week"){
+  const host=$("#scheduleWeekOverview");if(host){const days=weekDates();host.innerHTML='<div class="schedule-week-grid">'+days.map(({day:weekday,date})=>{const key=iso(date),ev=scheduleStore.getForDate(key),tasks=scheduleStore.getTasksForDate(key),all=[...ev,...tasks],classes=ev.filter(x=>x.type==="class"),deadline=tasks.filter(x=>x.dueDate===key).length;return '<button type="button" class="schedule-week-day '+(key===todayKey?"is-today":"")+'" data-week-day="'+weekday+'"><span>'+date.toLocaleDateString([],{weekday:"short"})+'</span><b>'+date.getDate()+'</b><small>'+classes.length+' classes · '+all.length+' items</small><div class="schedule-week-items">'+all.slice(0,5).map(x=>'<span class="'+(x.type==="class"?"is-fixed":x.planKind==="task"?"is-task":"")+'">'+esc(x.title)+'</span>').join("")+(all.length>5?'<small>+'+(all.length-5)+' more</small>':"")+'</div>'+(deadline?'<small>'+deadline+' deadline(s)</small>':"")+'</button>'}).join("")+'</div>'}
+  host.querySelectorAll("[data-week-day]").forEach(b=>b.onclick=()=>{selectedDay=Number(b.dataset.weekDay);scheduleMode="timeline";renderWeek();renderScheduleModes()});
+ }
+}
+function settingsTime(value){return value||"00:00"}
+function plusDayKey(day){const d=new Date(day+"T12:00:00");d.setDate(d.getDate()+1);return iso(d)}
+$("[data-schedule-mode]").forEach(b=>b.addEventListener("click",()=>{scheduleMode=b.dataset.scheduleMode;renderScheduleModes()}));
 function renderWeek(){
  const days=weekDates(),start=days[0].date,end=days[6].date;
  $("#weekLabel").textContent=start.toLocaleDateString("en-US",{month:"short",day:"numeric"})+" – "+end.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
@@ -205,9 +234,9 @@ function renderWeek(){
  const mix=new Map();weekClasses.forEach(x=>mix.set("University",(mix.get("University")||0)+durationMinutes({...x,time:x.start})));weekRoutine.forEach(x=>{const c=x.category||"Personal";mix.set(c,(mix.get(c)||0)+durationMinutes({...x,time:x.time}))});
  const groups=[...mix.entries()].filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);$("#distributionTotal").textContent=totalMinutes?Math.round(totalMinutes/60*10)/10+" scheduled hours":"No timed durations available";
  $("#weekDistribution").innerHTML=groups.length?groups.map(([name,value])=>'<div class="distribution-row"><span>'+esc(name)+'</span><div class="distribution-track"><i style="width:'+Math.round(value/Math.max(1,totalMinutes)*100)+'%"></i></div><b>'+Math.floor(value/60)+'h '+(value%60?value%60+"m":"")+'</b></div>').join(""):'<p class="muted">Add end times to activities to see an accurate weekly distribution.</p>';
- $$("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek()});wireEventActions();$$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
+ $("[data-weekday]").forEach(button=>button.onclick=()=>{selectedDay=Number(button.dataset.weekday);renderWeek();renderScheduleModes()});wireEventActions();$$("[data-empty-add]").forEach(button=>button.onclick=()=>openEditor("routine"));wireActions();
 }
-$("#prev").onclick=()=>{weekOffset--;renderWeek()};$("#next").onclick=()=>{weekOffset++;renderWeek()};$("#thisWeek").onclick=()=>{weekOffset=0;selectedDay=today.getDay();renderWeek()};
+$("#prev").onclick=()=>{weekOffset--;renderWeek();renderScheduleModes()};$("#next").onclick=()=>{weekOffset++;renderWeek();renderScheduleModes()};$("#thisWeek").onclick=()=>{weekOffset=0;selectedDay=today.getDay();renderWeek();renderScheduleModes()};
 function renderTasks(){const q=($("#taskSearch")?.value||"").trim().toLowerCase();let list=data.tasks.filter(t=>(filter==="all"||(filter==="done"?t.done:filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today):!t.done))&&(!q||(t.title+" "+t.category+" "+t.notes).toLowerCase().includes(q)));list.sort((a,b)=>Number(a.done)-Number(b.done)||({High:0,Normal:1,Low:2}[a.priority]??1)-({High:0,Normal:1,Low:2}[b.priority]??1)||(a.due||"9999").localeCompare(b.due||"9999"));$("#allTasks").innerHTML=list.map(taskMarkup).join("")||'<div class="empty">No tasks match this view. Add a task to get started.</div>';$$("[data-filter]").forEach(b=>{const selected=b.dataset.filter===filter;b.classList.toggle("selected",selected);b.setAttribute("aria-pressed",String(selected))});wireActions();$$("[data-task]").forEach(e=>e.onchange=()=>{const t=data.tasks.find(x=>String(x.id)===e.dataset.task);if(t){t.done=e.checked;t.completedAt=e.checked?new Date().toISOString():null;save(e.checked?"Task completed":"Task reopened")}})}
 let plannerSessionFilter="all",plannerSubjectFilter="all";
 function sessionCompletedDate(s){return s.completedAt?iso(new Date(s.completedAt)):s.date||""}
@@ -305,7 +334,7 @@ function renderHomeInsights(now=new Date()){
 function render(){
  const now=new Date();renderFocus();renderHomeWelcome(now);
  const items=homeTodayItems(now);$("#homeContext").textContent=items.length+" activities scheduled · "+data.tasks.filter(t=>!t.done).length+" tasks remaining";renderNextUp(items,now);renderHomeTimeline(items);renderHomeTasks();renderHomeAcademics(now);renderHomeInsights(now);
- renderWeek();renderTasks();renderPlanner();renderReminders();renderAnalytics();
+ renderWeek();renderScheduleModes();renderTasks();renderPlanner();renderReminders();renderAnalytics();
 }
 function wireActions(){$$("[data-edit]").forEach(b=>b.onclick=()=>openEditor(b.dataset.edit,b.dataset.id));$$("[data-duplicate]").forEach(b=>b.onclick=()=>openEditor(b.dataset.duplicate,null,b.dataset.id));$$("[data-delete]").forEach(b=>b.onclick=()=>removeItem(b.dataset.delete,b.dataset.id))}
 function removeItem(type,id){const key=({class:"classes",routine:"routine",task:"tasks",study:"sessions",reminder:"reminders"})[type];if(!key)return;if(!confirm("Delete this "+type+"?"))return;data[key]=data[key].filter(x=>String(x.id)!==String(id));save("Deleted")}
