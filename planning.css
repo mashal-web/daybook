@@ -28,3 +28,35 @@
 @media(max-width:650px){.prayer-times{grid-template-columns:repeat(2,minmax(0,1fr))}.prayer-next small{margin-left:0}.prayer-settings-grid{grid-template-columns:1fr}.prayer-anchor{grid-template-columns:65px 75px 1fr;font-size:.75rem}.flexible-item{display:block}.flexible-actions{margin-top:10px}.prayer-head,.flexible-head{align-items:flex-start;flex-direction:column}}
 
 .sleep-routine{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0 0;font-size:.78rem}.sleep-routine span,.sleep-routine small{color:var(--muted)}.sleep-routine b{font-weight:650}
+
+/* Phase 6 — shared timetable modes */
+.schedule-view-switch{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0;padding:5px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.schedule-view-switch button,.flexible-toolbar button{min-height:38px;padding:8px 13px;border:0;border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:.82rem;font-weight:650;cursor:pointer}
+.schedule-view-switch button[aria-pressed="true"],.flexible-toolbar button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.schedule-mode-panel[hidden]{display:none!important}
+.timeline-context,.agenda-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;margin-bottom:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:.8rem}
+.timeline-context span,.timeline-context small,.agenda-summary span{color:var(--muted)}
+.agenda-group{margin:18px 0}
+.agenda-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.agenda-group-head h4{margin:0;font-size:.92rem}
+.agenda-group-head span{color:var(--muted);font-size:.78rem}
+.agenda-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;margin:7px 0;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.agenda-row b{font-size:.88rem}.agenda-row p{margin:3px 0 0;color:var(--muted);font-size:.76rem}
+.agenda-row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.agenda-row-actions button{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:.74rem}
+.schedule-conflict-note{padding:10px 12px;border:1px solid var(--line);border-radius:10px;color:var(--muted);font-size:.8rem}
+.schedule-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px}
+.schedule-week-day{min-width:0;min-height:155px;padding:12px 9px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--ink);cursor:pointer}
+.schedule-week-day.is-today{outline:2px solid var(--accent);outline-offset:1px}
+.schedule-week-day>span,.schedule-week-day>small{display:block;color:var(--muted);font-size:.7rem}
+.schedule-week-day>b{display:block;margin:3px 0 8px;font-size:1.15rem}
+.schedule-week-items{display:grid;gap:5px;margin:7px 0}
+.schedule-week-items span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 6px;border-radius:6px;background:var(--accent-soft);font-size:.68rem}
+.schedule-week-items span.is-fixed{font-weight:700}
+.schedule-week-items span.is-task{border:1px dashed var(--line);background:transparent}
+.flexible-toolbar{display:flex;gap:5px;margin:10px 0}
+.flex-weekdays{display:flex;gap:9px;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;padding:10px}
+.flex-weekdays legend{padding:0 5px;color:var(--muted);font-size:.78rem}
+.flex-weekdays label{display:flex;gap:4px;align-items:center;font-size:.8rem}
+@media(max-width:900px){.schedule-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-week-day{min-height:125px}}
+@media(max-width:560px){.schedule-view-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-view-switch button{padding:8px 5px}.agenda-row{align-items:flex-start}.schedule-week-grid{gap:7px}.schedule-week-day{padding:10px 8px}}
