@@ -176,7 +176,7 @@ function eventConflicts(candidate,id){
   if(candidate.recurrence.frequency==="weekly"&&!candidate.recurrence.weekdays.includes(date.getDay()))continue;
   const startClock=String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0"),from=new Date(key+"T"+startClock),to=new Date(from.getTime()+(end.getTime()-start.getTime()));
   const probe={startDateTime:iso(from)+"T"+String(from.getHours()).padStart(2,"0")+":"+String(from.getMinutes()).padStart(2,"0"),endDateTime:iso(to)+"T"+String(to.getHours()).padStart(2,"0")+":"+String(to.getMinutes()).padStart(2,"0")};
-  for(const item of scheduleStore.getForDate(key)){if(item.id===id||item.endDateTime===null)continue;if(scheduleStore.overlaps(probe,item)&&!conflicts.some(x=>x.id===item.id&&x.date===key))conflicts.push({id:item.id,title:item.title,date:key})}
+  const dayItems=[...scheduleStore.getForDate(key),...(window.DaybookPrayer?.getPrayerIntervals?.(key)||[]).map(p=>({id:"prayer-"+p.name,title:p.name+" prayer",startDateTime:scheduleLocalStamp(p.start),endDateTime:scheduleLocalStamp(p.end)}))];for(const item of dayItems){if(item.id===id||item.endDateTime===null)continue;if(scheduleStore.overlaps(probe,item)&&!conflicts.some(x=>x.id===item.id&&x.date===key))conflicts.push({id:item.id,title:item.title,date:key})}
  }
  return conflicts;
 }
