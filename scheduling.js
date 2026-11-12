@@ -168,9 +168,9 @@
    const existing=new Map(events.filter(x=>x.source&&["class","routine","study"].includes(x.source.kind)).map(x=>[x.source.kind+":"+x.source.legacyId,x]));
    const next=mapped.map(item=>{const old=existing.get(item.source.kind+":"+item.source.legacyId);if(!old)return item;const a={...old,createdAt:"",updatedAt:""},b={...item,id:old.id,createdAt:"",updatedAt:""};return JSON.stringify(a)===JSON.stringify(b)?old:{...item,id:old.id,createdAt:old.createdAt}});
    const merged=[...retained,...next];if(exceptions.some(x=>{const series=merged.find(e=>e.id===x.seriesId);return !series||!matches(series,x.originalDate)}))return false;const mappedTasks=(Array.isArray(legacyTasks)?legacyTasks:[]).map(x=>normalizeTask({id:String(x.id||uid()),title:x.title,category:x.category||"Personal",kind:"task",priority:String(x.priority||"normal").toLowerCase(),durationMinutes:Number(x.durationMinutes)||30,dueDate:x.due||x.dueDate||null,status:x.done?"completed":"open",notes:x.notes||"",createdAt:x.createdAt||new Date().toISOString(),source:{kind:"legacy-task",legacyId:String(x.id||"")}})).filter(Boolean);
-   const taskOld=tasks;
-   if(JSON.stringify(merged)===JSON.stringify(events)&&JSON.stringify(mappedTasks)===JSON.stringify(taskOld))return healthy?true:write();
-   const oldEvents=events;events=merged;tasks=mappedTasks;if(!write()){events=oldEvents;tasks=taskOld;return false}emit("legacy-sync");return true;
+   const taskOld=tasks,mergedTasks=[...tasks.filter(x=>x.source?.kind!=="legacy-task"),...mappedTasks];
+   if(JSON.stringify(merged)===JSON.stringify(events)&&JSON.stringify(mergedTasks)===JSON.stringify(taskOld))return healthy?true:write();
+   const oldEvents=events;events=merged;tasks=mergedTasks;if(!write()){events=oldEvents;tasks=taskOld;return false}emit("legacy-sync");return true;
   }
   if(migrated&&raw!==null&&!blocked&&!write())healthy=false;
   return {version:VERSION,getAll:()=>clone(events),getForDate,getForWeek,getUpcoming,durationMinutes,overlaps,findOverlaps,createEvent,updateEvent,deleteEvent,duplicateEvent,syncLegacy,getOccurrenceId,createException,updateException,deleteException,getExceptions:()=>clone(exceptions),getException:id=>clone(exceptions.find(x=>x.occurrenceId===String(id))||null),getTasks,getTasksForDate,getDayPlan,createTask,updateTask,deleteTask,syncTasks,isHealthy:()=>healthy,wasMigrated:()=>migrated,storageKey:STORAGE_KEY};
