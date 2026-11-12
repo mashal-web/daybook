@@ -40,7 +40,7 @@ async function syncRemindersNow(reminders) {
   const notifications = [];
   for (const item of reminders) {
     if (!item || !item.title || !item.date || !item.time) continue;
-    let at = new Date(item.date + "T" + item.time + ":00");
+    let at = Number.isFinite(Number(item.timestamp)) ? new Date(Number(item.timestamp)) : new Date(item.date + "T" + item.time + ":00");
     if (Number.isNaN(at.getTime())) continue;
     const repeat = item.repeat === "daily" ? "day" : item.repeat === "weekly" ? "week" : null;
     const stepDays = repeat === "day" ? 1 : 7;
