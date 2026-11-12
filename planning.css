@@ -26,3 +26,5 @@
 #flexibleDialog{width:min(520px,calc(100% - 28px));max-height:88vh;overflow:auto;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--ink);padding:18px}
 #flexibleDialog::backdrop{background:#0009}#flexibleDialog .fields{display:grid;gap:10px}#flexibleDialog label{display:grid;gap:5px;font-size:.8rem}#flexibleDialog input,#flexibleDialog select,#flexibleDialog textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 @media(max-width:650px){.prayer-times{grid-template-columns:repeat(2,minmax(0,1fr))}.prayer-next small{margin-left:0}.prayer-settings-grid{grid-template-columns:1fr}.prayer-anchor{grid-template-columns:65px 75px 1fr;font-size:.75rem}.flexible-item{display:block}.flexible-actions{margin-top:10px}.prayer-head,.flexible-head{align-items:flex-start;flex-direction:column}}
+
+.sleep-routine{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0 0;font-size:.78rem}.sleep-routine span,.sleep-routine small{color:var(--muted)}.sleep-routine b{font-weight:650}
