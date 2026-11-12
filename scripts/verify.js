@@ -476,3 +476,12 @@ assert.throws(()=>reloadedOccurrence.updateEvent(seriesA.id,{recurrence:{frequen
 assert.equal(reloadedOccurrence.getExceptions().length,3,"Rejected series edits must preserve exceptions");
 assert(reloadedOccurrence.deleteEvent(seriesB.id),"Deleting a series must succeed");
 assert.equal(reloadedOccurrence.getExceptions().some(x=>x.seriesId===seriesB.id),false,"Deleting a series must remove its dependent exceptions atomically");
+
+assert(app.includes("const ROUTINE_VERSION=3")&&app.includes('?"22:30":r.time'),"Routine migration must move the old sleep default to 10:30 PM without discarding saved activities");
+assert(html.includes('href="planning.css"')&&html.includes('src="prayer-times.js"')&&html.includes('src="flexible-activities.js"'),"Prayer and flexible-planning modules must load in the web app");
+assert(build.includes('"planning.css"')&&build.includes('"prayer-times.js"')&&build.includes('"flexible-activities.js"'),"Prayer and flexible-planning assets must be included in Android builds");
+assert(sw.includes('"./planning.css"')&&sw.includes('"./prayer-times.js"')&&sw.includes('"./flexible-activities.js"'),"Prayer and flexible-planning assets must be cached for offline startup");
+assert(prayer.includes("api.aladhan.com/v1/timings/")&&prayer.includes("school=")&&prayer.includes("settings.offsets")&&prayer.includes("Asia/Karachi"),"Prayer times must use location, calculation method, Asr school and manual adjustments");
+assert(prayer.includes("Using saved prayer times")&&prayer.includes("getNativeReminders")&&prayer.includes("preparationMinutes")&&prayer.includes("checkWebNotifications"),"Prayer times must provide offline cache, reminders and configurable prayer anchors");
+assert(flexible.includes("daybook_flexible_activities_v1")&&flexible.includes("Estimated duration")&&flexible.includes("Tomorrow")&&flexible.includes("Fixed university classes")&&flexible.includes("getPrayerIntervals"),"Flexible activities must persist independently, support postponement and account for prayer windows");
+assert(native.includes("item.timestamp")&&app.includes("getNativeReminders"),"Android reminders must accept timezone-aware prayer notification timestamps");
