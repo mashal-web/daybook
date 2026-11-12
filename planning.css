@@ -60,3 +60,13 @@
 .flex-weekdays label{display:flex;gap:4px;align-items:center;font-size:.8rem}
 @media(max-width:900px){.schedule-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-week-day{min-height:125px}}
 @media(max-width:560px){.schedule-view-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-view-switch button{padding:8px 5px}.agenda-row{align-items:flex-start}.schedule-week-grid{gap:7px}.schedule-week-day{padding:10px 8px}}
+
+.timeline-prayer-markers{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+.timeline-prayer-markers span{padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:.72rem;color:var(--muted)}
+.timeline-prayer-markers b{color:var(--ink);margin-right:4px}
+.timeline-unscheduled{margin-top:18px;padding:14px;border:1px dashed var(--line);border-radius:13px}
+.timeline-unscheduled>div{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.timeline-unscheduled>div small{color:var(--muted)}
+.timeline-unscheduled article{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:.8rem}
+.timeline-unscheduled article small{color:var(--muted)}
+.schedule-week-prayers{line-height:1.5;margin-top:6px}
