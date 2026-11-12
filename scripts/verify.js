@@ -393,9 +393,11 @@ const overnightPlanEngine=scheduleEngine.create({storage:memoryStorage(),classes
 overnightPlanEngine.createEvent({id:"cross-midnight",title:"Overnight commitment",start:"2026-11-09T23:30",end:"2026-11-10T01:15"});
 const morningSlots=overnightPlanEngine.getDayPlan("2026-11-10",{dayStart:0,dayEnd:360}).available;
 assert.equal(morningSlots[0].startTime,"01:15","Available-time calculation must clip an overnight fixed event to the next local day");
+dailySeriesEngine.createException({seriesId:"daily-series",originalDate:"2026-11-11",type:"modified",override:{title:"Occurrence-specific title"}});
 dailySeriesEngine.updateEvent("daily-series",{title:"Updated daily review"});
-assert.equal(dailySeriesEngine.getExceptions().length,1,"Editing a recurring series must preserve existing occurrence exceptions");
-assert.equal(dailySeriesEngine.getForDate("2026-11-11")[0].title,"Daily review","A per-occurrence override must remain intact after a series edit");
+assert.equal(dailySeriesEngine.getExceptions().length,2,"Editing a recurring series must preserve existing occurrence exceptions");
+assert.equal(dailySeriesEngine.getForDate("2026-11-11")[0].title,"Occurrence-specific title","A per-occurrence override must remain intact after a series edit");
+assert.equal(dailySeriesEngine.getForDate("2026-11-12")[0].title,"Updated daily review","A series edit must update occurrences without individual overrides");
 const taskStorage=memoryStorage(),taskEngine=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
 const flexibleTask=taskEngine.createTask({id:"flex-study",title:"Review derivatives",durationMinutes:75,priority:"high",kind:"flexible",repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",dueDate:"2026-11-20"});
 assert(flexibleTask,"Flexible activities must be stored without an exact start time");
