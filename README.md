@@ -20,6 +20,9 @@ Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS
 - Personal finance tracker for PKR budgets, income, expenses and category-based transactions
 - Smart planning suggestions using open tasks and approximate free windows from the timetable
 - Weekly grid / today agenda timetable views
+- Location-aware five-prayer timetable using AlAdhan, with Karachi defaults, Hanafi/Shafi Asr selection, calculation methods, manual adjustments and cached offline timings
+- Prayer-aware conflict hints, optional prayer completion marks, and configurable prayer / bedtime notifications
+- Separate flexible activity list with estimated durations, optional activities, date-only deadlines, daily/weekly repeats, postponement and drag-to-reorder
 - Complete JSON backup and restore for core and new module data
 - One-time, daily and weekly reminders
 - Browser notification support while the web app is open
@@ -38,12 +41,14 @@ The initial timetable is based on the user's saved routine. It includes:
 - Maghrib prayer and Tilawat 6:00–6:30 PM
 - Phone time 7:30–8:00 PM
 - Dinner 8:00–8:30 PM
-- Wind down and sleep at 9:30 PM
+- Wind down and sleep at 10:30 PM
 - University blocks Monday, Wednesday, Thursday and Friday
 - No university on Saturday; Tuesday and Sunday are non-class days
 - Library blocks on Wednesday, Thursday and Friday
 
-All timetable entries are editable. Existing saved routine entries are preserved when the routine data version is upgraded; defaults are added only where a day/time slot is not already occupied.
+The default sleep schedule is 10:30 PM–5:30 AM. All timetable entries are editable. Existing saved routine entries are preserved when the routine data version is upgraded; the previous 9:30 PM sleep entry is migrated to 10:30 PM.
+
+Prayer times default to Karachi (Asia/Karachi), the Karachi calculation method and Hanafi Asr. Change city coordinates, timezone, calculation method, Asr school, manual minute offsets and reminder preferences in Settings. Prayer times are retrieved from AlAdhan and cached locally for offline fallback. The flexible activity list is intentionally separate from fixed calendar events, so it does not move university classes or appointments.
 
 ## Courses
 - Applied Physics & Electro Mechanical Fundamental
