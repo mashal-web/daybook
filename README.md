@@ -50,6 +50,14 @@ The default sleep schedule is 10:30 PM–5:30 AM. All timetable entries are edit
 
 Prayer times default to Karachi (Asia/Karachi), the Karachi calculation method and Hanafi Asr. Change city coordinates, timezone, calculation method, Asr school, manual minute offsets and reminder preferences in Settings. Prayer times are retrieved from AlAdhan and cached locally for offline fallback. The flexible activity list is intentionally separate from fixed calendar events, so it does not move university classes or appointments.
 
+## Unified scheduling (Phase 6)
+- One canonical schedule store now persists timed events, recurring series, occurrence exceptions, flexible activities and deadline tasks in schema version 3.
+- The day-plan API combines fixed events, task instances, prayer/sleep anchors, conflict pairs and available time intervals. It never moves a fixed commitment automatically.
+- The timetable workspace offers Timeline, Daily agenda, Flexible tasks and Weekly overview modes over the same schedule data.
+- Daily and selected-weekday recurring events support stable occurrence IDs, per-date edits, skips and series-level changes while retaining existing exception records.
+- Flexible activities support estimated duration, priority, optional deadlines, selected weekdays, completion history, postponement and optional start/end assignments.
+- Settings retain the preferred week start and default activity estimate. Prayer anchors are included where the selected date has cached prayer calculations.
+
 ## Courses
 - Applied Physics & Electro Mechanical Fundamental
 - Engineering Mathematics
