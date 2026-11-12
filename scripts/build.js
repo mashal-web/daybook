@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, "..");
 const out = path.join(root, "www");
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
-for (const file of ["index.html", "persistence.js", "scheduling.js","app.js", "styles.css", "timetable-theme.css", "upgrade.css", "upgrade.js", "mobile-app.css", "design-system.css", "study-planner.css", "manifest.webmanifest", "icon.svg", "sw.js"]) {
+for (const file of ["index.html", "persistence.js", "scheduling.js","app.js", "styles.css", "timetable-theme.css", "upgrade.css", "upgrade.js", "mobile-app.css", "design-system.css", "study-planner.css", "planning.css", "prayer-times.js", "flexible-activities.js", "manifest.webmanifest", "icon.svg", "sw.js"]) {
   fs.copyFileSync(path.join(root, file), path.join(out, file));
 }
 const bundledIndex = fs.readFileSync(path.join(out, "index.html"), "utf8").replace('<script src="app.js"></script>', '<script type="module" src="native.js"></script><script src="app.js"></script>');
