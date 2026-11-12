@@ -196,7 +196,7 @@ function scheduleAnchors(day){
  return out;
 }
 function renderScheduleModes(){
- const selected=weekDates().find(x=>x.day===selectedDay),day=iso(selected?.date||today),anchors=scheduleAnchors(day),plan=scheduleStore.getDayPlan(day,{anchors,priorityProfile:data.settings.priorityProfile}),now=new Date(),todayKey=iso(now);
+ const selected=weekDates().find(x=>x.day===selectedDay),day=iso(selected?.date||today);window.DaybookPrayer?.prefetchRange?.(day,1);const anchors=scheduleAnchors(day),plan=scheduleStore.getDayPlan(day,{anchors,priorityProfile:data.settings.priorityProfile}),now=new Date(),todayKey=iso(now);
  $$("[data-schedule-mode]").forEach(b=>{const active=b.dataset.scheduleMode===scheduleMode;b.setAttribute("aria-pressed",String(active));b.classList.toggle("selected",active)});
  $$("[data-mode-panel]").forEach(p=>{p.hidden=p.dataset.modePanel!==scheduleMode});
  if(scheduleMode==="timeline"){
