@@ -380,6 +380,15 @@ assert.equal(protectedEngine.syncLegacy([{id:"keep",day:1,start:"08:00",end:"09:
 assert.equal(corruptStorage.getItem("daybook_schedule_v1"),"not-json","Malformed canonical data must remain untouched");
 assert.equal(protectedEngine.getForDate("2026-11-09").length,1,"Legacy records must remain readable when canonical data is malformed");
 
+const dailySeriesEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+dailySeriesEngine.createEvent({id:"daily-series",title:"Daily review",start:"2026-11-09T07:00",end:"2026-11-09T07:30",recurrence:{frequency:"daily",weekdays:[],startDate:"2026-11-09",endDate:"2026-11-12"}});
+assert.equal(dailySeriesEngine.getForDate("2026-11-10").length,1,"Daily recurrence must generate the next occurrence");
+assert.equal(dailySeriesEngine.getForDate("2026-11-13").length,0,"Daily recurrence must respect its end date");
+const dailyIdentity=dailySeriesEngine.getOccurrenceId("daily-series","2026-11-10");
+assert(dailyIdentity,"Daily recurring occurrences must have stable occurrence identities");
+dailySeriesEngine.createException({seriesId:"daily-series",originalDate:"2026-11-10",type:"cancelled",override:null});
+assert.equal(dailySeriesEngine.getForDate("2026-11-10").length,0,"A single daily occurrence can be skipped without deleting its series");
+assert.equal(dailySeriesEngine.getForDate("2026-11-11").length,1,"Skipping one daily occurrence must preserve later occurrences");
 const taskStorage=memoryStorage(),taskEngine=scheduleEngine.create({storage:taskStorage,classes:[],routine:[]});
 const flexibleTask=taskEngine.createTask({id:"flex-study",title:"Review derivatives",durationMinutes:75,priority:"high",kind:"flexible",repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",dueDate:"2026-11-20"});
 assert(flexibleTask,"Flexible activities must be stored without an exact start time");
@@ -506,7 +515,7 @@ assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-sched
 assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
 assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
 assert(flexible.includes("DaybookScheduleStore")&&flexible.includes("createTask")&&flexible.includes("updateTask")&&flexible.includes("deleteTask"),"Flexible activity CRUD must use canonical schedule storage");
-assert(planningCss.includes(".schedule-week-grid")&&planningCss.includes("@media(max-width:560px)")&&planningCss.includes(".schedule-prayer-markers"),"Timetable modes must include responsive weekly and prayer marker styles");
+assert(planningCss.includes(".schedule-week-grid")&&planningCss.includes("@media(max-width:560px)")&&planningCss.includes(".timeline-prayer-markers"),"Timetable modes must include responsive weekly and prayer marker styles");
 
 assert(app.includes("const ROUTINE_VERSION=3")&&app.includes('?"22:30":r.time'),"Routine migration must move the old sleep default to 10:30 PM without discarding saved activities");
 assert(html.includes('href="planning.css"')&&html.includes('src="prayer-times.js"')&&html.includes('src="flexible-activities.js"'),"Prayer and flexible-planning modules must load in the web app");
