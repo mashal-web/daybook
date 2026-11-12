@@ -8,8 +8,8 @@ Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS
 - Persistent dark/light appearance preference, safe-area-aware layouts, touch-friendly controls and reduced-motion support
 
 ## Features
-- One combined weekly timetable: one timing column plus all seven days
-- Classes and daily activities shown together in chronological time rows
+- Unified schedule engine for fixed commitments, recurring events, deadline tasks, flexible activities and prayer/sleep anchors
+- Four timetable modes: chronological timeline, daily agenda, flexible task list and seven-day weekly overview
 - Add, edit and delete classes and routine activities
 - Study planner with editable course subjects and study sessions
 - Task manager with search, filters, priorities, categories, deadlines and notes
@@ -19,10 +19,10 @@ Daybook is a responsive, dark liquid-glass personal planner built with HTML, CSS
 - Daily habit tracker with check-ins, completion rate and streak estimates
 - Personal finance tracker for PKR budgets, income, expenses and category-based transactions
 - Smart planning suggestions using open tasks and approximate free windows from the timetable
-- Weekly grid / today agenda timetable views
+- Daily and weekly date navigation, conflict detection, available-time windows and priority-aware flexible task ordering
 - Location-aware five-prayer timetable using AlAdhan, with Karachi defaults, Hanafi/Shafi Asr selection, calculation methods, manual adjustments and cached offline timings
 - Prayer-aware conflict hints, optional prayer completion marks, and configurable prayer / bedtime notifications
-- Separate flexible activity list with estimated durations, optional activities, date-only deadlines, daily/weekly repeats, postponement and drag-to-reorder
+- Canonical flexible activities with estimated durations, optional work, date-only deadlines, daily/selected-weekday repeats, per-occurrence completion and postponement
 - Complete JSON backup and restore for core and new module data
 - One-time, daily and weekly reminders
 - Browser notification support while the web app is open
@@ -48,7 +48,7 @@ The initial timetable is based on the user's saved routine. It includes:
 
 The default sleep schedule is 10:30 PM–5:30 AM. All timetable entries are editable. Existing saved routine entries are preserved when the routine data version is upgraded; the previous 9:30 PM sleep entry is migrated to 10:30 PM.
 
-Prayer times default to Karachi (Asia/Karachi), the Karachi calculation method and Hanafi Asr. Change city coordinates, timezone, calculation method, Asr school, manual minute offsets and reminder preferences in Settings. Prayer times are retrieved from AlAdhan and cached locally for offline fallback. The flexible activity list is intentionally separate from fixed calendar events, so it does not move university classes or appointments.
+Prayer times default to Karachi (Asia/Karachi), the Karachi calculation method and Hanafi Asr. Change city coordinates, timezone, calculation method, Asr school, manual minute offsets and reminder preferences in Settings. Prayer times are retrieved from AlAdhan and cached locally for offline fallback. Flexible activities share the canonical schedule store but remain a separate planning category. Suggestions account for fixed events and prayer windows; fixed university classes and appointments are never moved automatically.
 
 ## Unified scheduling (Phase 6)
 - One canonical schedule store now persists timed events, recurring series, occurrence exceptions, flexible activities and deadline tasks in schema version 3.
@@ -56,7 +56,7 @@ Prayer times default to Karachi (Asia/Karachi), the Karachi calculation method a
 - The timetable workspace offers Timeline, Daily agenda, Flexible tasks and Weekly overview modes over the same schedule data.
 - Daily and selected-weekday recurring events support stable occurrence IDs, per-date edits, skips and series-level changes while retaining existing exception records.
 - Flexible activities support estimated duration, priority, optional deadlines, selected weekdays, completion history, postponement and optional start/end assignments.
-- Settings retain the preferred week start and default activity estimate. Prayer anchors are included where the selected date has cached prayer calculations.
+- Settings retain the preferred week start and default activity estimate. Prayer anchors are fetched and cached for the selected date and the displayed week when connectivity is available.
 
 ## Courses
 - Applied Physics & Electro Mechanical Fundamental
