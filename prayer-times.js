@@ -16,6 +16,9 @@
  function cleanTime(value){const m=String(value||"").match(/(\d{1,2}):(\d{2})/);return m?pad(+m[1]%24)+":"+m[2]:null}
  function addMinutes(time,n){const [h,m]=time.split(":").map(Number),v=(h*60+m+n+1440*10)%(1440);return pad(Math.floor(v/60))+":"+pad(v%60)}
  function apiDate(day){const [y,m,d]=day.split("-");return d+"-"+m+"-"+y}
+ function shiftDate(day,delta){const [y,m,d]=day.split("-").map(Number),x=new Date(Date.UTC(y,m-1,d+delta));return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate())}
+ async function prefetchDay(day){const key=cacheKey(day),all=read(CACHE,{});if(all[key])return;try{const url="https://api.aladhan.com/v1/timings/"+apiDate(day)+"?latitude="+encodeURIComponent(settings.latitude)+"&longitude="+encodeURIComponent(settings.longitude)+"&method="+encodeURIComponent(settings.method)+"&school="+encodeURIComponent(settings.school),response=await fetch(url,{headers:{Accept:"application/json"}});if(!response.ok)return;const payload=await response.json();if(payload.code!==200||!payload.data?.timings)return;const timings={};names.forEach(name=>{const t=cleanTime(payload.data.timings[name]);if(t)timings[name]=addMinutes(t,Number(settings.offsets[name])||0)});if(names.some(n=>!timings[n]))return;all[key]={day,timings,timezone:payload.data.meta?.timezone||settings.timezone,source:"AlAdhan",offline:false,updatedAt:Date.now()};write(CACHE,all);window.dispatchEvent(new Event("daybook-prayer-updated"))}catch(error){}}
+
  function cacheKey(day){return [day,settings.latitude,settings.longitude,settings.method,settings.school].join("|")}
  async function load(day,force=false){
   if(loading)return;loading=true;const cached=read(CACHE,{})[cacheKey(day)];
@@ -27,7 +30,7 @@
    const payload=await response.json();if(payload.code!==200||!payload.data?.timings)throw Error("Prayer service returned invalid data");
    const raw=payload.data.timings,timings={};names.forEach(name=>{const key=name==="Dhuhr"?"Dhuhr":name;const t=cleanTime(raw[key]);if(!t)throw Error("Missing "+name+" time");timings[name]=addMinutes(t,Number(settings.offsets[name])||0)});
    const result={day,timings,timezone:payload.data.meta?.timezone||settings.timezone,source:"AlAdhan",offline:false,updatedAt:Date.now()};
-   const all=read(CACHE,{});all[cacheKey(day)]=result;const keys=Object.keys(all);keys.slice(0,Math.max(0,keys.length-20)).forEach(k=>delete all[k]);write(CACHE,all);current=result;lastFetch=Date.now();
+   const all=read(CACHE,{});all[cacheKey(day)]=result;const keys=Object.keys(all);keys.slice(0,Math.max(0,keys.length-20)).forEach(k=>delete all[k]);write(CACHE,all);current=result;lastFetch=Date.now();prefetchDay(shiftDate(day,1));
   }catch(error){current=cached?{...cached,offline:true,error:"Using saved prayer times. "+error.message}:{day,timings:null,offline:true,error:"Prayer times unavailable. "+error.message}}
   finally{loading=false;render();window.dispatchEvent(new Event("daybook-prayer-updated"))}
  }
@@ -61,10 +64,11 @@
  function checkWebNotifications(){if(window.DaybookNative?.isNative()||!("Notification"in window)||Notification.permission!=="granted"||!current?.timings)return;const now=new Date(),day=current.day;names.forEach(name=>{if(!settings.notifications[name])return;const due=zonedInstant(day,addMinutes(current.timings[name],-settings.reminderMinutes),settings.timezone),key="web-prayer:"+name+":"+day;if(due<=now&&now-due<60000&&!read(key,false)){notify(name+" prayer","It is time for "+name+" prayer.");write(key,true)}});if(settings.sleepReminder){const due=zonedInstant(day,addMinutes(settings.bedtime,-settings.sleepReminderMinutes),settings.timezone),key="web-sleep:"+day;if(due<=now&&now-due<60000&&!read(key,false)){notify("Bedtime routine","Prepare for sleep. Wake-up: "+fmt(settings.wakeTime));write(key,true)}}}
  function notify(title,body){const options={body,icon:"./icon.svg"};if("serviceWorker"in navigator)navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,options)).catch(()=>{try{new Notification(title,options)}catch{}});else try{new Notification(title,options)}catch{}}
  function getNativeReminders(){
-  if(!current?.timings)return [];const day=current.day,now=new Date(),out=[];
-  names.forEach(name=>{if(!settings.notifications[name])return;const time=addMinutes(current.timings[name],-Math.max(0,Number(settings.reminderMinutes)||0)),at=zonedInstant(day,time,settings.timezone);if(at>now)out.push({id:"prayer-"+name+"-"+day,title:name+" prayer",date:day,time,timestamp:at.getTime()})});
-  if(settings.sleepReminder){const at=zonedInstant(day,addMinutes(settings.bedtime,-settings.sleepReminderMinutes),settings.timezone);if(at>now)out.push({id:"sleep-"+day,title:"Bedtime routine",date:day,time:addMinutes(settings.bedtime,-settings.sleepReminderMinutes),timestamp:at.getTime()})}
-  return out;
+  if(!current?.timings)return [];const now=new Date(),out=[],days=[current.day,shiftDate(current.day,1)],cache=read(CACHE,{});
+  days.forEach(day=>{const data=cache[cacheKey(day)];if(!data?.timings)return;
+   names.forEach(name=>{if(!settings.notifications[name])return;const time=addMinutes(data.timings[name],-Math.max(0,Number(settings.reminderMinutes)||0)),at=zonedInstant(day,time,settings.timezone);if(at>now)out.push({id:"prayer-"+name+"-"+day,title:name+" prayer",date:day,time,timestamp:at.getTime()})});
+   if(settings.sleepReminder){const time=addMinutes(settings.bedtime,-settings.sleepReminderMinutes),at=zonedInstant(day,time,settings.timezone);if(at>now)out.push({id:"sleep-"+day,title:"Bedtime routine",date:day,time,timestamp:at.getTime()})}
+  });return out;
  }
  function openSettings(){
   const dialog=document.getElementById("settingsDialog"),fields=dialog?.querySelector(".fields");if(!fields)return;
