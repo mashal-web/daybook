@@ -388,7 +388,7 @@ function handleEventAction(action){
 }
 function openOccurrenceEditor(seriesId,originalDate){
  const identity=scheduleStore.getOccurrenceId(seriesId,originalDate),series=scheduleStore.getAll().find(x=>x.id===seriesId);if(!identity||!series)return;
- const item=scheduleStore.getForDate(originalDate).find(x=>x.occurrenceId===identity);if(!item)return;
+ const exception=scheduleStore.getException(identity),lookupDate=exception?.override?.startDateTime?.slice(0,10)||originalDate,item=scheduleStore.getForDate(lookupDate).find(x=>x.occurrenceId===identity)||scheduleStore.getForDate(originalDate).find(x=>x.occurrenceId===identity);if(!item)return;
  let dialog=document.getElementById("occurrenceEditor");if(!dialog){dialog=document.createElement("dialog");dialog.id="occurrenceEditor";document.body.append(dialog)}
  const start=item.startDateTime||series.start,end=item.endDateTime||series.end||"",date=start.slice(0,10),time=start.slice(11),endDate=end?end.slice(0,10):date,endTime=end?end.slice(11):"";
  dialog.innerHTML='<form id="occurrenceForm"><div class="dialog-head"><h3>Edit one occurrence</h3><button type="button" id="occurrenceClose" aria-label="Close">×</button></div><p class="muted">Only '+esc(eventDateLabel(originalDate))+' will change. The recurring series and other exceptions remain untouched.</p><div class="fields">'+field("Title","occTitle","text",item.title||series.title)+field("Date","occDate","date",date)+field("Start time","occStart","time",time)+field("End date","occEndDate","date",endDate,"optional")+field("End time","occEnd","time",endTime,"optional")+'</div><div class="actions"><button type="button" class="secondary" id="occurrenceCancel">Cancel</button><button class="primary">Save occurrence</button></div></form>';
