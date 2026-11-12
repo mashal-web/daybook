@@ -97,7 +97,7 @@ assert(app.includes("Complete backup exported")&&persistence.includes("function 
 assert(html.includes('id="settingsDialog"')&&html.includes('id="timeFormatSetting"'), "Settings dialog must expose the stored time-format preference");
 assert(app.includes('$("#settingsForm").onsubmit=')&&app.includes('timeFormat:$("#timeFormatSetting").value'), "Time-format setting must be editable and persisted");
 assert(app.includes('filter==="overdue"?!t.done&&!!t.due&&t.due<iso(today)'), "Overdue task filter must include only unfinished past-due tasks");
-assert(app.includes('$("#overdue").textContent=data.tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length'), "Dashboard must show overdue task count");
+assert(app.includes('$("#overdue").textContent=tasks.filter(t=>!t.done&&t.due&&t.due<iso(today)).length')&&app.includes("function canonicalLegacyTasks()"), "Dashboard must show overdue task counts from canonical task records");
 assert(app.includes("function dueMeta(t)"), "Tasks must show relative due-date labels");
 assert(html.includes('id="weekDays" role="tablist"')&&html.includes('id="dayTimeline"'), "Mobile timetable must expose day tabs and a selected-day timeline");
 assert(!app.includes('<div class="table-scroll"><table'), "Timetable must not create nested scroll containers");
