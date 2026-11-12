@@ -511,6 +511,10 @@ assert.equal(reloadedOccurrence.getExceptions().length,3,"Rejected series edits 
 assert(reloadedOccurrence.deleteEvent(seriesB.id),"Deleting a series must succeed");
 assert.equal(reloadedOccurrence.getExceptions().some(x=>x.seriesId===seriesB.id),false,"Deleting a series must remove its dependent exceptions atomically");
 
+assert(scheduling.includes('["daily","weekly"].includes(recurrence.frequency)')&&scheduling.includes('function getOccurrenceId'),"Canonical event recurrence must support daily and selected-weekday series with stable occurrence identity");
+assert(app.includes("function openOccurrenceEditor")&&app.includes('data-event-action="skip-occurrence"')&&app.includes("updateException"),"Users must be able to edit or skip one occurrence without modifying its series");
+assert(html.includes('id="defaultDurationSetting"')&&html.includes('id="weekStartSetting"')&&app.includes("data.settings.defaultDuration")&&app.includes("data.settings.weekStart"),"Default activity duration and week-start preferences must persist");
+assert(app.includes('field("Estimated duration (minutes)","durationMinutes"')&&app.includes("scheduleStore.syncLegacy(data.classes,data.routine,data.sessions,data.tasks)"),"Deadline tasks must retain estimated duration in the canonical schedule store");
 assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-schedule-mode="agenda"')&&html.includes('data-schedule-mode="flexible"')&&html.includes('data-schedule-mode="week"'),"All four timetable modes must be available in the schedule workspace");
 assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
 assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
