@@ -405,7 +405,7 @@ function refreshDayBoundary(){
 setInterval(refreshDayBoundary,60000);
 setInterval(()=>{if(activeView==="schedule")renderWeek()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshDayBoundary()});
-const syncNativeReminders=()=>{if(!window.DaybookNative?.isNative())return Promise.resolve();const all=[...data.reminders,...(window.DaybookPrayer?.getNativeReminders?.()||[])];const snapshot=JSON.stringify(all);return window.DaybookNative.syncReminders(all).then(()=>{lastSyncedReminders=snapshot}).catch(()=>toast("Could not sync Android reminders"))};
+const syncNativeReminders=()=>{if(!window.DaybookNative?.isNative())return Promise.resolve();const all=[...data.reminders,...(window.DaybookPrayer?.getNativeReminders?.()||[])];const snapshot=JSON.stringify(data.reminders);return window.DaybookNative.syncReminders(all).then(()=>{lastSyncedReminders=snapshot}).catch(()=>toast("Could not sync Android reminders"))};
 window.addEventListener("daybook-native-ready",syncNativeReminders);
 window.addEventListener("daybook-native-resume",syncNativeReminders);
 window.addEventListener("daybook-prayer-updated",syncNativeReminders);
