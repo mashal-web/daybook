@@ -174,7 +174,7 @@ function eventConflicts(candidate,id){
   const date=new Date(start);date.setDate(start.getDate()+offset);const key=iso(date);
   if(key<candidate.start.slice(0,10)||candidate.recurrence.endDate&&key>candidate.recurrence.endDate)continue;
   if(candidate.recurrence.frequency==="weekly"&&!candidate.recurrence.weekdays.includes(date.getDay()))continue;
-  const delta=offset*86400000,from=new Date(start.getTime()+delta),to=new Date(end.getTime()+delta);
+  const startClock=String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0"),from=new Date(key+"T"+startClock),to=new Date(from.getTime()+(end.getTime()-start.getTime()));
   const probe={startDateTime:iso(from)+"T"+String(from.getHours()).padStart(2,"0")+":"+String(from.getMinutes()).padStart(2,"0"),endDateTime:iso(to)+"T"+String(to.getHours()).padStart(2,"0")+":"+String(to.getMinutes()).padStart(2,"0")};
   for(const item of scheduleStore.getForDate(key)){if(item.id===id||item.endDateTime===null)continue;if(scheduleStore.overlaps(probe,item)&&!conflicts.some(x=>x.id===item.id&&x.date===key))conflicts.push({id:item.id,title:item.title,date:key})}
  }
