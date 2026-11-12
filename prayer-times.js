@@ -17,6 +17,7 @@
  function addMinutes(time,n){const [h,m]=time.split(":").map(Number),v=(h*60+m+n+1440*10)%(1440);return pad(Math.floor(v/60))+":"+pad(v%60)}
  function apiDate(day){const [y,m,d]=day.split("-");return d+"-"+m+"-"+y}
  function shiftDate(day,delta){const [y,m,d]=day.split("-").map(Number),x=new Date(Date.UTC(y,m-1,d+delta));return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate())}
+ async function prefetchRange(start,count){const total=Math.max(1,Math.min(14,Number(count)||7));const jobs=[];for(let i=0;i<total;i++)jobs.push(prefetchDay(shiftDate(start,i)));await Promise.all(jobs)}
  async function prefetchDay(day){const key=cacheKey(day),all=read(CACHE,{});if(all[key])return;try{const url="https://api.aladhan.com/v1/timings/"+apiDate(day)+"?latitude="+encodeURIComponent(settings.latitude)+"&longitude="+encodeURIComponent(settings.longitude)+"&method="+encodeURIComponent(settings.method)+"&school="+encodeURIComponent(settings.school),response=await fetch(url,{headers:{Accept:"application/json"}});if(!response.ok)return;const payload=await response.json();if(payload.code!==200||!payload.data?.timings)return;const timings={};names.forEach(name=>{const t=cleanTime(payload.data.timings[name]);if(t)timings[name]=addMinutes(t,Number(settings.offsets[name])||0)});if(names.some(n=>!timings[n]))return;all[key]={day,timings,timezone:payload.data.meta?.timezone||settings.timezone,source:"AlAdhan",offline:false,updatedAt:Date.now()};write(CACHE,all);window.dispatchEvent(new Event("daybook-prayer-updated"))}catch(error){}}
 
  function cacheKey(day){return [day,settings.latitude,settings.longitude,settings.method,settings.school].join("|")}
@@ -99,6 +100,6 @@
  }
  function refreshDate(){const day=dateInZone(new Date(),settings.timezone);if(day!==lastDate){lastDate=day;current=null;load(day)}}
  const originalOpen=document.getElementById("settingsBtn");if(originalOpen)originalOpen.addEventListener("click",()=>setTimeout(openSettings,0));
- window.DaybookPrayer={getSettings:()=>clone(settings),getNativeReminders,getPrayerIntervals:(day)=>{if(!current?.timings||current.day!==day)return [];return names.map(n=>{const at=zonedInstant(day,current.timings[n],settings.timezone);return {start:new Date(at.getTime()-settings.preparationMinutes*60000),end:new Date(at.getTime()+settings.prayerDuration*60000),name:n}})},refresh:()=>load(dateInZone(new Date(),settings.timezone),true),openSettings};
+ window.DaybookPrayer={getSettings:()=>clone(settings),getNativeReminders,getPrayerIntervals:(day)=>{const cached=read(CACHE,{})[cacheKey(day)],timings=current?.day===day?current.timings:cached?.timings;if(!timings)return [];return names.map(n=>{const at=zonedInstant(day,timings[n],cached?.timezone||settings.timezone);return {start:new Date(at.getTime()-settings.preparationMinutes*60000),end:new Date(at.getTime()+settings.prayerDuration*60000),name:n}})},prefetchRange,refresh:()=>load(dateInZone(new Date(),settings.timezone),true),openSettings};
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
