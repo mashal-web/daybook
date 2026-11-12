@@ -39,7 +39,7 @@
   const end=input.end==null||input.end===""?null:String(input.end);
   if(end!==null){const a=parseLocal(start),b=parseLocal(end);if(!b||b<=a)return null}
   const recurrence=input.recurrence&&typeof input.recurrence==="object"?input.recurrence:{frequency:"none",weekdays:[]};
-  const frequency=recurrence.frequency==="weekly"?"weekly":"none";
+  const frequency=["daily","weekly"].includes(recurrence.frequency)?recurrence.frequency:"none";
   const weekdays=frequency==="weekly"?[...new Set((Array.isArray(recurrence.weekdays)?recurrence.weekdays:[]).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<=6))].sort((a,b)=>a-b):[];
   if(frequency==="weekly"&&!weekdays.length)return null;
   const recurrenceStart=recurrence.startDate==null||recurrence.startDate===""?null:String(recurrence.startDate);
@@ -92,7 +92,7 @@
   function normalizeException(input,seriesList){
    if(!input||typeof input!=="object"||Array.isArray(input))return null;
    const seriesId=String(input.seriesId||""),originalDate=String(input.originalDate||""),series=(seriesList||events).find(x=>x.id===seriesId);
-   if(!series||series.recurrence.frequency!=="weekly"||!validDate(originalDate)||!matches(series,originalDate))return null;
+   if(!series||series.recurrence.frequency==="none"||!validDate(originalDate)||!matches(series,originalDate))return null;
    const identity=occurrenceId(seriesId,originalDate),type=input.type;
    if(!EXCEPTION_TYPES.includes(type)||input.occurrenceId!==identity)return null;
    let override=null;
@@ -127,7 +127,7 @@
    const end=duration===null?null:new Date(start.getTime()+duration*60000);
    return {...clone(event),occurrenceDate:baseDate,occurrenceId:occurrenceId(event.id,baseDate),startDateTime:localStamp(start),endDateTime:end?localStamp(end):null,time:pad(start.getHours())+":"+pad(start.getMinutes()),end:end?pad(end.getHours())+":"+pad(end.getMinutes()):"",durationMinutes:duration};
   }
-  function matches(event,baseDate){const rec=event.recurrence;if(rec.frequency==="weekly"){const weekday=new Date(baseDate+"T12:00:00").getDay();return rec.weekdays.includes(weekday)&&(!rec.startDate||baseDate>=rec.startDate)&&(!rec.endDate||baseDate<=rec.endDate)}return event.start.slice(0,10)===baseDate}
+  function matches(event,baseDate){const rec=event.recurrence;if(rec.frequency==="daily")return (!rec.startDate||baseDate>=rec.startDate)&&(!rec.endDate||baseDate<=rec.endDate);if(rec.frequency==="weekly"){const weekday=new Date(baseDate+"T12:00:00").getDay();return rec.weekdays.includes(weekday)&&(!rec.startDate||baseDate>=rec.startDate)&&(!rec.endDate||baseDate<=rec.endDate)}return event.start.slice(0,10)===baseDate}
   function materializeOccurrence(event,baseDate){
    const item=occurrence(event,baseDate);if(!item)return null;const exception=exceptions.find(x=>x.occurrenceId===item.occurrenceId);if(exception&&exception.type==="cancelled")return null;
    if(exception&&exception.override){const originalStart=parseLocal(item.startDateTime),originalEnd=item.endDateTime?parseLocal(item.endDateTime):null,duration=originalStart&&originalEnd?originalEnd-originalStart:null;Object.assign(item,clone(exception.override));item.exceptionType=exception.type;item.exceptionModifiedAt=exception.modifiedAt;if(item.startDateTime){const d=parseLocal(item.startDateTime);item.time=pad(d.getHours())+":"+pad(d.getMinutes());if(!("endDateTime" in exception.override)&&duration!==null)item.endDateTime=localStamp(new Date(d.getTime()+duration))}if(item.endDateTime){const d=parseLocal(item.endDateTime);item.end=pad(d.getHours())+":"+pad(d.getMinutes())}else item.end="";item.durationMinutes=durationMinutes(item)}
@@ -146,7 +146,7 @@
   function overlaps(a,b){if(!a||!b)return false;const xs=parseLocal(a.startDateTime||a.start),ys=parseLocal(b.startDateTime||b.start),xe=parseLocal(a.endDateTime||a.end),ye=parseLocal(b.endDateTime||b.end);return !!(xs&&ys&&xe&&ye&&xe>xs&&ye>ys&&xs<ye&&ys<xe)}
   function findOverlaps(value){const list=Array.isArray(value)?value:getForDate(value||new Date()),conflicts=[];for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)if(overlaps(list[i],list[j]))conflicts.push([list[i],list[j]]);return conflicts}
   function createEvent(input){const event=normalizeEvent({...input,id:input&&input.id||uid()});if(!event)throw new Error("Invalid schedule event");if(events.some(x=>x.id===event.id))throw new Error("Duplicate schedule event ID");return transact([...events,event])?clone(event):null}
-  function getOccurrenceId(seriesId,originalDate){const series=events.find(x=>x.id===String(seriesId));if(!series||series.recurrence.frequency!=="weekly"||!validDate(originalDate)||!matches(series,originalDate))return null;return occurrenceId(series.id,originalDate)}
+  function getOccurrenceId(seriesId,originalDate){const series=events.find(x=>x.id===String(seriesId));if(!series||series.recurrence.frequency==="none"||!validDate(originalDate)||!matches(series,originalDate))return null;return occurrenceId(series.id,originalDate)}
   function createException(input){const series=events.find(x=>x.id===String(input&&input.seriesId||""));const identity=series&&getOccurrenceId(series.id,String(input.originalDate||""));if(!identity)throw new Error("Invalid recurring occurrence reference");if(exceptions.some(x=>x.occurrenceId===identity))throw new Error("Duplicate occurrence exception");const record=normalizeException({...input,occurrenceId:identity,modifiedAt:new Date().toISOString()},events);if(!record)throw new Error("Invalid occurrence exception");return transactExceptions([...exceptions,record])?clone(record):null}
   function updateException(identity,patch){const index=exceptions.findIndex(x=>x.occurrenceId===String(identity));if(index<0)return null;const candidate=normalizeException({...exceptions[index],...patch,seriesId:exceptions[index].seriesId,originalDate:exceptions[index].originalDate,occurrenceId:exceptions[index].occurrenceId,modifiedAt:new Date().toISOString()},events);if(!candidate)throw new Error("Invalid occurrence exception");const next=exceptions.slice();next[index]=candidate;return transactExceptions(next)?clone(candidate):null}
   function deleteException(identity){const next=exceptions.filter(x=>x.occurrenceId!==String(identity));if(next.length===exceptions.length)return false;return transactExceptions(next)}
