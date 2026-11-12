@@ -549,3 +549,85 @@ assert(prayer.includes("prefetchRange")&&prayer.includes("startTime")&&app.inclu
 assert(scheduling.includes("VERSION=3")&&scheduling.includes("priorityOrder")&&scheduling.includes("postponedFrom"),"Canonical schedule schema must retain tasks, priority profiles and occurrence-level postponement");
 assert(flexible.includes("daybook_flexible_activities_v1")&&flexible.includes("Estimated duration")&&flexible.includes("Tomorrow")&&flexible.includes("Fixed classes and appointments are protected")&&flexible.includes("getPrayerIntervals"),"Flexible activities must migrate safely, use canonical storage, support postponement and account for prayer windows");
 assert(native.includes("item.timestamp")&&app.includes("getNativeReminders"),"Android reminders must accept timezone-aware prayer notification timestamps");
+
+// Step 7A — execute the prayer module against deterministic browser/API fixtures.
+(async()=>{
+ const prayerClock={value:new Date("2026-11-13T10:00:00.000Z")};
+ class PrayerTestDate extends Date{
+  constructor(...args){super(...(args.length?args:[prayerClock.value.getTime()]))}
+  static now(){return prayerClock.value.getTime()}
+ }
+ const prayerMap=new Map(),prayerStorage={
+  getItem:key=>prayerMap.has(key)?prayerMap.get(key):null,
+  setItem:(key,value)=>prayerMap.set(key,String(value)),
+  removeItem:key=>prayerMap.delete(key)
+ };
+ const prayerSettings={
+  city:"Test City",latitude:24.8607,longitude:67.0011,timezone:"Asia/Karachi",
+  method:3,school:0,
+  offsets:{Fajr:2,Dhuhr:0,Asr:-3,Maghrib:0,Isha:0},
+  notifications:{Fajr:true,Dhuhr:true,Asr:true,Maghrib:true,Isha:true},
+  reminderMinutes:0,preparationMinutes:5,prayerDuration:10,
+  bedtime:"22:30",wakeTime:"05:30",sleepReminder:true,sleepReminderMinutes:15
+ };
+ prayerStorage.setItem("daybook_prayer_settings_v1",JSON.stringify(prayerSettings));
+ const prayerTimings={Fajr:"05:30 (PKT)",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:00",Isha:"19:30"};
+ const tomorrowKey=["2026-11-14",24.8607,67.0011,3,0].join("|");
+ prayerStorage.setItem("daybook_prayer_cache_v1",JSON.stringify({
+  [tomorrowKey]:{day:"2026-11-14",timings:{Fajr:"05:30",Dhuhr:"12:30",Asr:"15:45",Maghrib:"18:00",Isha:"19:30"},timezone:"Asia/Karachi",source:"AlAdhan",offline:false,updatedAt:0}
+ }));
+ const prayerCalls=[];let prayerNetworkFails=false;
+ const prayerFetch=async url=>{
+  prayerCalls.push(String(url));
+  if(prayerNetworkFails)return {ok:false,status:503,json:async()=>({})};
+  return {ok:true,status:200,json:async()=>({code:200,data:{timings:prayerTimings,meta:{timezone:"Asia/Karachi"}}})};
+ };
+ const prayerWindow={
+  DaybookPersistence:{storage:prayerStorage},
+  addEventListener(){},dispatchEvent(){},
+ };
+ const prayerDocument={readyState:"loading",addEventListener(){},getElementById(){return null},querySelector(){return null}};
+ const prayerNavigator={onLine:true};
+ const prayerEvent=class{constructor(type){this.type=type}};
+ new Function("window","localStorage","navigator","document","fetch","Event","Date","Intl","Notification",prayer)(
+  prayerWindow,prayerStorage,prayerNavigator,prayerDocument,prayerFetch,prayerEvent,PrayerTestDate,Intl,undefined
+ );
+ const prayerApi=prayerWindow.DaybookPrayer;
+ assert(prayerApi,"Prayer module must expose its public API without requiring a rendered page");
+ assert.equal(prayerApi.getSettings().city,"Test City","Prayer location settings must load from persistent storage");
+ assert.equal(prayerApi.getSettings().method,3,"Prayer calculation method must persist");
+ assert.equal(prayerApi.getSettings().school,0,"Asr calculation school must persist");
+ await prayerApi.refresh();
+ assert(prayerCalls.length>=1,"Prayer refresh must request timings from the configured provider");
+ const prayerRequest=new URL(prayerCalls[0]);
+ assert.equal(prayerRequest.searchParams.get("latitude"),"24.8607","Prayer requests must use the configured latitude");
+ assert.equal(prayerRequest.searchParams.get("longitude"),"67.0011","Prayer requests must use the configured longitude");
+ assert.equal(prayerRequest.searchParams.get("method"),"3","Prayer requests must use the configured calculation method");
+ assert.equal(prayerRequest.searchParams.get("school"),"0","Prayer requests must use the configured Asr school");
+ const prayerIntervals=prayerApi.getPrayerIntervals("2026-11-13");
+ assert.deepEqual(prayerIntervals.map(x=>x.name),["Fajr","Dhuhr","Asr","Maghrib","Isha"],"Prayer intervals must contain the five daily prayers and must not treat sunrise as a prayer");
+ assert.equal(prayerIntervals[0].startTime,"05:27","Manual prayer offsets and preparation time must be applied to displayed anchors");
+ assert.equal(prayerIntervals[0].endTime,"05:42","Prayer duration must determine the end of each anchor");
+ assert.equal(prayerIntervals[0].start.toISOString(),"2026-11-13T00:27:00.000Z","Prayer anchors must convert the configured local time zone into the correct instant");
+ const prayerReminders=prayerApi.getNativeReminders();
+ assert.equal(new Set(prayerReminders.map(x=>x.id)).size,prayerReminders.length,"Prayer and sleep reminder IDs must be unique to prevent duplicate scheduling");
+ assert(prayerReminders.some(x=>x.id==="prayer-Asr-2026-11-13"),"Future prayer reminders must be generated for the current local date");
+ assert(prayerReminders.some(x=>x.id==="prayer-Fajr-2026-11-14"),"Cached next-day prayer timings must support advance reminder scheduling");
+ assert(prayerReminders.some(x=>x.id==="sleep-2026-11-14"),"Sleep reminders must be generated from the configured bedtime");
+ prayerNavigator.onLine=false;
+ const prayerCallCount=prayerCalls.length;
+ await prayerApi.refresh();
+ assert.equal(prayerCalls.length,prayerCallCount,"Offline refresh must not make a network request");
+ assert.equal(prayerApi.getPrayerIntervals("2026-11-13").length,5,"Cached prayer timings must remain usable offline");
+ prayerNavigator.onLine=true;
+ prayerClock.value=new Date("2026-11-14T20:00:00.000Z");
+ await prayerApi.refresh();
+ assert(prayerCalls.some(url=>url.includes("/15-11-2026?")),"Prayer refresh must select the date in the configured time zone rather than the device UTC date");
+ assert.equal(prayerApi.getPrayerIntervals("2026-11-15").length,5,"A local date change must load the corresponding prayer schedule");
+ prayerClock.value=new Date("2026-11-13T10:00:00.000Z");
+ prayerNetworkFails=true;
+ await prayerApi.refresh();
+ assert.equal(prayerApi.getPrayerIntervals("2026-11-13").length,5,"A failed provider response must fall back to valid cached prayer timings");
+ console.log("Step 7A prayer runtime, location, method, cache, reminder and timezone checks passed.");
+})().catch(error=>{console.error(error);process.exitCode=1});
+
