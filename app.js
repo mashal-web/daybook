@@ -146,15 +146,15 @@ function openView(v){
  activeView=v;
  document.getElementById("moreDialog")?.close();
  $$(".view").forEach(x=>x.classList.toggle("active",x===target));
- $$(".nav").forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ $Array.from(document.querySelectorAll(".nav")).forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Timetable",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders",academics:"Academic management",habits:"Habits & routines",finance:"Personal finance"})[v]||"Daybook";
  render();
 }
-$("[data-view]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+Array.from(document.querySelectorAll("[data-view]")).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
 function openShellAction(action,button){
  if(action==="settings"){
   document.getElementById("moreDialog")?.close();
-  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  Array.from(document.querySelectorAll(".nav")).forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
   $("#settingsBtn")?.click();return;
  }
  const target=action==="prayer"?"overview":"schedule";
@@ -162,21 +162,21 @@ function openShellAction(action,button){
  openView(target);
  if(action==="calendar"||action==="events"){
   $("#heading").textContent=action==="calendar"?"Calendar":"Events";
-  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  Array.from(document.querySelectorAll(".nav")).forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
   renderScheduleModes();
   if(action==="events")document.querySelector('#schedule [data-add="event"]')?.focus({preventScroll:true});
  }
  if(action==="prayer"){
   $("#heading").textContent="Prayer";
-  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  Array.from(document.querySelectorAll(".nav")).forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
   window.setTimeout(()=>document.getElementById("daybookPrayerWidget")?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}),80);
  }
 }
-$("[data-shell-action]").forEach(button=>button.addEventListener("click",()=>openShellAction(button.dataset.shellAction,button)));
+Array.from(document.querySelectorAll("[data-shell-action]")).forEach(button=>button.addEventListener("click",()=>openShellAction(button.dataset.shellAction,button)));
 
 $("#openMore")?.addEventListener("click",()=>$("#moreDialog")?.showModal());
 $("#closeMore")?.addEventListener("click",()=>$("#moreDialog")?.close());
-$$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
+$Array.from(document.querySelectorAll("[data-go]")).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 function rowActions(type,id){const duplicate=["class","routine"].includes(type)?'<button class="small-action" data-duplicate="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Duplicate '+esc(type)+'" title="Duplicate">'+window.daybookIcon("plus")+'<span>Duplicate</span></button>':"";return '<button class="small-action" data-edit="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Edit '+esc(type)+'" title="Edit">'+window.daybookIcon("edit")+'<span>Edit</span></button>'+duplicate+'<button class="small-action danger" data-delete="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Delete '+esc(type)+'" title="Delete">'+window.daybookIcon("trash")+'<span>Delete</span></button>'}
