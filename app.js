@@ -146,7 +146,7 @@ function openView(v){
  activeView=v;
  document.getElementById("moreDialog")?.close();
  $$(".view").forEach(x=>x.classList.toggle("active",x===target));
- $Array.from(document.querySelectorAll(".nav")).forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+ Array.from(document.querySelectorAll(".nav")).forEach(b=>{const active=b.dataset.view===v;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
  $("#heading").textContent=({overview:"Overview",schedule:"Timetable",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders",academics:"Academic management",habits:"Habits & routines",finance:"Personal finance"})[v]||"Daybook";
  render();
 }
@@ -176,7 +176,7 @@ Array.from(document.querySelectorAll("[data-shell-action]")).forEach(button=>but
 
 $("#openMore")?.addEventListener("click",()=>$("#moreDialog")?.showModal());
 $("#closeMore")?.addEventListener("click",()=>$("#moreDialog")?.close());
-$Array.from(document.querySelectorAll("[data-go]")).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
+Array.from(document.querySelectorAll("[data-go]")).forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));
 $("#date").textContent=today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase();
 $("#today").textContent=today.toLocaleDateString("en-US",{month:"short",day:"numeric"});
 function rowActions(type,id){const duplicate=["class","routine"].includes(type)?'<button class="small-action" data-duplicate="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Duplicate '+esc(type)+'" title="Duplicate">'+window.daybookIcon("plus")+'<span>Duplicate</span></button>':"";return '<button class="small-action" data-edit="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Edit '+esc(type)+'" title="Edit">'+window.daybookIcon("edit")+'<span>Edit</span></button>'+duplicate+'<button class="small-action danger" data-delete="'+esc(type)+'" data-id="'+esc(id)+'" aria-label="Delete '+esc(type)+'" title="Delete">'+window.daybookIcon("trash")+'<span>Delete</span></button>'}
