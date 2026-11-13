@@ -631,3 +631,14 @@ assert(native.includes("item.timestamp")&&app.includes("getNativeReminders"),"An
  console.log("Step 7A prayer runtime, location, method, cache, reminder and timezone checks passed.");
 })().catch(error=>{console.error(error);process.exitCode=1});
 
+
+/* Phase 7B.1 design-system and shell regression guards */
+assert(html.includes('class="sidebar-primary"')&&html.includes('class="sidebar-tools"'),"Primary workspaces and supporting tools must remain distinct");
+for(const action of ["calendar","events","prayer","settings"])assert(html.includes('data-shell-action="'+action+'"'),"Shell shortcut must connect "+action);
+for(const destination of ["overview","schedule","tasks","analytics","planner","reminders","academics","habits","finance"])assert(html.includes('data-view="'+destination+'"'),"Existing destination must remain available: "+destination);
+assert(html.includes('id="moreDialog"')&&html.includes('class="mobile-nav"'),"Accessible mobile navigation must remain present");
+assert(html.includes('localStorage.getItem("daybook_settings")')&&html.includes('document.documentElement.dataset.theme=t'),"Theme must be applied before CSS to avoid theme flash");
+assert(design.includes("PHASE 7B.1")&&design.includes("--surface-3:#292929")&&design.includes("--focus:#fff"),"Monochrome design tokens and focus indicator must exist");
+assert(design.includes("@media(max-width:360px)")&&design.includes("@media(max-width:600px)")&&design.includes("@media(max-width:900px)"),"Phone and tablet breakpoints must exist");
+assert(app.includes("function openShellAction")&&app.includes("renderScheduleModes()"),"Workspace shortcuts must route to existing application features");
+console.log("Phase 7B.1 design system and application shell checks passed.");

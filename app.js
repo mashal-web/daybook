@@ -90,7 +90,7 @@ window.addEventListener("daybook-postpone-legacy-task",event=>{const task=data.t
 window.addEventListener("daybook-prayer-updated",()=>{if(activeView==="schedule")renderScheduleModes()});
 let lastSyncedReminders=JSON.stringify(data.reminders);
 let activeView="overview",filter="all",weekOffset=0,scheduleMode="timeline",edit={type:null,id:null};
-function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f2f4f2":"#0b1018";}
+function applyTheme(theme){const value=theme==="light"?"light":"dark";document.documentElement.dataset.theme=value;document.documentElement.style.colorScheme=value;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=value==="light"?"#f5f5f4":"#101010";}
 applyTheme(data.settings.theme);
 const FOCUS_KEY="daybook_focus";
 function readFocus(){try{const v=JSON.parse(window.DaybookPersistence.storage.getItem(FOCUS_KEY));return v&&typeof v==="object"?v:null}catch{return null}}
@@ -150,7 +150,30 @@ function openView(v){
  $("#heading").textContent=({overview:"Overview",schedule:"Timetable",planner:"Study planner",tasks:"Tasks",analytics:"Progress analytics",reminders:"Reminders",academics:"Academic management",habits:"Habits & routines",finance:"Personal finance"})[v]||"Daybook";
  render();
 }
-$$("[data-view]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+$("[data-view]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.view)));
+function openShellAction(action,button){
+ if(action==="settings"){
+  document.getElementById("moreDialog")?.close();
+  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  $("#settingsBtn")?.click();return;
+ }
+ const target=action==="prayer"?"overview":"schedule";
+ scheduleMode=action==="calendar"?"week":"timeline";
+ openView(target);
+ if(action==="calendar"||action==="events"){
+  $("#heading").textContent=action==="calendar"?"Calendar":"Events";
+  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  renderScheduleModes();
+  if(action==="events")document.querySelector('#schedule [data-add="event"]')?.focus({preventScroll:true});
+ }
+ if(action==="prayer"){
+  $("#heading").textContent="Prayer";
+  $(".nav").forEach(n=>{const active=n===button;n.classList.toggle("active",active);if(active)n.setAttribute("aria-current","page");else n.removeAttribute("aria-current")});
+  window.setTimeout(()=>document.getElementById("daybookPrayerWidget")?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}),80);
+ }
+}
+$("[data-shell-action]").forEach(button=>button.addEventListener("click",()=>openShellAction(button.dataset.shellAction,button)));
+
 $("#openMore")?.addEventListener("click",()=>$("#moreDialog")?.showModal());
 $("#closeMore")?.addEventListener("click",()=>$("#moreDialog")?.close());
 $$("[data-go]").forEach(b=>b.addEventListener("click",()=>openView(b.dataset.go)));

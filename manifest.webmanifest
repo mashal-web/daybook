@@ -8,8 +8,8 @@
     "standalone",
     "minimal-ui"
   ],
-  "background_color": "#080d1a",
-  "theme_color": "#080d1a",
+  "background_color": "#101010",
+  "theme_color": "#101010",
   "description": "Your personal timetable, daily routine, study planner, tasks and focus timer.",
   "icons": [
     {
