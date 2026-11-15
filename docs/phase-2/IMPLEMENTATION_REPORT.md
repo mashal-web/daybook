@@ -48,6 +48,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Preserve original flexible-legacy properties by merging the source record before explicit normalized fields.
 - Retain recurrence end, postponement origin/destination and scheduled start/end where present.
 - Preserve the legacy source key; no destructive deletion.
+- Flexible activity suggestions now withhold time windows when prayer intervals are unavailable, the schedule is unhealthy, or a commitment has an unknown end time.
 
 ### Canonical scheduling API
 
