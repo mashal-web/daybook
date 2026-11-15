@@ -1,7 +1,7 @@
 # Daybook Phase 2 — Data Ownership Matrix
 
-**Repository baseline:** `825c75208fdf577fa666008276e9b1e1f5353153`  
-**Inspection target:** `main` at the baseline, with Phase 2 implementation reviewed on `phase-2/canonical-data-compatibility`.  
+**Repository baseline:** `825c75208fdf577fa666008276e9b1e1f5353153`
+**Inspection target:** `main` at the baseline, with Phase 2 implementation reviewed on `phase-2/canonical-data-compatibility`.
 **Status:** Source-inspected; no database migration performed.
 
 ## Ownership principles
