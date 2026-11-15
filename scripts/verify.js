@@ -84,7 +84,9 @@ assert(html.includes('src="scheduling.js"')&&build.includes('"scheduling.js"')&&
 assert(scheduling.includes("function getForDate")&&scheduling.includes("function getForWeek")&&scheduling.includes("function getUpcoming")&&scheduling.includes("function findOverlaps"), "Scheduling engine must expose centralized schedule queries");
 assert(app.includes("scheduleStore.getForDate")&&app.includes("scheduleStore.getForWeek"), "Week and day views must read the unified scheduling engine");
 assert(app.includes("canonicalId:item.id,id:item.source?.legacyId||item.id"), "Legacy event IDs must remain usable by existing edit and delete handlers");
-assert(upgrade.includes("engine.getForDate(new Date())"), "Agenda must read the unified scheduling engine");
+assert(upgrade.includes("const engine=window.DaybookScheduleStore")&&upgrade.includes("engine.getForDate(today())"), "Agenda must query the created canonical scheduling instance for the current date");
+assert(upgrade.includes("engine.getTasks()")&&upgrade.includes("engine.getDayPlan(day,{anchors})")&&upgrade.includes("Free time cannot be calculated safely"), "Smart Planner must use canonical tasks and refuse to invent availability when schedule data is unavailable");
+assert(!upgrade.includes("read(\"tasks\",[])")&&!upgrade.includes("window.DaybookSchedule?.getForDate"), "Smart Planner must not read legacy task storage or call scheduling methods on the factory");
 assert(upgrade.includes('window.addEventListener("daybook-schedule-updated"'), "Agenda and smart planning must refresh on shared schedule changes");
 assert(scheduling.includes('"daybook-schedule-updated"'), "Schedule mutations must publish a shared update event");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
@@ -425,6 +427,34 @@ const legacyTaskStorage=memoryStorage(),legacyTaskEngine=scheduleEngine.create({
 legacyTaskEngine.syncLegacy([],[],[],[{id:"old-task",title:"Legacy task",due:"2026-11-12",priority:"High",done:false}]);
 assert.equal(legacyTaskEngine.getTasks().find(x=>x.id==="old-task").title,"Legacy task","Existing task manager records must synchronize into canonical scheduling storage");
 assert.equal(JSON.parse(legacyTaskStorage.getItem("daybook_schedule_v1")).version,3,"Task synchronization must persist schema version 3");
+const richTaskStorage=memoryStorage(),richTaskEngine=scheduleEngine.create({storage:richTaskStorage,classes:[],routine:[]});
+const richLegacyTask={id:"rich-task",title:"Research report",description:"Prepare the full report",notes:"Use course references",planDate:"2026-11-09",due:"2026-11-20",duration:90,priority:"High",done:false,repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",repeatEnd:"2026-12-01",completedDates:["2026-11-04"],postponedFrom:"2026-11-05",postponedTo:"2026-11-06",scheduledStart:"2026-11-09T10:00",scheduledEnd:"2026-11-09T11:30",courseId:"course-civil",customMetadata:{sourceNote:"legacy import"},customFlag:"keep-me"};
+assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"A supported populated legacy task must synchronize");
+const richTask=richTaskEngine.getTasks().find(x=>x.id==="rich-task");
+assert.equal(richTask.description,richLegacyTask.description,"Task description must survive canonical conversion");
+assert.equal(richTask.deadline,undefined,"Deadline aliases are normalized to dueDate while the original due alias remains preserved");
+assert.equal(richTask.dueDate,"2026-11-20","Legacy due date must map to the canonical deadline");
+assert.equal(richTask.durationMinutes,90,"Legacy estimated duration must map to canonical duration");
+assert.deepEqual(richTask.completedDates,richLegacyTask.completedDates,"Completion history must survive task conversion");
+assert.equal(richTask.postponedFrom,richLegacyTask.postponedFrom,"Postponement origin must survive task conversion");
+assert.equal(richTask.postponedTo,richLegacyTask.postponedTo,"Postponement destination must survive task conversion");
+assert.equal(richTask.courseId,"course-civil","Academic relationship fields must survive task conversion");
+assert.deepEqual(richTask.customMetadata,richLegacyTask.customMetadata,"Custom metadata must survive task conversion");
+assert.equal(richTask.customFlag,"keep-me","Unknown task fields must survive canonical normalization");
+assert.equal(richTask.scheduledStart,richLegacyTask.scheduledStart,"Scheduled start must survive task conversion");
+const firstRichSnapshot=JSON.stringify(richTaskEngine.getTasks());
+assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"Repeated legacy synchronization must remain successful");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Repeated synchronization must be idempotent and must not duplicate or rewrite task records");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"broken-task"}]),false,"Malformed legacy tasks must block synchronization instead of being silently discarded");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Rejected malformed input must not overwrite previously synchronized task data");
+const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
+assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
+const recurringCompletion=rangeEngine.createTask({id:"recurring-completion",title:"Daily revision",repeat:"daily",repeatStart:"2026-11-09",durationMinutes:30});
+assert(rangeEngine.setTaskCompletion("recurring-completion",true,"2026-11-09"),"Recurring occurrence completion must be persisted");
+assert.equal(rangeEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring completion API must mark the selected occurrence complete");
+assert.equal(rangeEngine.getTasksForDate("2026-11-10")[0].occurrenceStatus,"open","Recurring completion must not complete future occurrences");
+
 console.log("Daybook regression checks passed.");
 
 assert(app.includes("window.daybookIcon") && app.includes("const ICONS="), "Shared icon set must be defined centrally");
