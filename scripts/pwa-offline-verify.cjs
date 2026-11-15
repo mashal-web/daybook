@@ -105,7 +105,9 @@ const server = http.createServer((req,res) => {
   check("finance-module-rendered",financeText.length>0,{length:financeText.length});
   check("no-page-errors",pageErrors.length===0,pageErrors);
   await page.evaluate(()=>window.DaybookPersistence.storage.removeItem("daybook_phase24_offline_probe"));
-  const report={ok:failures.length===0,failures,checks};\n  fs.writeFileSync(path.resolve(__dirname,"../pwa-verification-report.json"),JSON.stringify(report,null,2));\n  console.log(JSON.stringify(report,null,2));
+  const report={ok:failures.length===0,failures,checks};
+  fs.writeFileSync(path.resolve(__dirname,"../pwa-verification-report.json"),JSON.stringify(report,null,2));
+  console.log(JSON.stringify(report,null,2));
   if(failures.length)process.exitCode=1;
  } catch(e) { console.error(e.stack||String(e));process.exitCode=1; }
  finally {if(browser)await browser.close();server.close();}
