@@ -41,7 +41,7 @@
 
 ## Phase 2 ownership changes
 
-1. Canonical task normalization now retains unknown JSON properties (except unsafe prototype-related property names) while canonical fields are written explicitly.
+1. Canonical task normalization now retains unknown JSON properties and the legacy `duration` alias (except unsafe prototype-related property names) while canonical fields are written explicitly.
 2. Legacy task synchronization maps known legacy fields to canonical fields, retains original aliases/custom data, and uses existing canonical values only when the current legacy record omits a field.
 3. Invalid or duplicate task records and identity collisions reject synchronization before the canonical write.
 4. Flexible-activity legacy conversion spreads the original record first, then explicitly normalizes known fields and retains the legacy key.
