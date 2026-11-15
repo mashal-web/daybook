@@ -10,7 +10,7 @@
  const plusDays=(key,n)=>{const d=new Date(key+"T12:00:00");d.setDate(d.getDate()+n);return dateKey(d)};
  const uid=()=>root.crypto&&typeof root.crypto.randomUUID==="function"?root.crypto.randomUUID():"evt-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,10);
  const clone=v=>JSON.parse(JSON.stringify(v));
- const TASK_FIELDS=new Set(["id","title","category","kind","priority","durationMinutes","duration","planDate","dueDate","postponedTo","postponedFrom","repeat","weekdays","repeatStart","repeatEnd","completedDates","status","scheduledStart","scheduledEnd","notes","createdAt","updatedAt","source"]);
+ const TASK_FIELDS=new Set(["id","title","category","kind","priority","durationMinutes","planDate","dueDate","postponedTo","postponedFrom","repeat","weekdays","repeatStart","repeatEnd","completedDates","status","scheduledStart","scheduledEnd","notes","createdAt","updatedAt","source"]);
  function taskExtras(input){const out={};for(const key of Object.keys(input)){if(TASK_FIELDS.has(key)||key==="__proto__"||key==="constructor"||key==="prototype"||input[key]===undefined)continue;out[key]=clone(input[key])}return out}
  function normalizeTask(input){
   if(!input||typeof input!=="object"||Array.isArray(input))return null;
