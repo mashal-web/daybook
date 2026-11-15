@@ -435,6 +435,7 @@ assert.equal(richTask.description,richLegacyTask.description,"Task description m
 assert.equal(richTask.due,"2026-11-20","The original legacy due-date property must remain available for compatibility");
 assert.equal(richTask.dueDate,"2026-11-20","Legacy due date must map to the canonical deadline");
 assert.equal(richTask.durationMinutes,90,"Legacy estimated duration must map to canonical duration");
+assert.equal(richTask.duration,90,"Original legacy duration alias must remain available after canonical normalization");
 assert.deepEqual(richTask.completedDates,richLegacyTask.completedDates,"Completion history must survive task conversion");
 assert.equal(richTask.postponedFrom,richLegacyTask.postponedFrom,"Postponement origin must survive task conversion");
 assert.equal(richTask.postponedTo,richLegacyTask.postponedTo,"Postponement destination must survive task conversion");
