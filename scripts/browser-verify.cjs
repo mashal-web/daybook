@@ -73,16 +73,30 @@ const assert = require("node:assert/strict");
       let invalidDateRejected=false, duplicateRejected=false;
       try { store.createEvent({id:"pw-invalid",title:"Invalid date",start:"2026-02-30T09:00",end:"2026-02-30T10:00"}); } catch(e) { invalidDateRejected=true; }
       try { store.createEvent({id,title:"duplicate",start:start+"T08:00",end:start+"T08:30"}); } catch(e) { duplicateRejected=true; }
+      const weeklyId = "pw-weekly-series", weekday = base.getDay();
+      store.createEvent({id:weeklyId,title:"PW weekly recurrence",start:start+"T08:00",end:start+"T08:30",recurrence:{frequency:"weekly",weekdays:[weekday],startDate:start,endDate:plus(14)}});
+      const weeklyNext = store.getForDate(plus(7)).some(x=>x.title==="PW weekly recurrence");
+      const weeklyWrongDay = store.getForDate(plus(1)).some(x=>x.title==="PW weekly recurrence");
+      const weeklyIdentity = store.getOccurrenceId(weeklyId,plus(7));
+      store.createException({seriesId:weeklyId,originalDate:plus(7),type:"cancelled",override:null});
+      const weeklySkipped = store.getForDate(plus(7)).some(x=>x.title==="PW weekly recurrence");
+      const weeklyPreserved = store.getForDate(plus(14)).some(x=>x.title==="PW weekly recurrence");
       const boundary = store.getForDateRange(start,plus(2)).filter(x=>x.title==="PW daily recurrence").length;
       const reversedRange = store.getForDateRange(plus(2),start).length;
       store.createEvent({id:"pw-unknown-end",title:"Unknown end commitment",start:start+"T13:00",end:null});
       const unknownEnd = store.getDayPlan(start,{dayStart:12*60,dayEnd:18*60}).available.length;
-      return {daily1,identity:!!identity,skipped,preserved,invalidDateRejected,duplicateRejected,boundary,reversedRange,unknownEnd,start};
+      store.deleteEvent("pw-unknown-end");
+      return {daily1,identity:!!identity,skipped,preserved,weeklyNext,weeklyWrongDay,weeklyIdentity:!!weeklyIdentity,weeklySkipped,weeklyPreserved,invalidDateRejected,duplicateRejected,boundary,reversedRange,unknownEnd,start};
     });
     assert.equal(scheduling.daily1, true);
     assert.equal(scheduling.identity, true);
     assert.equal(scheduling.skipped, false);
     assert.equal(scheduling.preserved, true);
+    assert.equal(scheduling.weeklyNext, true);
+    assert.equal(scheduling.weeklyWrongDay, false);
+    assert.equal(scheduling.weeklyIdentity, true);
+    assert.equal(scheduling.weeklySkipped, false);
+    assert.equal(scheduling.weeklyPreserved, true);
     assert.equal(scheduling.invalidDateRejected, true);
     assert.equal(scheduling.duplicateRejected, true);
     assert.equal(scheduling.boundary, 2);
@@ -102,11 +116,17 @@ const assert = require("node:assert/strict");
         {name:"Isha",startTime:"20:00",endTime:"20:20"}
       ]};
       window.dispatchEvent(new Event("daybook-prayer-updated"));
-      return {missing,valid:!host.textContent.includes("Prayer timing data is unavailable"),hasSafeWindow:host.textContent.includes("Available focus window")};
+      const valid = !host.textContent.includes("Prayer timing data is unavailable");
+      const hasSafeWindow = host.textContent.includes("Available focus window");
+      window.DaybookScheduleStore.createEvent({id:"pw-planner-unknown-end",title:"Unknown end planner commitment",start:new Date().toISOString().slice(0,10)+"T13:00",end:null});
+      const unknownEndSuppressed = host.textContent.includes("no end time") || host.textContent.includes("cannot be calculated safely");
+      window.DaybookScheduleStore.deleteEvent("pw-planner-unknown-end");
+      return {missing,valid,hasSafeWindow,unknownEndSuppressed};
     });
     assert.equal(planner.missing, true);
     assert.equal(planner.valid, true);
     assert.equal(planner.hasSafeWindow, true);
+    assert.equal(planner.unknownEndSuppressed, true);
 
     const unhealthy = await page.evaluate(() => {
       localStorage.setItem("daybook_schedule_v1", "not-json");
@@ -119,6 +139,7 @@ const assert = require("node:assert/strict");
     await page.locator('[data-schedule-mode="agenda"]').click();
     await page.locator("#scheduleAgenda").waitFor();
     assert.match(await page.locator("#scheduleAgenda").innerText(), /unavailable|recovery/i);
+    assert.match(await page.locator("#smartPlan").innerText(), /unavailable|recovery/i);
 
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
