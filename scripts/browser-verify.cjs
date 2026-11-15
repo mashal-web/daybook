@@ -136,11 +136,16 @@ const assert = require("node:assert/strict");
 
     await page.evaluate(() => localStorage.setItem("daybook_schedule_v1", "not-json"));
     await page.reload({ waitUntil: "networkidle" });
+    await page.waitForFunction(() => window.DaybookScheduleStore?.isHealthy() === false);
+    await page.evaluate(() => window.dispatchEvent(new Event("daybook-schedule-updated")));
     await page.locator('#sidebar .sidebar-primary [data-view="schedule"]').click();
     await page.locator('[data-schedule-mode="agenda"]').click();
     await page.locator("#scheduleAgenda").waitFor();
-    assert.match(await page.locator("#scheduleAgenda").innerText(), /unavailable|recovery/i);
-    assert.match(await page.locator("#smartPlan").innerText(), /unavailable|recovery/i);
+    const agendaText = await page.locator("#scheduleAgenda").innerText();
+    const plannerText = await page.locator("#smartPlan").innerText();
+    console.log("Unhealthy storage UI diagnostic:", JSON.stringify({agendaText,plannerText}));
+    assert.match(agendaText, /unavailable|recovery/i);
+    assert.match(plannerText, /unavailable|recovery/i);
 
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
