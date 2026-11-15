@@ -53,6 +53,14 @@ Step 7A prayer runtime, location, method, cache, reminder and timezone checks pa
 
 No failures were captured. Because the shims are not the Node standard library and the script was not launched through npm, this result is reported as an isolated V8 execution of the verification logic, not as an `npm test` pass.
 
+## Phase 2.1 independent audit corrections
+
+- Reproduced a data-loss case in the feature-branch implementation: a legacy `repeat: "monthly"` task synchronized successfully as `repeat: "none"`, and an invalid completion-history date was silently discarded.
+- Updated `normalizeTask()` to reject unsupported recurrence values, malformed weekday arrays and invalid completion-history dates before writing canonical tasks.
+- Updated `setTaskCompletion()` to reject dates that are not active occurrences under the task's recurrence boundaries/weekday rule, while allowing an explicit postponed destination.
+- Added regression assertions for unsupported recurrence, malformed completion history and non-occurrence completion dates.
+- The updated scheduling source and targeted regression cases were executed in the isolated V8 runtime after these corrections. This is not Node.js or `npm test`.
+
 ## Remaining verification gates
 
 The following must still be completed in a genuine checkout before release or merge to `main`:
