@@ -595,6 +595,7 @@ assert(prayer.includes("Using saved prayer times")&&prayer.includes("getNativeRe
 assert(prayer.includes("prefetchRange")&&prayer.includes("startTime")&&app.includes('startDateTime:key+"T"+p.startTime'),"Prayer anchors must be prefetched and represented in the selected location time zone");
 assert(scheduling.includes("VERSION=3")&&scheduling.includes("priorityOrder")&&scheduling.includes("postponedFrom"),"Canonical schedule schema must retain tasks, priority profiles and occurrence-level postponement");
 assert(flexible.includes("daybook_flexible_activities_v1")&&flexible.includes("Estimated duration")&&flexible.includes("Tomorrow")&&flexible.includes("Fixed classes and appointments are protected")&&flexible.includes("getPrayerIntervals"),"Flexible activities must migrate safely, use canonical storage, support postponement and account for prayer windows");
+assert(flexible.includes("Prayer timing data is unavailable")&&flexible.includes("A scheduled item has no end time")&&flexible.includes('window.addEventListener("daybook-prayer-updated",render)'),"Flexible activity suggestions must withhold unsafe windows and refresh when prayer timings change");
 assert(native.includes("item.timestamp")&&app.includes("getNativeReminders"),"Android reminders must accept timezone-aware prayer notification timestamps");
 
 // Step 7A — execute the prayer module against deterministic browser/API fixtures.
