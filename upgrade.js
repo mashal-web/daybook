@@ -80,7 +80,7 @@ document.addEventListener("click",e=>{
  if(b.dataset.habitDelete){habits=habits.filter(x=>x.id!==b.dataset.habitDelete);persist();renderAll()}
  if(b.dataset.transactionDelete){finance.transactions=finance.transactions.filter(x=>x.id!==b.dataset.transactionDelete);persist();renderAll()}
  if(b.id==="clearFinance"&&confirm("Delete all transaction history?")){finance.transactions=[];persist();renderAll()}
- if(b.dataset.scheduleMode){agendaMode=b.dataset.scheduleMode;$$("[data-schedule-mode]").forEach(x=>x.classList.toggle("active",x===b));$("#weekGrid").hidden=agendaMode!=="week";$("#scheduleAgenda").hidden=agendaMode!=="agenda";renderAgenda()}
+ if(b.dataset.scheduleMode){agendaMode=b.dataset.scheduleMode;$$("[data-schedule-mode]").forEach(x=>x.classList.toggle("active",x===b));$("#scheduleWeekOverview").hidden=agendaMode!=="week";$("#scheduleAgenda").hidden=agendaMode!=="agenda";renderAgenda()}
 });
 $("#budgetForm")?.addEventListener("submit",e=>{e.preventDefault();finance.budget=Math.max(0,Number(new FormData(e.currentTarget).get("budget")||0));persist();renderAll();toast("Budget saved")});
 $("#financeForm")?.addEventListener("submit",e=>{e.preventDefault();const f=new FormData(e.currentTarget),amount=Number(f.get("amount")),date=String(f.get("date")||"");if(!Number.isFinite(amount)||amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(date))return toast("Enter a valid amount and date");finance.transactions.push({id:id(),type:f.get("type"),category:f.get("category"),amount,note:String(f.get("note")||"").trim(),date});e.currentTarget.reset();e.currentTarget.elements.date.value=today();persist();renderAll();toast("Transaction saved")});
