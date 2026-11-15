@@ -34,7 +34,7 @@ All returned records are cloned/materialized values; callers must use mutation m
 |---|---|---|
 | `getAll()` | None | Clone of all canonical event series records, not expanded occurrences. |
 | `getForDate(date)` | `Date` or ISO date string | Materialized occurrences overlapping that local date, sorted by start then title. Cancelled series/occurrences are omitted. |
-| `getForDateRange(from,to)` | Inclusive start/end date | Deduplicated materialized occurrences across the inclusive range. Invalid/reversed ranges and ranges over 3,660 days return `[]`. |
+| `getForDateRange(from,to)` | Inclusive start/end date | Deduplicated materialized occurrences across the inclusive range. Inputs must be `Date` objects or exact `YYYY-MM-DD` strings; invalid/reversed ranges and ranges over 3,660 calendar days return `[]`. Calendar-day span calculation is independent of local daylight-saving offsets. |
 | `getForWeek(startDate)` | Date or ISO date string | Materialized occurrences for seven consecutive dates starting at the supplied date. |
 | `getUpcoming(from,limit)` | Optional date/time and count | Upcoming materialized occurrences, capped at 500 results and 366 search days. |
 | `createEvent(input)` | Event record | Persists and returns a normalized event clone. Invalid input or duplicate ID throws; storage failure returns `null`. |
