@@ -66,7 +66,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Replaced factory access with `window.DaybookScheduleStore`.
 - Agenda now queries the current date from the created canonical instance.
 - Uses materialized occurrence start/end timestamps and retains the existing presentation and edit action.
-- Missing schedule instance produces an explicit unavailable message.
+- Missing or unhealthy schedule instance produces an explicit unavailable message rather than presenting a partial legacy fallback as a complete agenda.
 
 ### Smart Planner
 
