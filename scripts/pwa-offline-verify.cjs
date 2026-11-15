@@ -59,7 +59,7 @@ const server = http.createServer((req,res) => {
   let manifestAudit=null;
   try { manifestAudit=await cdp.send("Page.getAppManifest"); } catch(e) { manifestAudit={error:String(e)}; }
   check("chromium-manifest-audit",!!manifestAudit&&!manifestAudit.error&&(!manifestAudit.errors||manifestAudit.errors.length===0),manifestAudit);
-  const initialCache=await page.evaluate(async()=>({keys:await caches.keys(),count:(await caches.open((await caches.keys()).find(k=>k.startsWith("daybook-")))).then(c=>c.keys()).then(x=>x.length)}));
+  const initialCache=await page.evaluate(async()=>{const keys=await caches.keys();const cache=await caches.open(keys.find(k=>k.startsWith("daybook-")));return {keys,count:(await cache.keys()).length};});
   check("core-assets-cached",initialCache.keys.some(k=>k.startsWith("daybook-"))&&initialCache.count>=15,initialCache);
   const initialStorageKeys=await page.evaluate(()=>window.DaybookPersistence.storageKeys());
   const appSections=await page.evaluate(()=>["overview","schedule","tasks","planner","academics","habits","finance","reminders","analytics"].map(id=>({id,exists:!!document.getElementById(id)})));
