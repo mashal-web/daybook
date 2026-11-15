@@ -104,6 +104,8 @@ const assert = require("node:assert/strict");
     assert.equal(scheduling.unknownEnd, 0, "Unknown-end commitment must suppress unsafe free-time slots");
 
     const planner = await page.evaluate(() => {
+      const store = window.DaybookScheduleStore;
+      store.getAll().filter(item => !item.end).forEach(item => store.deleteEvent(item.id));
       const host = document.querySelector("#smartPlan");
       window.DaybookPrayer = { getPrayerIntervals: () => [] };
       window.dispatchEvent(new Event("daybook-prayer-updated"));
