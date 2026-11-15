@@ -102,6 +102,8 @@ const fs = require("node:fs");
       let invalidDateRejected=false, duplicateRejected=false;
       try { store.createEvent({id:"pw-invalid",title:"Invalid date",start:"2026-02-30T09:00",end:"2026-02-30T10:00"}); } catch(e) { invalidDateRejected=true; }
       try { store.createEvent({id,title:"duplicate",start:start+"T08:00",end:start+"T08:30"}); } catch(e) { duplicateRejected=true; }
+      const validSurvivedMalformed = store.getForDate(plus(2)).some(x=>x.title==="PW daily recurrence");
+      const duplicatePreserved = store.getForDate(plus(2)).some(x=>x.title==="PW daily recurrence");
       const weeklyId = "pw-weekly-series", weekday = base.getDay();
       store.createEvent({id:weeklyId,title:"PW weekly recurrence",start:start+"T08:00",end:start+"T08:30",recurrence:{frequency:"weekly",weekdays:[weekday],startDate:start,endDate:plus(14)}});
       const weeklyNext = store.getForDate(plus(7)).some(x=>x.title==="PW weekly recurrence");
