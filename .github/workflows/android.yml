@@ -1,5 +1,5 @@
 name: Build Daybook Android APK
-# Final Phase 2.4 verification trigger; also runs the PWA suite for this exact commit.
+# Build and inspect the Capacitor APK for the exact pushed commit.
 
 on:
   workflow_dispatch:
@@ -25,6 +25,7 @@ on:
       - "icon-512.png"
       - "scripts/**"
       - ".github/workflows/android.yml"
+      - "docs/phase-2/**"
 
 permissions:
   contents: read
@@ -42,7 +43,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
