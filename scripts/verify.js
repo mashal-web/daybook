@@ -85,6 +85,7 @@ assert(scheduling.includes("function getForDate")&&scheduling.includes("function
 assert(app.includes("scheduleStore.getForDate")&&app.includes("scheduleStore.getForWeek"), "Week and day views must read the unified scheduling engine");
 assert(app.includes("canonicalId:item.id,id:item.source?.legacyId||item.id"), "Legacy event IDs must remain usable by existing edit and delete handlers");
 assert(upgrade.includes("const engine=window.DaybookScheduleStore")&&upgrade.includes("engine.getForDate(today())"), "Agenda must query the created canonical scheduling instance for the current date");
+assert(upgrade.includes("Schedule data is unavailable or needs recovery")&&upgrade.includes("engine.isHealthy?.()===false"),"Agenda must not present partial fallback data when canonical schedule storage is unhealthy");
 assert(upgrade.includes("engine.getTasks()")&&upgrade.includes("engine.getDayPlan(day,{anchors})")&&upgrade.includes("Free time cannot be calculated safely"), "Smart Planner must use canonical tasks and refuse to invent availability when schedule data is unavailable");
 assert(upgrade.includes("Prayer timing data is unavailable")&&upgrade.includes("prayerIntervals.length")&&upgrade.includes('window.addEventListener("daybook-prayer-updated"'),"Smart Planner must withhold free-time suggestions without prayer timings and refresh when prayer timings update");
 assert(!upgrade.includes("read(\"tasks\",[])")&&!upgrade.includes("window.DaybookSchedule?.getForDate"), "Smart Planner must not read legacy task storage or call scheduling methods on the factory");
