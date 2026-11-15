@@ -1,7 +1,7 @@
 # Daybook Phase 2 — Test Results
 
-**Target branch:** `phase-2/canonical-data-compatibility`  
-**Required base:** `825c75208fdf577fa666008276e9b1e1f5353153`  
+**Target branch:** `phase-2/canonical-data-compatibility`
+**Required base:** `825c75208fdf577fa666008276e9b1e1f5353153`
 **Execution:** GitHub Actions; Node.js 22, Playwright Chromium, PWA browser checks and GitHub-hosted Android/Gradle runner.
 
 ## Final commit verification
