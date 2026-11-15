@@ -9,7 +9,7 @@ const assert = require("node:assert/strict");
   const pageErrors = [];
   const failedRequests = [];
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
-  page.on("pageerror", error => pageErrors.push(error.message));
+  page.on("pageerror", error => pageErrors.push(error.stack || error.message));
   page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
   try {
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
