@@ -56,7 +56,9 @@ function renderSmartPlan(){
  const host=$("#smartPlan");if(!host)return;const engine=window.DaybookScheduleStore,day=today();
  if(!engine||typeof engine.getTasks!=="function"||typeof engine.getDayPlan!=="function"||engine.isHealthy?.()===false){host.innerHTML='<div class="panel-head"><div><p class="label">DAYBOOK INTELLIGENCE</p><h3>Suggested plan for today</h3></div></div><p class="muted">Canonical scheduling data is unavailable or needs recovery. Free time cannot be calculated safely.</p>';return}
  const priorityOrder={urgent:0,high:1,normal:2,low:3},tasks=engine.getTasks().filter(t=>t.status!=="completed"&&t.status!=="cancelled"&&!(t.repeat!=="none"&&Array.isArray(t.completedDates)&&t.completedDates.includes(day))).sort((a,b)=>{const priority=(priorityOrder[a.priority]??2)-(priorityOrder[b.priority]??2),deadline=(a.dueDate||"9999").localeCompare(b.dueDate||"9999");return window.DaybookAppSettings?.priorityProfile==="deadline-first"?deadline||priority:priority||deadline}).slice(0,4);
- const anchors=(window.DaybookPrayer?.getPrayerIntervals?.(day)||[]).map(p=>({id:"prayer-"+p.name,title:p.name+" prayer",category:"Prayer",start:day+"T"+p.startTime,end:day+"T"+p.endTime}));
+ const prayerIntervals=window.DaybookPrayer?.getPrayerIntervals?.(day);
+ if(!Array.isArray(prayerIntervals)||!prayerIntervals.length){host.innerHTML='<div class="panel-head"><div><p class="label">DAYBOOK INTELLIGENCE</p><h3>Suggested plan for today</h3></div></div><p class="muted">Prayer timing data is unavailable. Free-time suggestions are withheld until prayer commitments can be included safely.</p>';return}
+ const anchors=prayerIntervals.map(p=>({id:"prayer-"+p.name,title:p.name+" prayer",category:"Prayer",start:day+"T"+p.startTime,end:day+"T"+p.endTime}));
  const plan=engine.getDayPlan(day,{anchors}),slots=plan?.available;
  if(!Array.isArray(slots)){host.innerHTML='<p class="muted">The daily schedule could not be calculated. Free time is not being reported.</p>';return}
  const unresolved=plan.items.filter(item=>(item.startDateTime||item.scheduled?.start||item.start)&&!(item.endDateTime||item.scheduled?.end||item.end));
@@ -90,6 +92,7 @@ document.addEventListener("click",e=>{const n=e.target.closest("[data-view]");if
 window.addEventListener("daybook-subjects-updated",e=>{const names=Array.isArray(e.detail)?e.detail:[];for(const name of names)if(typeof name==="string"&&!courses.some(c=>c.name.toLowerCase()===name.toLowerCase()))courses.push({id:id(),name,code:"",credits:0});persist();renderAcademics()});
 window.addEventListener("storage",e=>{if(e.key?.startsWith("daybook_"))renderAll()});
 window.addEventListener("daybook-schedule-updated",()=>{renderAgenda();renderSmartPlan()});
+window.addEventListener("daybook-prayer-updated",()=>{renderSmartPlan()});
 if($("#financeForm"))$("#financeForm").elements.date.value=today();
 renderAll();
 })();
