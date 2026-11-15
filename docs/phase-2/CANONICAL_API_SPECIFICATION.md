@@ -100,7 +100,7 @@ During `syncLegacy`:
 1. Existing canonical identity for the same `source.kind === "legacy-task"` and `source.legacyId` is retained.
 2. For fields present in the current legacy task, the current legacy value is authoritative.
 3. When the legacy field is absent, the previous canonical value is retained.
-4. Known aliases map explicitly: `due`/`deadline` to canonical `dueDate`; `done` to `status`; `duration` to `durationMinutes`; priority is lowercased.
+4. Known aliases map explicitly: `due`/`deadline` to canonical `dueDate`; `done` to `status`; `duration` to `durationMinutes`; priority is lowercased. The original `due`, `done` and `duration` aliases remain available on the canonical compatibility record.
 5. Original aliases and unknown JSON fields are retained for compatibility.
 6. Duplicate legacy IDs, collisions with retained canonical task IDs, or malformed task records reject the synchronization before the canonical task write.
 
