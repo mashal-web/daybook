@@ -12,6 +12,7 @@ on:
       - "*.html"
       - "*.css"
       - "*.webmanifest"
+      - "docs/phase-2/**"
 
 permissions:
   contents: read
