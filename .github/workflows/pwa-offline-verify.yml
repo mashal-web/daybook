@@ -1,0 +1,47 @@
+name: Daybook PWA Offline Verification
+
+on:
+  push:
+    branches: [phase-2/canonical-data-compatibility]
+    paths:
+      - "index.html"
+      - "manifest.webmanifest"
+      - "sw.js"
+      - "native.js"
+      - "scripts/**"
+      - "package.json"
+      - ".github/workflows/pwa-offline-verify.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daybook-pwa-verification
+  cancel-in-progress: true
+
+jobs:
+  pwa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: phase-2/canonical-data-compatibility
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm install --no-save --no-audit --no-fund playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Verify PWA, offline behavior and data integrity
+        run: node scripts/pwa-offline-verify.cjs
+      - name: Upload PWA verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybook-pwa-offline-report
+          path: www/../pwa-verification-report.json
+          if-no-files-found: ignore
+          retention-days: 30
