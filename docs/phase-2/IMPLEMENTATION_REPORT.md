@@ -40,7 +40,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Preserve recurrence configuration, completion dates, postponement dates, scheduled timestamps, notes, timestamps, source data, academic links and custom metadata when present.
 - Retain an existing canonical ID for the same legacy source; otherwise retain the legacy ID.
 - Use current legacy values when present and previous canonical values when legacy fields are absent.
-- Reject malformed task records, duplicate incoming IDs and collisions with retained canonical task IDs before writing.
+- Reject malformed task records, unsupported recurrence values, invalid weekday/completion-history values, duplicate incoming IDs and collisions with retained canonical task IDs before writing.
 - Reject duplicate projected event identities.
 
 **Implemented in `flexible-activities.js`:**
@@ -55,7 +55,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 
 - Added inclusive `getForDateRange(from,to)`, with invalid/reversed and over-3,660-day ranges rejected.
 - Added `getAvailableSlots(day,options)`.
-- Added `setTaskCompletion(id,completed,occurrenceDate)`, using occurrence-specific completion dates for recurring tasks and status for one-off tasks.
+- Added `setTaskCompletion(id,completed,occurrenceDate)`, using occurrence-specific completion dates for recurring tasks and status for one-off tasks; recurring completion dates must match the active recurrence rule or an explicit postponed destination.
 - Existing CRUD, recurrence, exception, conflict and day-plan methods remain the underlying implementation.
 
 ### Agenda
