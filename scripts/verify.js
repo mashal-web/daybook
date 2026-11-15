@@ -456,6 +456,8 @@ assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"unsupported-repeat",title:
 assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Unsupported recurrence rejection must preserve the existing canonical task collection");
 assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"invalid-history",title:"Task with invalid history",repeat:"weekly",weekdays:[1],completedDates:["not-a-date"],duration:30}]),false,"Invalid completion history must reject synchronization rather than silently dropping history");
 assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Invalid completion history rejection must preserve the existing canonical task collection");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"invalid-weekday",title:"Malformed weekday",repeat:"weekly",weekdays:[null],duration:30}]),false,"Malformed weekday values must reject synchronization rather than coercing null to Sunday");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Malformed weekday rejection must preserve the existing canonical task collection");
 const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
 rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
 assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
