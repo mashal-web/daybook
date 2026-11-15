@@ -123,6 +123,9 @@ const assert = require("node:assert/strict");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
     console.log("Playwright Chromium verification passed.");
     console.log(JSON.stringify({ browser: "Chromium", checks: 22, scheduling, planner, consoleErrors, pageErrors, failedRequests }, null, 2));
+  } catch (error) {
+    await page.screenshot({ path: "playwright-failure.png", fullPage: true }).catch(() => {});
+    throw error;
   } finally {
     await context.close();
     await browser.close();
