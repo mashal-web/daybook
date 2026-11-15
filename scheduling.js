@@ -22,9 +22,9 @@
   const repeat=input.repeat==null||input.repeat===""?"none":input.repeat;
   if(!["none","daily","weekly"].includes(repeat))return null;
   if(input.weekdays!=null&&!Array.isArray(input.weekdays))return null;
-  const rawWeekdays=Array.isArray(input.weekdays)?input.weekdays.map(Number):[];
-  if(rawWeekdays.some(n=>!Number.isInteger(n)||n<0||n>6))return null;
-  const weekdays=[...new Set(rawWeekdays)].sort((a,b)=>a-b);
+  const rawWeekdays=Array.isArray(input.weekdays)?input.weekdays:[];
+  if(rawWeekdays.some(n=>!(Number.isInteger(n)&&n>=0&&n<=6)&&!(typeof n==="string"&&/^[0-6]$/.test(n))))return null;
+  const weekdays=[...new Set(rawWeekdays.map(Number))].sort((a,b)=>a-b);
   if(repeat==="weekly"&&!weekdays.length)return null;
   if(input.completedDates!=null&&!Array.isArray(input.completedDates))return null;
   const rawCompletedDates=Array.isArray(input.completedDates)?input.completedDates:[];
