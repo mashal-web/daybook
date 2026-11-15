@@ -35,7 +35,7 @@ const assert = require("node:assert/strict");
     await page.getByText("Browser verification event").first().waitFor();
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
 
-    await page.locator('#tasks [data-add="task"]').click();
+    await page.locator('#sidebar .sidebar-primary [data-view="tasks"]').click();\n    await page.locator("#tasks.active").waitFor();\n    await page.locator('#tasks [data-add="task"]').click();
     await page.locator("#title").fill("Browser persistence task");
     await page.locator("#category").selectOption("Assignment");
     await page.locator("#priority").selectOption("High");
