@@ -95,6 +95,18 @@ jobs:
           grep -R -q "LocalNotificationsPlugin" android/app/src/main
           grep -q '"@capacitor/local-notifications"' package.json
           echo "Capacitor LocalNotifications plugin is registered and native source is present."
+          test -s android/app/src/main/assets/public/index.html
+          grep -q 'src="native.js"' android/app/src/main/assets/public/index.html
+          test -s android/app/src/main/assets/capacitor.config.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          config = json.loads(Path("android/app/src/main/assets/capacitor.config.json").read_text())
+          assert config.get("appId") == "com.mashalweb.daybook", config
+          assert config.get("appName") == "Daybook", config
+          assert config.get("webDir") == "www", config
+          print("Native Capacitor app identity, web assets and startup entry are verified.")
+          PY
       - name: Apply Daybook launcher icons
         run: |
           RES="android/app/src/main/res"
