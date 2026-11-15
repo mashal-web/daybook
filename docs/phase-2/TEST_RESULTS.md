@@ -20,6 +20,7 @@
 | Duplicate task rejection | PASS | Duplicate legacy IDs rejected before canonical write. |
 | Date-range API | PASS | Inclusive range returned matching event occurrence; oversized range returned an empty array rather than a partial result. |
 | Recurring task completion API | PASS | Completing one occurrence did not complete the next occurrence. |
+| Flexible legacy adapter runtime | PASS | Executed the actual `flexible-activities.js` adapter with a mocked DOM-ready callback and canonical task store; verified weekly recurrence fallback from `createdAt`, recurrence end, postponement dates, scheduled timestamps and custom field preservation. |
 | Agenda renderer integration | PASS | Extracted renderer executed against a mocked canonical instance and rendered the expected event/date/time. |
 | Smart Planner renderer integration | PASS | Extracted renderer used canonical tasks and day-plan availability; a missing store and an unbounded commitment suppressed free-time suggestions. |
 | Task-duration filtering | PASS | Planner did not display a slot shorter than the shortest open task duration (with a 45-minute floor). |
