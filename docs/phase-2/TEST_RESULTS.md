@@ -23,6 +23,7 @@
 | Flexible legacy adapter runtime | PASS | Executed the actual `flexible-activities.js` adapter with a mocked DOM-ready callback and canonical task store; verified weekly recurrence fallback from `createdAt`, recurrence end, postponement dates, scheduled timestamps and custom field preservation. |
 | Agenda renderer integration | PASS | Extracted renderer executed against a mocked canonical instance and rendered the expected event/date/time. |
 | Smart Planner renderer integration | PASS | Extracted renderer used canonical tasks and day-plan availability; a missing store and an unbounded commitment suppressed free-time suggestions. |
+| Missing prayer timing safety | PASS (isolated V8) | Executed the current renderer: no prayer intervals withheld all free-time suggestions; valid intervals allowed the bounded day-plan window to render. |
 | Task-duration filtering | PASS | Planner did not display a slot shorter than the shortest open task duration (with a 45-minute floor). |
 | `npm test` | NOT EXECUTED | No local Node/npm shell or repository checkout is exposed. The test script logic was executed through the V8 shim described above. |
 | `npm run build` | NOT EXECUTED | Build requires Node, installed esbuild and filesystem operations. |
@@ -60,6 +61,7 @@ No failures were captured. Because the shims are not the Node standard library a
 - Updated `setTaskCompletion()` to reject dates that are not active occurrences under the task's recurrence boundaries/weekday rule, while allowing an explicit postponed destination.
 - Preserved the original legacy `duration` alias in addition to canonical `durationMinutes`, with a regression assertion.
 - Re-executed the complete current `scripts/verify.js` logic after the corrections in isolated V8 using GitHub-fetched source files and `fs`, `assert/strict` and `URL` compatibility shims; all four success messages were emitted, with no captured failures.
+- Executed the current Smart Planner renderer separately with missing and available prayer-interval fixtures; it withheld windows when intervals were absent and rendered the bounded slot when intervals were present.
 - Added regression assertions for unsupported recurrence, malformed completion history and non-occurrence completion dates.
 - The updated scheduling source and targeted regression cases were executed in the isolated V8 runtime after these corrections. This is not Node.js or `npm test`.
 
