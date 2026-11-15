@@ -453,6 +453,9 @@ assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Reject
 const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
 rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
 assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
+assert.equal(typeof rangeEngine.getAvailableSlots,"function","Canonical scheduling API must expose available-slot queries");
+assert(Array.isArray(rangeEngine.getAvailableSlots("2026-11-09")),"Available-slot query must return a predictable array");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09","2037-11-09"),[],"Unsupported oversized date ranges must be rejected without partial results");
 const recurringCompletion=rangeEngine.createTask({id:"recurring-completion",title:"Daily revision",repeat:"daily",repeatStart:"2026-11-09",durationMinutes:30});
 assert(rangeEngine.setTaskCompletion("recurring-completion",true,"2026-11-09"),"Recurring occurrence completion must be persisted");
 assert.equal(rangeEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring completion API must mark the selected occurrence complete");
