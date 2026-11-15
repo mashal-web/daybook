@@ -61,6 +61,7 @@ No failures were captured. Because the shims are not the Node standard library a
 - Updated `normalizeTask()` to reject unsupported recurrence values, malformed weekday arrays and invalid completion-history dates before writing canonical tasks.
 - Updated `setTaskCompletion()` to reject dates that are not active occurrences under the task's recurrence boundaries/weekday rule, while allowing an explicit postponed destination.
 - Preserved the original legacy `duration` alias in addition to canonical `durationMinutes`, with a regression assertion.
+- Tightened `getForDateRange()` to reject malformed/trailing date text and calculate span using calendar-day UTC ordinals; regression assertions cover malformed date strings.
 - Re-executed the complete current `scripts/verify.js` logic after the corrections in isolated V8 using GitHub-fetched source files and `fs`, `assert/strict` and `URL` compatibility shims; all four success messages were emitted, with no captured failures.
 - Executed the current Smart Planner renderer separately with missing and available prayer-interval fixtures; it withheld windows when intervals were absent and rendered the bounded slot when intervals were present.
 - Executed the current flexible suggestion function with missing-prayer and unknown-end fixtures; both cases withheld the slot.
