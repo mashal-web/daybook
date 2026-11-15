@@ -1,9 +1,9 @@
 # Daybook Phase 2 — Canonical Scheduling API Specification
 
-**Implementation:** `scheduling.js`  
-**Factory:** `window.DaybookSchedule.create(options)`  
-**Instance:** `window.DaybookScheduleStore` (assigned by `app.js`)  
-**Storage key:** `daybook_schedule_v1`  
+**Implementation:** `scheduling.js`
+**Factory:** `window.DaybookSchedule.create(options)`
+**Instance:** `window.DaybookScheduleStore` (assigned by `app.js`)
+**Storage key:** `daybook_schedule_v1`
 **Schedule schema version:** 3
 
 ## Factory versus instance
