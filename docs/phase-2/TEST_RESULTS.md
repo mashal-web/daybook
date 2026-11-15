@@ -58,6 +58,8 @@ No failures were captured. Because the shims are not the Node standard library a
 - Reproduced a data-loss case in the feature-branch implementation: a legacy `repeat: "monthly"` task synchronized successfully as `repeat: "none"`, and an invalid completion-history date was silently discarded.
 - Updated `normalizeTask()` to reject unsupported recurrence values, malformed weekday arrays and invalid completion-history dates before writing canonical tasks.
 - Updated `setTaskCompletion()` to reject dates that are not active occurrences under the task's recurrence boundaries/weekday rule, while allowing an explicit postponed destination.
+- Preserved the original legacy `duration` alias in addition to canonical `durationMinutes`, with a regression assertion.
+- Re-executed the complete current `scripts/verify.js` logic after the corrections in isolated V8 using GitHub-fetched source files and `fs`, `assert/strict` and `URL` compatibility shims; all four success messages were emitted, with no captured failures.
 - Added regression assertions for unsupported recurrence, malformed completion history and non-occurrence completion dates.
 - The updated scheduling source and targeted regression cases were executed in the isolated V8 runtime after these corrections. This is not Node.js or `npm test`.
 
