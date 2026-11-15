@@ -84,6 +84,10 @@ const fs = require("node:fs");
 
     const scheduling = await page.evaluate(() => {
       const store = window.DaybookScheduleStore;
+      const tasksBefore = store.getTasks();
+      const malformedTaskRejected = store.syncTasks([...tasksBefore,{id:"pw-malformed-task",title:""}]) === false;
+      const duplicateTaskRejected = tasksBefore.length > 0 && store.syncTasks([...tasksBefore,tasksBefore[0]]) === false;
+      const tasksPreserved = store.getTasks().length === tasksBefore.length && store.getTasks().every(x=>tasksBefore.some(y=>y.id===x.id));
       const base = new Date(); base.setHours(12,0,0,0);
       const key = d => [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
       const start = key(base);
@@ -111,8 +115,11 @@ const fs = require("node:fs");
       store.createEvent({id:"pw-unknown-end",title:"Unknown end commitment",start:start+"T13:00",end:null});
       const unknownEnd = store.getDayPlan(start,{dayStart:12*60,dayEnd:18*60}).available.length;
       store.deleteEvent("pw-unknown-end");
-      return {daily1,identity:!!identity,skipped,preserved,weeklyNext,weeklyWrongDay,weeklyIdentity:!!weeklyIdentity,weeklySkipped,weeklyPreserved,invalidDateRejected,duplicateRejected,validSurvivedMalformed,duplicatePreserved,boundary,reversedRange,unknownEnd,start};
+      return {malformedTaskRejected,duplicateTaskRejected,tasksPreserved,daily1,identity:!!identity,skipped,preserved,weeklyNext,weeklyWrongDay,weeklyIdentity:!!weeklyIdentity,weeklySkipped,weeklyPreserved,invalidDateRejected,duplicateRejected,validSurvivedMalformed,duplicatePreserved,boundary,reversedRange,unknownEnd,start};
     });
+    assert.equal(scheduling.malformedTaskRejected, true);
+    assert.equal(scheduling.duplicateTaskRejected, true);
+    assert.equal(scheduling.tasksPreserved, true);
     assert.equal(scheduling.daily1, true);
     assert.equal(scheduling.identity, true);
     assert.equal(scheduling.skipped, false);
