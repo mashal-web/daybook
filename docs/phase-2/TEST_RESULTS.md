@@ -21,7 +21,7 @@
 | Date-range API | PASS | Inclusive range returned matching event occurrence; oversized range returned an empty array rather than a partial result. |
 | Recurring task completion API | PASS | Completing one occurrence did not complete the next occurrence. |
 | Flexible legacy adapter runtime | PASS | Executed the actual `flexible-activities.js` adapter with a mocked DOM-ready callback and canonical task store; verified weekly recurrence fallback from `createdAt`, recurrence end, postponement dates, scheduled timestamps and custom field preservation. |
-| Agenda renderer integration | PASS | Extracted renderer executed against a mocked canonical instance and rendered the expected event/date/time. |
+| Agenda renderer integration | PASS | Extracted renderer executed against a mocked healthy canonical instance and rendered the expected event/date/time; unhealthy storage is explicitly withheld. |
 | Smart Planner renderer integration | PASS | Extracted renderer used canonical tasks and day-plan availability; a missing store and an unbounded commitment suppressed free-time suggestions. |
 | Missing prayer timing safety | PASS (isolated V8) | Executed the current Smart Planner renderer: no prayer intervals withheld all free-time suggestions; valid intervals allowed the bounded day-plan window to render. |
 | Flexible suggestion safety | PASS (isolated V8) | Executed the current flexible suggestion function: missing prayer intervals and an unknown-end commitment both withheld the suggested slot. |
