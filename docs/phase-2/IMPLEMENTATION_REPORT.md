@@ -36,7 +36,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Preserve unknown JSON task properties during canonical normalization, while explicitly writing normalized canonical fields afterward.
 - Map legacy `due`, `dueDate` and `deadline` to canonical `dueDate`.
 - Map legacy `done` to canonical status.
-- Map legacy `duration` / `durationMinutes` to canonical duration.
+- Map legacy `duration` / `durationMinutes` to canonical `durationMinutes`, while retaining the original legacy `duration` alias.
 - Preserve recurrence configuration, completion dates, postponement dates, scheduled timestamps, notes, timestamps, source data, academic links and custom metadata when present.
 - Retain an existing canonical ID for the same legacy source; otherwise retain the legacy ID.
 - Use current legacy values when present and previous canonical values when legacy fields are absent.
