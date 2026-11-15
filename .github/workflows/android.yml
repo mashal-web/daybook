@@ -1,4 +1,5 @@
 name: Build Daybook Android APK
+# Re-run the Android build against the final Phase 2.4 verification HEAD.
 
 on:
   workflow_dispatch:
