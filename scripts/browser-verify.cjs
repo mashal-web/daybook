@@ -38,7 +38,7 @@ const fs = require("node:fs");
     const agendaTextAfterCreate = await page.locator("#scheduleAgenda").innerText();
     assert.match(agendaTextAfterCreate, /Browser verification event/);
     assert.match(agendaTextAfterCreate, /10:15/);
-    assert.match(await page.locator("#selectedDayTitle").innerText(), /Today/);
+    assert.equal(await page.evaluate(date => { const d = new Date(date + "T12:00:00"); const expected = new Intl.DateTimeFormat("en-US", {month:"long",day:"numeric"}).format(d); return document.querySelector("#selectedDayTitle").textContent.includes(expected); }, today), true, "Agenda must display the selected date");
 
     await page.locator('#sidebar .sidebar-primary [data-view="tasks"]').click();
     await page.locator("#tasks.active").waitFor();
