@@ -50,12 +50,36 @@ const fs = require("node:fs");
     const taskBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("daybook_tasks") || "[]").find(x => x.title === "Browser persistence task"));
     assert.ok(taskBefore);
     assert.equal(taskBefore.notes, "Retain this task description");
+    const taskHistory = await page.evaluate(({id, today}) => {
+      const next = new Date(today + "T12:00:00"); next.setDate(next.getDate() + 1);
+      const tomorrow = [next.getFullYear(),String(next.getMonth()+1).padStart(2,"0"),String(next.getDate()).padStart(2,"0")].join("-");
+      const store = window.DaybookScheduleStore;
+      store.updateTask(id,{repeat:"daily",repeatStart:today,repeatEnd:tomorrow,completedDates:[],academicMetadata:{courseId:"CE101",courseTitle:"Civil Engineering",semester:1}});
+      store.setTaskCompletion(id,true,today);
+      const completionRecorded = store.getTasks().find(x=>x.id===id).completedDates.includes(today);
+      store.updateTask(id,{postponedFrom:today,postponedTo:tomorrow});
+      return {completionRecorded,tomorrow,postponedFrom:store.getTasks().find(x=>x.id===id).postponedFrom,postponedTo:store.getTasks().find(x=>x.id===id).postponedTo};
+    },{id:taskBefore.id,today});
+    assert.equal(taskHistory.completionRecorded,true);
+    assert.equal(taskHistory.postponedFrom,today);
+    assert.equal(taskHistory.postponedTo,taskHistory.tomorrow);
     await page.reload({ waitUntil: "networkidle" });
     await page.locator('#sidebar .sidebar-primary [data-view="tasks"]').click();
     await page.locator("#allTasks").getByText("Browser persistence task").waitFor();
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("daybook_tasks") || "[]").some(x => x.title === "Browser persistence task")), true);
-    const canonicalCount = await page.evaluate(() => window.DaybookScheduleStore.getTasks().filter(x => x.title === "Browser persistence task").length);
-    assert.equal(canonicalCount, 1, "Repeated legacy synchronization must not duplicate tasks");
+    const canonicalState = await page.evaluate(id => {
+      const store=window.DaybookScheduleStore,task=store.getTasks().find(x=>x.id===id);
+      return {count:store.getTasks().filter(x=>x.title==="Browser persistence task").length,task,tomorrowItems:store.getTasksForDate(task.postponedTo).some(x=>x.id===id),todayItems:store.getTasksForDate(task.postponedFrom).some(x=>x.id===id)};
+    },taskBefore.id);
+    assert.equal(canonicalState.count,1,"Repeated legacy synchronization must not duplicate tasks");
+    assert.ok(canonicalState.task.completedDates.includes(today),"Completion history must survive normalization");
+    assert.equal(canonicalState.task.postponedFrom,today);
+    assert.equal(canonicalState.task.postponedTo,taskHistory.tomorrow);
+    assert.equal(canonicalState.task.academicMetadata.courseId,"CE101","Academic metadata must survive normalization");
+    assert.equal(canonicalState.task.academicMetadata.semester,1);
+    assert.equal(canonicalState.todayItems,false);
+    assert.equal(canonicalState.tomorrowItems,true);
+    assert.equal(canonicalState.task.notes,"Retain this task description");
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
 
     const scheduling = await page.evaluate(() => {
