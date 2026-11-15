@@ -460,6 +460,7 @@ const recurringCompletion=rangeEngine.createTask({id:"recurring-completion",titl
 assert(rangeEngine.setTaskCompletion("recurring-completion",true,"2026-11-09"),"Recurring occurrence completion must be persisted");
 assert.equal(rangeEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring completion API must mark the selected occurrence complete");
 assert.equal(rangeEngine.getTasksForDate("2026-11-10")[0].occurrenceStatus,"open","Recurring completion must not complete future occurrences");
+assert.throws(()=>rangeEngine.setTaskCompletion("rec","true","2026-11-09"),/Completion state must be boolean/,"Task completion API must reject non-boolean state");
 
 console.log("Daybook regression checks passed.");
 
