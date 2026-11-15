@@ -432,7 +432,7 @@ const richLegacyTask={id:"rich-task",title:"Research report",description:"Prepar
 assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"A supported populated legacy task must synchronize");
 const richTask=richTaskEngine.getTasks().find(x=>x.id==="rich-task");
 assert.equal(richTask.description,richLegacyTask.description,"Task description must survive canonical conversion");
-assert.equal(richTask.deadline,undefined,"Deadline aliases are normalized to dueDate while the original due alias remains preserved");
+assert.equal(richTask.due,"2026-11-20","The original legacy due-date property must remain available for compatibility");
 assert.equal(richTask.dueDate,"2026-11-20","Legacy due date must map to the canonical deadline");
 assert.equal(richTask.durationMinutes,90,"Legacy estimated duration must map to canonical duration");
 assert.deepEqual(richTask.completedDates,richLegacyTask.completedDates,"Completion history must survive task conversion");
