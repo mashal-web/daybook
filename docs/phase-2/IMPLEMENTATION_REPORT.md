@@ -75,7 +75,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Uses canonical task status, priority, due date and estimated duration.
 - Honors the configured protected/deadline-first task ordering.
 - Uses canonical `getDayPlan()` availability rather than a second hand-built gap calculation.
-- Includes available prayer intervals as time anchors when available.
+- Includes available prayer intervals as time anchors; withholds free-time suggestions when prayer timing data is unavailable and refreshes when prayer timings update.
 - Does not show free-time suggestions if the canonical store is absent/unhealthy, if the day plan cannot be calculated, or if a scheduled commitment has no end time.
 - Filters displayed windows against the shortest open task duration, with a 45-minute minimum.
 - Does not place tasks automatically.
