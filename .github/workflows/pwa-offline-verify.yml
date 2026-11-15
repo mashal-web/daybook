@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   pwa:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +42,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: daybook-pwa-offline-report
-          path: www/../pwa-verification-report.json
+          path: pwa-verification-report.json
           if-no-files-found: ignore
           retention-days: 30
