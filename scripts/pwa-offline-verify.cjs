@@ -61,6 +61,7 @@ const server = http.createServer((req,res) => {
   check("chromium-manifest-audit",!!manifestAudit&&!manifestAudit.error&&(!manifestAudit.errors||manifestAudit.errors.length===0),manifestAudit);
   const initialCache=await page.evaluate(async()=>({keys:await caches.keys(),count:(await caches.open((await caches.keys()).find(k=>k.startsWith("daybook-")))).then(c=>c.keys()).then(x=>x.length)}));
   check("core-assets-cached",initialCache.keys.some(k=>k.startsWith("daybook-"))&&initialCache.count>=15,initialCache);
+  const initialStorageKeys=await page.evaluate(()=>window.DaybookPersistence.storageKeys());
   const appSections=await page.evaluate(()=>["overview","schedule","tasks","planner","academics","habits","finance","reminders","analytics"].map(id=>({id,exists:!!document.getElementById(id)})));
   check("core-modules-present",appSections.every(x=>x.exists),appSections);
   await page.evaluate(()=>{window.DaybookPersistence.storage.setItem("daybook_phase24_offline_probe",JSON.stringify({token:"offline-integrity",value:41}));});
@@ -79,9 +80,12 @@ const server = http.createServer((req,res) => {
   await page.evaluate(()=>{window.DaybookPersistence.storage.setItem("daybook_phase24_offline_probe",JSON.stringify({token:"offline-integrity",value:42,offline:true}));});
   const offlineExport=await page.evaluate(async()=>{
    const blob=window.DaybookPersistence.exportFile(); const parsed=JSON.parse(await blob.text());
-   return {app:parsed.app,version:parsed.version,probe:parsed.data.daybook_phase24_offline_probe,financeKey:Object.keys(parsed.data).some(k=>k.includes("finance"))};
+   const file=new File([await blob.text()],"daybook-phase24-backup.json",{type:"application/json"});
+   const restored=await window.DaybookPersistence.importFile(file,()=>true);
+   const probe=JSON.parse(window.DaybookPersistence.storage.getItem("daybook_phase24_offline_probe")||"null");
+   return {app:parsed.app,version:parsed.version,probe:parsed.data.daybook_phase24_offline_probe,restored:!restored.cancelled,restoredProbe:probe,financeKey:Object.keys(parsed.data).some(k=>k.includes("finance"))};
   });
-  check("offline-backup-export",offlineExport.app==="Daybook"&&offlineExport.probe?.value===42,offlineExport);
+  check("offline-backup-export-and-restore",offlineExport.app==="Daybook"&&offlineExport.probe?.value===42&&offlineExport.restored&&offlineExport.restoredProbe?.value===42,offlineExport);
   await context.setOffline(false);
   await page.waitForFunction(()=>navigator.onLine===true);
   await page.reload({waitUntil:"networkidle"});
@@ -90,17 +94,19 @@ const server = http.createServer((req,res) => {
   swRevision="\n// phase24 service-worker update verification";
   const update=await page.evaluate(async()=>{
    const reg=await navigator.serviceWorker.getRegistration();
+   const previous=reg.active;
    await reg.update();
-   const deadline=Date.now()+10000;
-   while(Date.now()<deadline){if(reg.active?.state==="activated"&&reg.active.scriptURL)break;await new Promise(r=>setTimeout(r,100));}
-   return {active:reg.active?.state,waiting:reg.waiting?.state||null,controller:!!navigator.serviceWorker.controller};
+   const deadline=Date.now()+15000;
+   while(Date.now()<deadline&&(reg.active===previous||reg.installing||reg.waiting))await new Promise(r=>setTimeout(r,100));
+   return {updated:reg.active!==previous,active:reg.active?.state,installing:reg.installing?.state||null,waiting:reg.waiting?.state||null,controller:!!navigator.serviceWorker.controller};
   });
-  check("service-worker-update",update.active==="activated"&&!update.waiting,update);
+  check("service-worker-update",update.updated&&update.active==="activated"&&!update.installing&&!update.waiting,update);
   await page.reload({waitUntil:"networkidle"});
   const afterUpdate=await page.evaluate(()=>({controller:!!navigator.serviceWorker.controller,title:document.title,probe:JSON.parse(window.DaybookPersistence.storage.getItem("daybook_phase24_offline_probe")||"null")}));
   check("reload-after-update",afterUpdate.controller&&afterUpdate.probe?.value===42,afterUpdate);
   const storageKeys=await page.evaluate(()=>window.DaybookPersistence.storageKeys());
-  check("storage-keys-preserved",storageKeys.includes("daybook_phase24_offline_probe")&&storageKeys.includes("daybook_schema_version"),storageKeys);
+  check("storage-keys-preserved",initialStorageKeys.every(key=>storageKeys.includes(key))&&storageKeys.includes("daybook_phase24_offline_probe")&&storageKeys.includes("daybook_schema_version"),{initialStorageKeys,storageKeys});
+  await page.locator('[data-view="finance"]').first().click();
   const financeText=await page.locator("#finance").innerText().catch(()=> "");
   check("finance-module-rendered",financeText.length>0,{length:financeText.length});
   check("no-page-errors",pageErrors.length===0,pageErrors);
