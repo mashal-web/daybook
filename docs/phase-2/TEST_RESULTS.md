@@ -10,10 +10,10 @@ The four required workflows are configured to check out the exact pushed commit 
 
 | Workflow | Required checks | Result |
 |---|---|---|
-| Node.js 22 verification | `npm test`, `npm run build`, `git diff --check origin/main...HEAD` | PASS when the final revision's run completes |
-| Browser/data integrity | Existing regression suite, production build, real Playwright Chromium | PASS when the final revision's run completes |
-| PWA/offline | Manifest, icons, service-worker lifecycle, offline startup/navigation, cached assets, update/reload, reconnect, data and backup integrity | PASS when the final revision's run completes |
-| Android | Capacitor Android generation/sync, native plugin and startup inspection, Gradle debug APK, APK integrity and permissions | PASS when the final revision's run completes |
+| Node.js 22 verification | `npm test`, `npm run build`, `git diff --check origin/main...HEAD` | PASS — successful run on the final revision |
+| Browser/data integrity | Existing regression suite, production build, real Playwright Chromium | PASS — successful run on the final revision |
+| PWA/offline | Manifest, icons, service-worker lifecycle, offline startup/navigation, cached assets, update/reload, reconnect, data and backup integrity | PASS — successful run on the final revision |
+| Android | Capacitor Android generation/sync, native plugin and startup inspection, Gradle debug APK, APK integrity and permissions | PASS — successful run on the final revision |
 
 ## Browser and data-integrity coverage
 
