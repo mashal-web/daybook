@@ -97,7 +97,7 @@ const server = http.createServer((req,res) => {
    const previous=reg.active;
    await reg.update();
    const deadline=Date.now()+15000;
-   while(Date.now()<deadline&&(reg.active===previous||reg.installing||reg.waiting))await new Promise(r=>setTimeout(r,100));
+   while(Date.now()<deadline&&(reg.active===previous||reg.active?.state!=="activated"||reg.installing||reg.waiting))await new Promise(r=>setTimeout(r,100));
    return {updated:reg.active!==previous,active:reg.active?.state,installing:reg.installing?.state||null,waiting:reg.waiting?.state||null,controller:!!navigator.serviceWorker.controller};
   });
   check("service-worker-update",update.updated&&update.active==="activated"&&!update.installing&&!update.waiting,update);
