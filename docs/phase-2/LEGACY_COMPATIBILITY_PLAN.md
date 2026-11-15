@@ -117,5 +117,5 @@ The fixtures are representative of the field shapes observed in the source adapt
 - Live user localStorage records were not accessible, so no actual device data sample was examined.
 - The flexible adapter still catches per-record conversion exceptions without surfacing a structured migration report. The original record remains in the legacy key, but the UI does not yet present a per-record remediation queue.
 - Main task compatibility remains dual-read/dual-write at the application boundary; a later phase may remove the legacy adapter only after export/import and historical-device coverage is proven.
-- Canonical task normalization validates current supported recurrence types (`none`, `daily`, `weekly`). Unknown recurrence types are not converted into a new recurrence algorithm.
+- Canonical task normalization supports recurrence types `none`, `daily` and `weekly`. Unsupported recurrence values, invalid weekday entries and malformed completion-history dates are rejected before canonical writes; they are not silently converted to one-off tasks or filtered out. The original legacy record remains in its source key for recovery.
 - Full browser, Android and physical-device verification remains unperformed.
