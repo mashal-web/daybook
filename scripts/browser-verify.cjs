@@ -134,13 +134,8 @@ const assert = require("node:assert/strict");
     assert.equal(planner.hasSafeWindow, true);
     assert.equal(planner.unknownEndSuppressed, true);
 
-    const unhealthy = await page.evaluate(() => {
-      localStorage.setItem("daybook_schedule_v1", "not-json");
-      location.reload();
-      return true;
-    });
-    assert.equal(unhealthy, true);
-    await page.waitForLoadState("networkidle");
+    await page.evaluate(() => localStorage.setItem("daybook_schedule_v1", "not-json"));
+    await page.reload({ waitUntil: "networkidle" });
     await page.locator('#sidebar .sidebar-primary [data-view="schedule"]').click();
     await page.locator('[data-schedule-mode="agenda"]').click();
     await page.locator("#scheduleAgenda").waitFor();
