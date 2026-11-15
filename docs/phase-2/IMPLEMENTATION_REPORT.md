@@ -41,7 +41,7 @@ The existing verification script and focused scheduling/consumer logic were neve
 - Retain an existing canonical ID for the same legacy source; otherwise retain the legacy ID.
 - Use current legacy values when present and previous canonical values when legacy fields are absent.
 - Reject malformed task records, unsupported recurrence values, invalid weekday/completion-history values, duplicate incoming IDs and collisions with retained canonical task IDs before writing.
-- Reject duplicate projected event identities.
+- Reject event-ID collisions between migrated legacy projections and retained canonical events. Duplicate class/routine legacy IDs are deduplicated by the existing projection adapter (first encountered record wins); malformed legacy class/routine/study entries may be omitted from the canonical projection but remain in their original source keys.
 
 **Implemented in `flexible-activities.js`:**
 
