@@ -1,5 +1,6 @@
 const { chromium } = require("playwright");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -150,10 +151,13 @@ const assert = require("node:assert/strict");
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
+    const report = { status: "passed", browser: "Chromium", checks: 22, scheduling, planner, consoleErrors, pageErrors, failedRequests };
+    fs.writeFileSync("playwright-results.json", JSON.stringify(report, null, 2));
     console.log("Playwright Chromium verification passed.");
-    console.log(JSON.stringify({ browser: "Chromium", checks: 22, scheduling, planner, consoleErrors, pageErrors, failedRequests }, null, 2));
+    console.log(JSON.stringify(report, null, 2));
   } catch (error) {
     await page.screenshot({ path: "playwright-failure.png", fullPage: true }).catch(() => {});
+    fs.writeFileSync("playwright-results.json", JSON.stringify({ status: "failed", browser: "Chromium", error: error.stack || error.message, consoleErrors, pageErrors, failedRequests }, null, 2));
     throw error;
   } finally {
     await context.close();
