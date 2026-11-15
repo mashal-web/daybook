@@ -65,7 +65,7 @@ A series edit is performed with `updateEvent`. A single occurrence is modified b
 | `createTask(input)` | Task record | Persists and returns normalized clone; invalid task or duplicate ID throws; storage failure returns `null`. |
 | `updateTask(id,patch)` | Existing ID and partial record | Persists and returns clone; unknown ID returns `null`; invalid task throws. |
 | `deleteTask(id)` | Task ID | Returns boolean. |
-| `setTaskCompletion(id,completed,occurrenceDate?)` | Task ID, boolean, optional occurrence date | One-off task updates `status`; recurring task adds/removes the supplied date in `completedDates`. Recurring tasks require a valid occurrence date. Unknown ID returns `null`. |
+| `setTaskCompletion(id,completed,occurrenceDate?)` | Task ID, boolean, optional occurrence date | One-off task updates `status`; recurring task adds/removes the supplied date in `completedDates`. Completion must be boolean; recurring tasks require a valid occurrence date. Unknown ID returns `null`. |
 | `syncTasks(items)` | Complete task array | Validates and replaces canonical task records; duplicate IDs or invalid records return `false`; write failure returns `false`. |
 
 Canonical task fields include ID, title, category, kind, priority, duration, plan/deadline dates, postponement dates, recurrence configuration, completion dates, status, scheduled start/end, notes, timestamps and source. Unknown JSON fields are retained through normalization unless they are unsafe prototype-related keys.
