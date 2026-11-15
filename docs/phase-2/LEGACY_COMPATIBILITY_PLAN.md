@@ -34,7 +34,7 @@ The canonical task normalizer validates identity/title, dates, duration, recurre
 - Unknown JSON properties are copied into the normalized record before canonical fields are assigned.
 - Canonical values are assigned explicitly after extras, so custom properties cannot overwrite the canonical identity or normalized fields.
 - Prototype-sensitive names (`__proto__`, `constructor`, `prototype`) are excluded from copied extras.
-- Original legacy aliases such as `due` and `done` remain available as extra compatibility properties while canonical `dueDate` and `status` are populated.
+- Original legacy aliases such as `due`, `done` and `duration` remain available as extra compatibility properties while canonical `dueDate`, `status` and `durationMinutes` are populated.
 
 ### Main legacy task synchronization
 
