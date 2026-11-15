@@ -465,6 +465,9 @@ assert(rangeEngine.setTaskCompletion("recurring-completion",true,"2026-11-09"),"
 assert.equal(rangeEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring completion API must mark the selected occurrence complete");
 assert.equal(rangeEngine.getTasksForDate("2026-11-10")[0].occurrenceStatus,"open","Recurring completion must not complete future occurrences");
 assert.throws(()=>rangeEngine.setTaskCompletion("rec","true","2026-11-09"),/Completion state must be boolean/,"Task completion API must reject non-boolean state");
+const weeklyGuard=rangeEngine.createTask({id:"weekly-guard",title:"Monday task",repeat:"weekly",weekdays:[1],repeatStart:"2026-11-09",repeatEnd:"2026-11-30",durationMinutes:30});
+assert.throws(()=>rangeEngine.setTaskCompletion(weeklyGuard.id,true,"2026-11-10"),/Date is not an active task occurrence/,"Recurring task completion must reject dates outside the selected weekday rule");
+assert(rangeEngine.setTaskCompletion(weeklyGuard.id,true,"2026-11-09"),"Recurring task completion must accept a date that matches its recurrence rule");
 
 console.log("Daybook regression checks passed.");
 
