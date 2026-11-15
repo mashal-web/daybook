@@ -12,6 +12,7 @@ on:
       - "scripts/**"
       - "package.json"
       - ".github/workflows/pwa-offline-verify.yml"
+      - ".github/workflows/android.yml"
   workflow_dispatch:
 
 permissions:
