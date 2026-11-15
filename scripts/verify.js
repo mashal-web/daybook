@@ -445,6 +445,9 @@ assert.equal(richTask.scheduledStart,richLegacyTask.scheduledStart,"Scheduled st
 const firstRichSnapshot=JSON.stringify(richTaskEngine.getTasks());
 assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"Repeated legacy synchronization must remain successful");
 assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Repeated synchronization must be idempotent and must not duplicate or rewrite task records");
+const duplicateTaskEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+assert.equal(duplicateTaskEngine.syncLegacy([],[],[],[{id:"duplicate",title:"First"},{id:"duplicate",title:"Second"}]),false,"Duplicate legacy task identities must be rejected");
+assert.equal(duplicateTaskEngine.getTasks().length,0,"Duplicate task rejection must not partially write canonical records");
 assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"broken-task"}]),false,"Malformed legacy tasks must block synchronization instead of being silently discarded");
 assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Rejected malformed input must not overwrite previously synchronized task data");
 const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
@@ -567,6 +570,7 @@ assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-sched
 assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
 assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
 assert(flexible.includes("DaybookScheduleStore")&&flexible.includes("createTask")&&flexible.includes("updateTask")&&flexible.includes("deleteTask"),"Flexible activity CRUD must use canonical schedule storage");
+assert(flexible.includes("...x")&&flexible.includes("postponedFrom")&&flexible.includes("repeatEnd")&&flexible.includes("scheduledStart"),"Flexible legacy conversion must preserve custom fields, postponement, recurrence boundaries and scheduled times");
 assert(planningCss.includes(".schedule-week-grid")&&planningCss.includes("@media(max-width:560px)")&&planningCss.includes(".timeline-prayer-markers"),"Timetable modes must include responsive weekly and prayer marker styles");
 
 assert(app.includes("const ROUTINE_VERSION=3")&&app.includes('?"22:30":r.time'),"Routine migration must move the old sleep default to 10:30 PM without discarding saved activities");
