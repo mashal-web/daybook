@@ -10,7 +10,7 @@
 - Existing feature keys remain authoritative for their non-scheduling records. Schedule entries projected from classes, routines and timed study sessions are compatibility projections, not replacements for their source records.
 - Legacy keys are retained. Phase 2 does not remove or rename storage keys.
 - The persistence wrapper journals individual writes and exports all `daybook_*` keys except its internal write journal.
-- A source adapter must not silently discard a record it cannot normalize. The task synchronizer now refuses the whole synchronization if an input task is malformed or duplicate, leaving the existing canonical task set unchanged.
+- A source adapter must not silently discard a record it cannot normalize. The task synchronizer refuses the whole synchronization if an input task is malformed or duplicate, or contains an unsupported recurrence or invalid weekday/completion-history values, leaving the existing canonical task set unchanged.
 
 ## Domain inventory
 
