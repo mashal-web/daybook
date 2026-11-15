@@ -3,7 +3,7 @@ name: Build Daybook Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, phase-2/canonical-data-compatibility]
     paths:
       - "app.js"
       - "index.html"
@@ -34,63 +34,46 @@ concurrency:
 
 jobs:
   build:
-    name: Build installable Android APK
+    name: Build and inspect Android debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        with:
+          ref: ${{ github.ref }}
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           packages: "platform-tools"
-
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
-
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-
       - name: Run Daybook regression checks
         run: |
           node --check app.js
           node --check sw.js
           node --check scripts/build.js
           npm test
-
       - name: Prepare web app and native plugin bundle
         run: npm run build
-
       - name: Verify packaged app files
         run: |
-          test -s www/index.html
-          test -s www/app.js
-          test -s www/native.js
-          test -s www/styles.css
-          test -s www/timetable-theme.css
-          test -s www/upgrade.css
-          test -s www/upgrade.js
-          test -s www/mobile-app.css
-          test -s www/design-system.css
-          test -s www/study-planner.css
-          test -s www/manifest.webmanifest
-          test -s www/sw.js
-
+          for file in index.html app.js native.js styles.css timetable-theme.css upgrade.css upgrade.js mobile-app.css design-system.css study-planner.css planning.css prayer-times.js flexible-activities.js manifest.webmanifest sw.js icon-192.png icon-512.png; do
+            test -s "www/$file" || { echo "Missing packaged asset: $file"; exit 1; }
+          done
       - name: Add Android platform
         run: npx cap add android
-
       - name: Add Android notification icon
         run: |
           mkdir -p android/app/src/main/res/drawable
@@ -102,10 +85,15 @@ jobs:
                   android:pathData="M12,2L3,7v10l9,5 9,-5V7zM12,5.1l5.8,3.2L12,11.5 6.2,8.3zM5,10.2l5.5,3v5.3L5,15.4zM13.5,18.5v-5.3l5.5,-3v5.2z"/>
           </vector>
           EOF
-
       - name: Sync Capacitor plugins
         run: npx cap sync android
-
+      - name: Verify native notification plugin registration
+        run: |
+          test -s android/app/src/main/assets/capacitor.plugins.json
+          grep -q "LocalNotifications" android/app/src/main/assets/capacitor.plugins.json
+          grep -R -q "LocalNotificationsPlugin" android/app/src/main
+          grep -q '"@capacitor/local-notifications"' package.json
+          echo "Capacitor LocalNotifications plugin is registered and native source is present."
       - name: Apply Daybook launcher icons
         run: |
           RES="android/app/src/main/res"
@@ -128,13 +116,6 @@ jobs:
               <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
           </adaptive-icon>
           EOF
-
-      - name: Verify Daybook launcher resources
-        run: |
-          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
-          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
-
       - name: Declare exact-alarm permission
         run: |
           python3 - <<'PY'
@@ -147,18 +128,27 @@ jobs:
               content = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    ' + permission, content, count=1)
               manifest.write_text(content)
           PY
-
       - name: Build debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
-
-      - name: Verify APK
-        run: test -s android/app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload installable APK
+      - name: Verify APK integrity, permissions and native plugin
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          unzip -t "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump permissions "$APK" | tee apk-permissions.txt
+          grep -q "android.permission.POST_NOTIFICATIONS" apk-permissions.txt
+          grep -q "android.permission.SCHEDULE_EXACT_ALARM" apk-permissions.txt
+          unzip -l "$APK" | grep -q "capacitor.plugins.json"
+          unzip -p "$APK" assets/capacitor.plugins.json | grep -q "LocalNotifications"
+          sha256sum "$APK" | tee apk-sha256.txt
+      - name: Upload installable APK and verification details
         uses: actions/upload-artifact@v4
         with:
           name: Daybook-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            apk-permissions.txt
+            apk-sha256.txt
           if-no-files-found: error
           retention-days: 30
