@@ -25,7 +25,7 @@ const assert = require("node:assert/strict");
     const today = await page.evaluate(() => {
       const d = new Date(); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,"0"), String(d.getDate()).padStart(2,"0")].join("-");
     });
-    await page.locator('[data-add="event"]').first().click();
+    await page.locator('#schedule [data-add="event"]').click();
     await page.locator("#eventTitle").fill("Browser verification event");
     await page.locator("#eventStartDate").fill(today);
     await page.locator("#eventStartTime").fill("10:15");
@@ -35,7 +35,7 @@ const assert = require("node:assert/strict");
     await page.getByText("Browser verification event").first().waitFor();
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
 
-    await page.locator('[data-add="task"]').first().click();
+    await page.locator('#tasks [data-add="task"]').click();
     await page.locator("#title").fill("Browser persistence task");
     await page.locator("#category").selectOption("Assignment");
     await page.locator("#priority").selectOption("High");
@@ -51,6 +51,8 @@ const assert = require("node:assert/strict");
     await page.locator('[data-view="tasks"]').click();
     await page.getByText("Browser persistence task").waitFor();
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("daybook_tasks") || "[]").some(x => x.title === "Browser persistence task")), true);
+    const canonicalCount = await page.evaluate(() => window.DaybookScheduleStore.getTasks().filter(x => x.title === "Browser persistence task").length);
+    assert.equal(canonicalCount, 1, "Repeated legacy synchronization must not duplicate tasks");
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
 
     const scheduling = await page.evaluate(() => {
