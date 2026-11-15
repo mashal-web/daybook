@@ -1,4 +1,5 @@
 name: Daybook PWA Offline Verification
+# Re-run after correcting the report writer in the browser harness.
 
 on:
   push:
