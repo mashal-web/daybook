@@ -459,6 +459,8 @@ assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Invali
 const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
 rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
 assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09garbage","2026-11-10"),[],"Date-range API must reject strings that only begin with a valid date");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09T12:00","2026-11-10"),[],"Date-range API must accept calendar dates rather than silently truncating timestamps");
 assert.equal(typeof rangeEngine.getAvailableSlots,"function","Canonical scheduling API must expose available-slot queries");
 assert(Array.isArray(rangeEngine.getAvailableSlots("2026-11-09")),"Available-slot query must return a predictable array");
 assert.deepEqual(rangeEngine.getForDateRange("2026-11-09","2037-11-09"),[],"Unsupported oversized date ranges must be rejected without partial results");
