@@ -450,6 +450,10 @@ assert.equal(duplicateTaskEngine.syncLegacy([],[],[],[{id:"duplicate",title:"Fir
 assert.equal(duplicateTaskEngine.getTasks().length,0,"Duplicate task rejection must not partially write canonical records");
 assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"broken-task"}]),false,"Malformed legacy tasks must block synchronization instead of being silently discarded");
 assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Rejected malformed input must not overwrite previously synchronized task data");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"unsupported-repeat",title:"Monthly task",repeat:"monthly",duration:30}]),false,"Unsupported recurrence must reject synchronization rather than silently becoming a one-off task");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Unsupported recurrence rejection must preserve the existing canonical task collection");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"invalid-history",title:"Task with invalid history",repeat:"weekly",weekdays:[1],completedDates:["not-a-date"],duration:30}]),false,"Invalid completion history must reject synchronization rather than silently dropping history");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Invalid completion history rejection must preserve the existing canonical task collection");
 const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
 rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
 assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
