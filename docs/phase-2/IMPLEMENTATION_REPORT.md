@@ -1,8 +1,8 @@
 # Daybook Phase 2 — Implementation Report
 
-**Status:** Implemented; CI verification passed for the final reviewed revision.  
-**Target branch:** `main`  
-**Implementation branch:** `phase-2/canonical-data-compatibility`  
+**Status:** Implemented; CI verification passed for the final reviewed revision.
+**Target branch:** `main`
+**Implementation branch:** `phase-2/canonical-data-compatibility`
 **Required baseline:** `825c75208fdf577fa666008276e9b1e1f5353153`
 
 ## 1. Executive result
