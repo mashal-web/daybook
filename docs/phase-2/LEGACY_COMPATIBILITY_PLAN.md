@@ -64,7 +64,7 @@ The legacy record is not deleted or rewritten by the scheduler adapter. Existing
 - If any mapped legacy task is invalid, the synchronization returns `false` before writing the canonical task collection.
 - Duplicate IDs within incoming legacy tasks are rejected.
 - Incoming legacy task IDs that collide with retained non-legacy canonical task IDs are rejected.
-- Duplicate IDs in the merged event projection are rejected.
+- Duplicate class/routine legacy IDs are deduplicated by the existing projection adapter (first encountered record wins); collisions between a projected event and a retained canonical event reject synchronization. Invalid class/routine/study projection records may be omitted from the canonical projection, but their original legacy records are not deleted.
 - The canonical task array remains unchanged on these rejection paths.
 
 This is intentionally conservative: a malformed legacy record must be repaired or separately inspected rather than silently filtered out during synchronization.
