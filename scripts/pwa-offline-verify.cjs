@@ -38,7 +38,7 @@ const server = http.createServer((req,res) => {
   const manifest=await page.evaluate(async()=>{
    const link=document.querySelector('link[rel="manifest"]'); if(!link)return {present:false};
    const response=await fetch(link.href); const data=await response.json();
-   return {present:true,status:response.status,data,icons:await Promise.all((data.icons||[]).map(async i=>{const u=new URL(i.src,link.href);const r=await fetch(u);const b=await createImageBitmap(await r.blob());return {src:i.src,status:r.status,width:b.width,height:b.height,type:i.type,purpose:i.purpose}}))};
+   return {present:true,status:response.status,data,icons:await Promise.all((data.icons||[]).map(async i=>{const u=new URL(i.src,link.href);const r=await fetch(u);if(i.type==="image/svg+xml")return {src:i.src,status:r.status,width:null,height:null,type:i.type,purpose:i.purpose};const b=await createImageBitmap(await r.blob());return {src:i.src,status:r.status,width:b.width,height:b.height,type:i.type,purpose:i.purpose}}))};
   });
   check("manifest-valid",manifest.present&&manifest.status===200&&manifest.data.name&&manifest.data.short_name&&manifest.data.start_url&&manifest.data.scope&&manifest.data.display==="standalone"&&manifest.data.icons.length>=2,manifest);
   check("manifest-icons",manifest.icons?.some(i=>i.status===200&&i.width===192&&i.height===192)&&manifest.icons?.some(i=>i.status===200&&i.width===512&&i.height===512),manifest.icons);
@@ -109,6 +109,6 @@ const server = http.createServer((req,res) => {
   fs.writeFileSync(path.resolve(__dirname,"../pwa-verification-report.json"),JSON.stringify(report,null,2));
   console.log(JSON.stringify(report,null,2));
   if(failures.length)process.exitCode=1;
- } catch(e) { console.error(e.stack||String(e));process.exitCode=1; }
+ } catch(e) { const report={ok:false,failures:["uncaught"],error:e.stack||String(e),checks};fs.writeFileSync(path.resolve(__dirname,"../pwa-verification-report.json"),JSON.stringify(report,null,2));console.error(e.stack||String(e));process.exitCode=1; }
  finally {if(browser)await browser.close();server.close();}
 })();
