@@ -1,0 +1,81 @@
+name: Node.js 22 verification
+
+on:
+  push:
+    branches:
+      - "phase-2/canonical-data-compatibility"
+    paths:
+      - "package.json"
+      - "scripts/**"
+      - ".github/workflows/node22-verify.yml"
+      - "app.js"
+      - "native.js"
+      - "persistence.js"
+      - "scheduling.js"
+      - "flexible-activities.js"
+      - "prayer-times.js"
+      - "docs/phase-2/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daybook-node22-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node.js 22 test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact pushed commit and full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Check merge diff whitespace against main
+        run: |
+          git fetch --no-tags origin main
+          git diff --check origin/main...HEAD
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Record runtime versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies from package.json
+        run: npm install --no-audit --no-fund
+
+      - name: Run npm test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee npm-test.log
+
+      - name: Run npm run build
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee npm-build.log
+          test -s www/index.html
+          test -s www/native.js
+          test -s www/app.js
+          test -s www/styles.css
+          test -s www/manifest.webmanifest
+
+      - name: Preserve verification logs and build output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybook-node22-verification
+          path: |
+            npm-test.log
+            npm-build.log
+            www/
+          if-no-files-found: warn
+          retention-days: 14

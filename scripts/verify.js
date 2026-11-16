@@ -84,7 +84,11 @@ assert(html.includes('src="scheduling.js"')&&build.includes('"scheduling.js"')&&
 assert(scheduling.includes("function getForDate")&&scheduling.includes("function getForWeek")&&scheduling.includes("function getUpcoming")&&scheduling.includes("function findOverlaps"), "Scheduling engine must expose centralized schedule queries");
 assert(app.includes("scheduleStore.getForDate")&&app.includes("scheduleStore.getForWeek"), "Week and day views must read the unified scheduling engine");
 assert(app.includes("canonicalId:item.id,id:item.source?.legacyId||item.id"), "Legacy event IDs must remain usable by existing edit and delete handlers");
-assert(upgrade.includes("engine.getForDate(new Date())"), "Agenda must read the unified scheduling engine");
+assert(upgrade.includes("const engine=window.DaybookScheduleStore")&&upgrade.includes("engine.getForDate(today())"), "Agenda must query the created canonical scheduling instance for the current date");
+assert(upgrade.includes("Schedule data is unavailable or needs recovery")&&upgrade.includes("engine.isHealthy?.()===false"),"Agenda must not present partial fallback data when canonical schedule storage is unhealthy");
+assert(upgrade.includes("engine.getTasks()")&&upgrade.includes("engine.getDayPlan(day,{anchors})")&&upgrade.includes("Free time cannot be calculated safely"), "Smart Planner must use canonical tasks and refuse to invent availability when schedule data is unavailable");
+assert(upgrade.includes("Prayer timing data is unavailable")&&upgrade.includes("prayerIntervals.length")&&upgrade.includes('window.addEventListener("daybook-prayer-updated"'),"Smart Planner must withhold free-time suggestions without prayer timings and refresh when prayer timings update");
+assert(!upgrade.includes("read(\"tasks\",[])")&&!upgrade.includes("window.DaybookSchedule?.getForDate"), "Smart Planner must not read legacy task storage or call scheduling methods on the factory");
 assert(upgrade.includes('window.addEventListener("daybook-schedule-updated"'), "Agenda and smart planning must refresh on shared schedule changes");
 assert(scheduling.includes('"daybook-schedule-updated"'), "Schedule mutations must publish a shared update event");
 assert(html.includes('data-add="class"')&&html.includes('data-add="routine"'), "Weekly routine must allow adding both class periods and routine activities");
@@ -425,6 +429,53 @@ const legacyTaskStorage=memoryStorage(),legacyTaskEngine=scheduleEngine.create({
 legacyTaskEngine.syncLegacy([],[],[],[{id:"old-task",title:"Legacy task",due:"2026-11-12",priority:"High",done:false}]);
 assert.equal(legacyTaskEngine.getTasks().find(x=>x.id==="old-task").title,"Legacy task","Existing task manager records must synchronize into canonical scheduling storage");
 assert.equal(JSON.parse(legacyTaskStorage.getItem("daybook_schedule_v1")).version,3,"Task synchronization must persist schema version 3");
+const richTaskStorage=memoryStorage(),richTaskEngine=scheduleEngine.create({storage:richTaskStorage,classes:[],routine:[]});
+const richLegacyTask={id:"rich-task",title:"Research report",description:"Prepare the full report",notes:"Use course references",planDate:"2026-11-09",due:"2026-11-20",duration:90,priority:"High",done:false,repeat:"weekly",weekdays:[1,3],repeatStart:"2026-11-09",repeatEnd:"2026-12-01",completedDates:["2026-11-04"],postponedFrom:"2026-11-05",postponedTo:"2026-11-06",scheduledStart:"2026-11-09T10:00",scheduledEnd:"2026-11-09T11:30",courseId:"course-civil",customMetadata:{sourceNote:"legacy import"},customFlag:"keep-me"};
+assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"A supported populated legacy task must synchronize");
+const richTask=richTaskEngine.getTasks().find(x=>x.id==="rich-task");
+assert.equal(richTask.description,richLegacyTask.description,"Task description must survive canonical conversion");
+assert.equal(richTask.due,"2026-11-20","The original legacy due-date property must remain available for compatibility");
+assert.equal(richTask.dueDate,"2026-11-20","Legacy due date must map to the canonical deadline");
+assert.equal(richTask.durationMinutes,90,"Legacy estimated duration must map to canonical duration");
+assert.equal(richTask.duration,90,"Original legacy duration alias must remain available after canonical normalization");
+assert.deepEqual(richTask.completedDates,richLegacyTask.completedDates,"Completion history must survive task conversion");
+assert.equal(richTask.postponedFrom,richLegacyTask.postponedFrom,"Postponement origin must survive task conversion");
+assert.equal(richTask.postponedTo,richLegacyTask.postponedTo,"Postponement destination must survive task conversion");
+assert.equal(richTask.courseId,"course-civil","Academic relationship fields must survive task conversion");
+assert.deepEqual(richTask.customMetadata,richLegacyTask.customMetadata,"Custom metadata must survive task conversion");
+assert.equal(richTask.customFlag,"keep-me","Unknown task fields must survive canonical normalization");
+assert.equal(richTask.scheduledStart,richLegacyTask.scheduledStart,"Scheduled start must survive task conversion");
+const firstRichSnapshot=JSON.stringify(richTaskEngine.getTasks());
+assert.equal(richTaskEngine.syncLegacy([],[],[],[richLegacyTask]),true,"Repeated legacy synchronization must remain successful");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Repeated synchronization must be idempotent and must not duplicate or rewrite task records");
+const duplicateTaskEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+assert.equal(duplicateTaskEngine.syncLegacy([],[],[],[{id:"duplicate",title:"First"},{id:"duplicate",title:"Second"}]),false,"Duplicate legacy task identities must be rejected");
+assert.equal(duplicateTaskEngine.getTasks().length,0,"Duplicate task rejection must not partially write canonical records");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"broken-task"}]),false,"Malformed legacy tasks must block synchronization instead of being silently discarded");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Rejected malformed input must not overwrite previously synchronized task data");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"unsupported-repeat",title:"Monthly task",repeat:"monthly",duration:30}]),false,"Unsupported recurrence must reject synchronization rather than silently becoming a one-off task");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Unsupported recurrence rejection must preserve the existing canonical task collection");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"invalid-history",title:"Task with invalid history",repeat:"weekly",weekdays:[1],completedDates:["not-a-date"],duration:30}]),false,"Invalid completion history must reject synchronization rather than silently dropping history");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Invalid completion history rejection must preserve the existing canonical task collection");
+assert.equal(richTaskEngine.syncLegacy([],[],[],[{id:"invalid-weekday",title:"Malformed weekday",repeat:"weekly",weekdays:[null],duration:30}]),false,"Malformed weekday values must reject synchronization rather than coercing null to Sunday");
+assert.equal(JSON.stringify(richTaskEngine.getTasks()),firstRichSnapshot,"Malformed weekday rejection must preserve the existing canonical task collection");
+const rangeEngine=scheduleEngine.create({storage:memoryStorage(),classes:[],routine:[]});
+rangeEngine.createEvent({id:"range-event",title:"Range test",start:"2026-11-09T09:00",end:"2026-11-09T10:00"});
+assert.equal(rangeEngine.getForDateRange("2026-11-09","2026-11-10").length,1,"Date-range API must return matching event occurrences");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09garbage","2026-11-10"),[],"Date-range API must reject strings that only begin with a valid date");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09T12:00","2026-11-10"),[],"Date-range API must accept calendar dates rather than silently truncating timestamps");
+assert.equal(typeof rangeEngine.getAvailableSlots,"function","Canonical scheduling API must expose available-slot queries");
+assert(Array.isArray(rangeEngine.getAvailableSlots("2026-11-09")),"Available-slot query must return a predictable array");
+assert.deepEqual(rangeEngine.getForDateRange("2026-11-09","2037-11-09"),[],"Unsupported oversized date ranges must be rejected without partial results");
+const recurringCompletion=rangeEngine.createTask({id:"recurring-completion",title:"Daily revision",repeat:"daily",repeatStart:"2026-11-09",durationMinutes:30});
+assert(rangeEngine.setTaskCompletion("recurring-completion",true,"2026-11-09"),"Recurring occurrence completion must be persisted");
+assert.equal(rangeEngine.getTasksForDate("2026-11-09")[0].occurrenceStatus,"completed","Recurring completion API must mark the selected occurrence complete");
+assert.equal(rangeEngine.getTasksForDate("2026-11-10")[0].occurrenceStatus,"open","Recurring completion must not complete future occurrences");
+assert.throws(()=>rangeEngine.setTaskCompletion("rec","true","2026-11-09"),/Completion state must be boolean/,"Task completion API must reject non-boolean state");
+const weeklyGuard=rangeEngine.createTask({id:"weekly-guard",title:"Monday task",repeat:"weekly",weekdays:[1],repeatStart:"2026-11-09",repeatEnd:"2026-11-30",durationMinutes:30});
+assert.throws(()=>rangeEngine.setTaskCompletion(weeklyGuard.id,true,"2026-11-10"),/Date is not an active task occurrence/,"Recurring task completion must reject dates outside the selected weekday rule");
+assert(rangeEngine.setTaskCompletion(weeklyGuard.id,true,"2026-11-09"),"Recurring task completion must accept a date that matches its recurrence rule");
+
 console.log("Daybook regression checks passed.");
 
 assert(app.includes("window.daybookIcon") && app.includes("const ICONS="), "Shared icon set must be defined centrally");
@@ -537,6 +588,7 @@ assert(html.includes('data-schedule-mode="timeline"')&&html.includes('data-sched
 assert(app.includes("function renderScheduleModes()")&&app.includes("scheduleStore.getDayPlan")&&app.includes("scheduleStore.getTasksForDate"),"Timetable modes must render from the canonical scheduling engine");
 assert(scheduling.includes("function normalizeTask")&&scheduling.includes("function getDayPlan")&&scheduling.includes("function getTasksForDate")&&scheduling.includes("function availableSlots"),"Canonical scheduling engine must support flexible tasks, day plans and availability windows");
 assert(flexible.includes("DaybookScheduleStore")&&flexible.includes("createTask")&&flexible.includes("updateTask")&&flexible.includes("deleteTask"),"Flexible activity CRUD must use canonical schedule storage");
+assert(flexible.includes("...x")&&flexible.includes("postponedFrom")&&flexible.includes("repeatEnd")&&flexible.includes("scheduledStart")&&flexible.includes("recurrenceDate"),"Flexible legacy conversion must preserve custom fields, postponement, recurrence boundaries, scheduled times and the historical weekly recurrence fallback");
 assert(planningCss.includes(".schedule-week-grid")&&planningCss.includes("@media(max-width:560px)")&&planningCss.includes(".timeline-prayer-markers"),"Timetable modes must include responsive weekly and prayer marker styles");
 
 assert(app.includes("const ROUTINE_VERSION=3")&&app.includes('?"22:30":r.time'),"Routine migration must move the old sleep default to 10:30 PM without discarding saved activities");
@@ -548,6 +600,7 @@ assert(prayer.includes("Using saved prayer times")&&prayer.includes("getNativeRe
 assert(prayer.includes("prefetchRange")&&prayer.includes("startTime")&&app.includes('startDateTime:key+"T"+p.startTime'),"Prayer anchors must be prefetched and represented in the selected location time zone");
 assert(scheduling.includes("VERSION=3")&&scheduling.includes("priorityOrder")&&scheduling.includes("postponedFrom"),"Canonical schedule schema must retain tasks, priority profiles and occurrence-level postponement");
 assert(flexible.includes("daybook_flexible_activities_v1")&&flexible.includes("Estimated duration")&&flexible.includes("Tomorrow")&&flexible.includes("Fixed classes and appointments are protected")&&flexible.includes("getPrayerIntervals"),"Flexible activities must migrate safely, use canonical storage, support postponement and account for prayer windows");
+assert(flexible.includes("Prayer timing data is unavailable")&&flexible.includes("A scheduled item has no end time")&&flexible.includes('window.addEventListener("daybook-prayer-updated",render)'),"Flexible activity suggestions must withhold unsafe windows and refresh when prayer timings change");
 assert(native.includes("item.timestamp")&&app.includes("getNativeReminders"),"Android reminders must accept timezone-aware prayer notification timestamps");
 
 // Step 7A — execute the prayer module against deterministic browser/API fixtures.

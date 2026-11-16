@@ -1,0 +1,85 @@
+name: Phase 2 browser and data integrity verification
+
+on:
+  push:
+    branches:
+      - "phase-2/canonical-data-compatibility"
+    paths:
+      - "package.json"
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "*.js"
+      - "*.html"
+      - "*.css"
+      - "*.webmanifest"
+      - "docs/phase-2/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daybook-phase2-browser-verification
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    name: Node.js 22 and Playwright Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out exact pushed commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Record runtime
+        run: |
+          node --version
+          npm --version
+
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run existing regression suite
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Install Playwright without changing project dependencies
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start built application
+        run: |
+          node scripts/serve-built.cjs > browser-server.log 2>&1 &
+          echo $! > browser-server.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat browser-server.log
+          exit 1
+
+      - name: Execute real Chromium browser suite
+        run: node scripts/browser-verify.cjs
+
+      - name: Upload browser reports, screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybook-phase2-browser-results
+          path: |
+            playwright-results.json
+            playwright-failure.png
+            browser-server.log
+          if-no-files-found: warn
+          retention-days: 14
