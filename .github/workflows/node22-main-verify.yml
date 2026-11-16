@@ -1,0 +1,72 @@
+name: Node.js 22 main verification
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "package.json"
+      - "scripts/**"
+      - ".github/workflows/node22-main-verify.yml"
+      - "app.js"
+      - "native.js"
+      - "persistence.js"
+      - "scheduling.js"
+      - "flexible-activities.js"
+      - "prayer-times.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daybook-node22-main-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Node.js 22 test and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact triggering commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Record runtime versions
+        run: |
+          node --version
+          npm --version
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run regression tests
+        run: npm test
+
+      - name: Build production application
+        run: |
+          npm run build
+          test -s www/index.html
+          test -s www/native.js
+          test -s www/app.js
+          test -s www/styles.css
+          test -s www/manifest.webmanifest
+          test -s www/icon-192.png
+          test -s www/icon-512.png
+
+      - name: Preserve test and build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybook-main-node22-verification
+          path: www/
+          if-no-files-found: warn
+          retention-days: 14
