@@ -211,18 +211,34 @@
   for(const key of keysToChange){const previous=native.getItem(key);before[key]={present:previous!==null,raw:previous};after[key]={present:true,raw:entries[key]}}
   const operationId=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2);
   const journal={format:"daybook-restore",version:2,operationId,state:"prepared",keys:keysToChange,before,after};
-  let committed=false;
+  let committed=false,journalReady=false,preserveJournal=false;
   try{
-   persistJournal(journal);
+   persistJournal(journal);journalReady=true;
    journal.state="applying";persistJournal(journal);
    for(const key of keysToChange)rawSet(key,after[key].raw);
    if(!sameSnapshot(after))throw Error("Restore replacement read-back verification failed");
-   journal.state="committed";persistJournal(journal);committed=true;
+   journal.state="committed";
+   try{persistJournal(journal);committed=true}
+   catch(commitError){
+    journal.state="applying";
+    try{persistJournal(journal)}catch(recoveryMarkerError){
+     preserveJournal=true;healthy=false;blocked=true;
+     recoveryError=String(recoveryMarkerError&&recoveryMarkerError.message||recoveryMarkerError);
+    }
+    throw commitError;
+   }
    removeJournalVerified();
    healthy=true;blocked=false;recoveryError=null;
    return true;
   }catch(error){
-   if(committed)throw error;
+   if(committed||preserveJournal)throw error;
+   if(!journalReady){
+    // No application key is touched until the first complete journal is verified.
+    // If a write may have left an unreadable journal, retain it and block startup.
+    try{if(native.getItem(JOURNAL)!==null){healthy=false;blocked=true;recoveryError="Recovery journal could not be verified and was retained"}}
+    catch(readError){healthy=false;blocked=true;recoveryError="Recovery journal state could not be determined"}
+    throw error;
+   }
    try{
     restoreSnapshot(before);
     removeJournalVerified();
