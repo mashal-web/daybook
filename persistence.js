@@ -71,7 +71,7 @@
  }
  function snapshot(){const data={};for(const key of keys())data[key]=readValue(key);return data}
  function validateV4(file){
-  if(file.appId!=="daybook"||file.schemaVersion!==VERSION||typeof file.exportedAt!=="string"||!Number.isFinite(Date.parse(file.exportedAt)))throw Error("Invalid version-4 backup envelope");
+  if(file.appId!=="daybook"||file.schemaVersion!==VERSION||file.sourceSchemaVersion!==VERSION||typeof file.exportedAt!=="string"||!Number.isFinite(Date.parse(file.exportedAt)))throw Error("Invalid version-4 backup envelope");
   if(!Array.isArray(file.manifest)||!isObject(file.data))throw Error("Version-4 backup requires a manifest and data object");
   const seen=new Set(),entries={};
   for(const item of file.manifest){
@@ -139,7 +139,7 @@
  }
  function exportFile(){
   const data=snapshot(),manifest=keys().map(key=>({key,status:isEmpty(key,data[key])?"empty":"populated"}));
-  const backup={app:"Daybook",appId:"daybook",version:4,exportedAt:new Date().toISOString(),schemaVersion:VERSION,manifest,data};
+  const backup={app:"Daybook",appId:"daybook",version:4,exportedAt:new Date().toISOString(),schemaVersion:VERSION,sourceSchemaVersion:VERSION,manifest,data};
   validateBackup(backup);
   return new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
  }
