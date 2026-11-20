@@ -151,6 +151,20 @@ async function rejected(promise,pattern){await assert.rejects(promise,pattern)}
   assert.equal(fresh.map.has("daybook_focus"),false,"Recovery must restore a previously absent key as absent");
   assert.deepEqual(JSON.parse(fresh.map.get("daybook_tasks")),[{id:"before"}]);
  }
+ // Legacy restore preview must explicitly describe partial compatibility behavior.
+ {
+  const h=harness(seedData());
+  const legacy={size:100,text:async()=>JSON.stringify({app:"Daybook",version:3,exportedAt:"2026-11-20T00:00:00.000Z",data:{daybook_tasks:[{id:"legacy-preview",title:"Legacy import"}]}})};
+  let preview="";
+  const result=await h.api.importFile(legacy,message=>{preview=message;return true});
+  assert.equal(result.cancelled,false);
+  assert.match(preview,/LEGACY V3 COMPATIBILITY IMPORT/);
+  assert.match(preview,/only stores present in this backup/i);
+  assert.match(preview,/absent from the backup remain unchanged/i);
+  assert.match(preview,/daybook_tasks/);
+  assert.deepEqual(JSON.parse(h.map.get("daybook_subjects")),JSON.parse(seedData().daybook_subjects),"Legacy preview import must preserve absent stores");
+ }
+
  // Invalid journal blocks writes without changing application data.
  {
   const h=harness(seedData());h.map.set(JOURNAL,JSON.stringify({format:"daybook-restore",version:2,state:"applying",keys:["daybook_tasks"],before:{},after:{},checksum:"bad"}));
