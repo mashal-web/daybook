@@ -20,7 +20,11 @@ function harness(seed={},fault=null){
 }
 function makeV4(api,changes={}){
  const blob=api.exportFile(),file=JSON.parse(blob.parts.join(""));
- for(const [key,value] of Object.entries(changes)){file.data[key]=value;const item=file.manifest.find(x=>x.key===key);item.status=api.validateBackup(file)[key]===undefined?"unsupported":(Array.isArray(value)&&!value.length?"empty":value&&typeof value==="object"&&!Array.isArray(value)&&!Object.keys(value).length?"empty":"populated")}
+ for(const [key,value] of Object.entries(changes)){
+  file.data[key]=value;
+  const item=file.manifest.find(x=>x.key===key);
+  item.status=(Array.isArray(value)&&value.length===0)||(value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).length===0)?"empty":"populated";
+ }
  return {size:JSON.stringify(file).length,text:async()=>JSON.stringify(file)};
 }
 function seedData(){return {
