@@ -6,14 +6,13 @@ const fs = require("node:fs");
   const browser = await chromium.launch({ headless: true });
   // Block service workers so browser-context routing owns every network request.
   // Playwright routing does not intercept requests fulfilled by an active service worker.
+  // Block service workers so browser-context routing owns every network request.
+  // Playwright routing does not intercept requests fulfilled by an active service worker.
   const context = await browser.newContext({ serviceWorkers: "block" });
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
   const dialogEvents = [];
-  page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
-  page.on("pageerror", error => pageErrors.push(error.stack || error.message));
-  page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
   // Register the API mock at context scope before creating/navigating the page.
   // This catches fetches from every page and survives page reloads.
   let prayerApiIntercepts = 0;
@@ -22,12 +21,15 @@ const fs = require("node:fs");
     assert.equal(url.hostname, "api.aladhan.com", "Unexpected host matched prayer API route");
     prayerApiIntercepts += 1;
     await route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
     });
   });
   const page = await context.newPage();
+  page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
+  page.on("pageerror", error => pageErrors.push(error.stack || error.message));
+  page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
   page.on("dialog", async dialog => {
     const event = { type: dialog.type(), message: dialog.message() };
     dialogEvents.push(event);
