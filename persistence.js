@@ -258,8 +258,30 @@
   if(!file)throw Error("Choose a backup file first");
   if(file.size>10*1024*1024)throw Error("Backup file exceeds the 10 MB limit");
   const parsed=JSON.parse(await file.text()),entries=validateBackup(parsed),count=Object.keys(entries).length;
-  if(typeof confirmFn!=="function"||!confirmFn("This backup contains "+count+" stored data groups from "+(parsed.exportedAt||"an earlier export")+". Replacing Daybook data on this device will overwrite current records. Export your current data first. Continue?"))return {cancelled:true,count};
-  apply(entries);return {cancelled:false,count};
+  const replacing=Object.keys(entries);
+  const mode=Number(parsed.version)===4?"V4 EXACT REPLACEMENT":"LEGACY V"+Number(parsed.version)+" COMPATIBILITY IMPORT";
+  const preserved=Number(parsed.version)===4
+   ?(parsed.manifest||[]).filter(item=>item.status==="unsupported").map(item=>item.key)
+   :[];
+  const preview=[
+   "DAYBOOK RESTORE PREVIEW",
+   mode,
+   "Backup date: "+(parsed.exportedAt||"not recorded"),
+   "",
+   "Stores that will be replaced ("+count+"):",
+   ...replacing.map(key=>"• "+key),
+   "",
+   Number(parsed.version)===4
+    ?"V4 replaces every supported store represented as empty or populated in its complete manifest. Empty stores will be cleared. Stores marked unsupported are preserved."
+    :"Legacy import updates only stores present in this backup. Stores absent from the backup remain unchanged.",
+   preserved.length?"Unsupported stores preserved: "+preserved.join(", "):"",
+   "Protected schema, migration, cache and recovery metadata are never imported or deleted.",
+   "",
+   "This action overwrites current records on this device. Export a backup first.",
+   "Continue with restore?"
+  ].filter(Boolean).join("\\n");
+  if(typeof confirmFn!=="function"||!confirmFn(preview))return {cancelled:true,count,preview};
+  apply(entries);return {cancelled:false,count,preview};
  }
  try{if(native.getItem(SCHEMA)===null)storage.setItem(SCHEMA,JSON.stringify(VERSION))}catch(e){healthy=false}
  root.DaybookPersistence={storage,snapshot,exportFile,importFile,validateBackup,getHealth:()=>({healthy,blocked,recovered,version:VERSION,error:recoveryError}),storageKeys:keys};
