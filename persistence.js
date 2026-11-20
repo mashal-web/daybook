@@ -53,7 +53,7 @@
  function isObject(value){return value!==null&&typeof value==="object"&&!Array.isArray(value)}
  function isEmpty(key,value){
   const type=STORES[key];
-  if(type==="array")return Array.isArray(value)&&value.length===0;
+  if(type==="array"||type==="strings")return Array.isArray(value)&&value.length===0;
   if(type==="object")return isObject(value)&&Object.keys(value).length===0;
   if(type==="schedule")return isObject(value)&&Array.isArray(value.events)&&Array.isArray(value.exceptions||[])&&Array.isArray(value.tasks)&&!value.events.length&&!(value.exceptions||[]).length&&!value.tasks.length;
   if(type==="finance")return isObject(value)&&Number(value.budget||0)===0&&Array.isArray(value.transactions)&&value.transactions.length===0;
