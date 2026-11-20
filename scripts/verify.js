@@ -492,16 +492,47 @@ assert(html.includes("<main><header>") && html.includes("id=\"settingsBtn\"") &&
 
 const persistenceSource=read("persistence.js");
 assert(persistenceSource.includes("function recover()")&&persistenceSource.includes("function apply(entries)"),"Persistence must recover interrupted writes and apply multi-key restores transactionally");
-assert(persistenceSource.includes("version:3")&&persistenceSource.includes("schemaVersion"),"Backups must include an explicit format and schema version");
+assert(persistenceSource.includes("version:4")&&persistenceSource.includes("schemaVersion")&&persistenceSource.includes("manifest"),"Backups must include a version-4 manifest and schema version");
 assert(html.includes('<script src="persistence.js"></script><script src="scheduling.js"></script>'),"Persistence layer must load before schedule and app modules");
 assert(build.includes('"persistence.js"')&&sw.includes('"./persistence.js"'),"Persistence layer must be packaged for Android and cached offline");
 
 
 const persistenceHarness = (() => { const map=new Map(); let failAt=null,writes=0; const native={get length(){return map.size},key:i=>[...map.keys()][i]??null,getItem:k=>map.has(k)?map.get(k):null,setItem(k,v){writes++;if(failAt&&writes===failAt)throw Error("QuotaExceededError");map.set(k,String(v))},removeItem:k=>map.delete(k)};const window={localStorage:native};new Function("window","Blob",persistence)(window, class BlobMock{constructor(parts,options){this.parts=parts;this.type=options.type}});return {map,native,api:window.DaybookPersistence,setFailure(n){failAt=n;writes=0},clearFailure(){failAt=null;writes=0}};})();
 const ps=persistenceHarness.api.storage;ps.setItem("daybook_tasks",JSON.stringify([{id:"t1",title:"Keep me"}]));assert.equal(JSON.parse(ps.getItem("daybook_tasks"))[0].id,"t1","Central storage must save and retrieve records");
-const backupData=persistenceHarness.api.snapshot();assert(backupData.daybook_tasks&&backupData.daybook_schema_version!==undefined,"Backup snapshot must include user records and schema metadata");
+const backupData=persistenceHarness.api.snapshot();assert(backupData.daybook_tasks&&backupData.daybook_goal===10&&!Object.hasOwn(backupData,"daybook_schema_version")&&!Object.hasOwn(backupData,"daybook_routineVersion"),"Backup snapshot must contain user stores and exclude protected metadata");
 const validBackup={app:"Daybook",version:3,exportedAt:"2026-11-09T00:00:00.000Z",data:{daybook_tasks:[{id:"t2",title:"Restored"}]}};const entries=persistenceHarness.api.validateBackup(validBackup);assert.equal(JSON.parse(entries.daybook_tasks)[0].id,"t2","Valid backup records must validate");assert.throws(()=>persistenceHarness.api.validateBackup({app:"Daybook",version:99,data:{}}),/Unsupported/,"Unsupported backup versions must be rejected");
 assert(persistence.includes("Refusing to overwrite unreadable stored data")&&persistence.includes("function recover()"),"Corrupt records must be protected and interrupted writes must be recoverable");
+const v2=validateBackup({app:"Daybook",version:2,data:{tasks:[{id:"v2",title:"Legacy v2"}],goal:8},extensions:{finance:{budget:100,transactions:[]}}});
+assert(v2.daybook_tasks&&v2.daybook_goal&&v2.daybook_finance,"V2 legacy and extension mappings must remain supported");
+assert(!Object.hasOwn(v2,"daybook_subjects"),"V2 imports must not infer absent stores as empty");
+const v3=validateBackup({app:"Daybook",version:3,schemaVersion:1,data:{daybook_schema_version:1,daybook_routineVersion:3,daybook_prayer_cache_v1:{byDate:{}},daybook_tasks:[{id:"v3",title:"Legacy v3"}]}});
+assert.deepEqual(Object.keys(v3),["daybook_tasks"],"V3 metadata and historical prayer cache must be excluded from replacement");
+assert.throws(()=>validateBackup({app:"Daybook",version:3,data:{daybook_schema_version:2,daybook_tasks:[]}}),/schema metadata/,"V3 historical schema metadata must be validated");
+assert.throws(()=>validateBackup({app:"Daybook",version:3,data:{daybook_tasks:[],daybook_unknown:[]}}),/unsupported storage key/,"Unknown V3 keys must be rejected");
+const v4blob=persistenceHarness.api.exportFile();
+const v4=JSON.parse(v4blob.parts.join(""));
+assert.equal(v4.version,4);
+assert.equal(v4.appId,"daybook");
+assert.equal(v4.manifest.length,persistenceHarness.api.storageKeys().length,"V4 manifest must enumerate every approved store");
+assert(v4.manifest.some(x=>x.key==="daybook_subjects"&&x.status==="empty"),"V4 manifest must represent empty stores explicitly");
+assert(v4.manifest.some(x=>x.key==="daybook_tasks"&&x.status==="populated"),"V4 manifest must represent populated stores explicitly");
+assert.equal(Object.keys(validateBackup(v4)).length,v4.manifest.length,"Complete V4 export must round-trip through validation");
+const cloneV4=JSON.parse(JSON.stringify(v4));
+cloneV4.manifest.pop();
+assert.throws(()=>validateBackup(cloneV4),/incomplete/,"V4 manifest must reject missing stores");
+const duplicateV4=JSON.parse(JSON.stringify(v4));
+duplicateV4.manifest[1]={...duplicateV4.manifest[0]};
+assert.throws(()=>validateBackup(duplicateV4),/duplicate/,"V4 manifest must reject duplicate entries");
+const mismatchV4=JSON.parse(JSON.stringify(v4));
+mismatchV4.manifest.find(x=>x.key==="daybook_tasks").status="empty";
+assert.throws(()=>validateBackup(mismatchV4),/status mismatch/,"V4 manifest must reject status/data contradictions");
+const missingDataV4=JSON.parse(JSON.stringify(v4));
+delete missingDataV4.data.daybook_tasks;
+assert.throws(()=>validateBackup(missingDataV4),/Missing or invalid/,"V4 manifest must reject missing data entries");
+const protectedV4=JSON.parse(JSON.stringify(v4));
+protectedV4.manifest.push({key:"daybook_schema_version",status:"populated"});
+assert.throws(()=>validateBackup(protectedV4),/unsupported manifest/,"V4 must reject protected metadata keys");
+
 
 
 
