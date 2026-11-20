@@ -13,6 +13,12 @@ const fs = require("node:fs");
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   page.on("pageerror", error => pageErrors.push(error.stack || error.message));
   page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
+  // Keep the browser suite deterministic and offline; prayer API behavior has its own unit fixtures.
+  await page.route("https://api.aladhan.com/v1/timings/**", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
+  }));
   page.on("dialog", async dialog => {
     const event = { type: dialog.type(), message: dialog.message() };
     dialogEvents.push(event);
