@@ -3,7 +3,7 @@
  const PREFIX="daybook_",JOURNAL=PREFIX+"write_journal_v1",SCHEMA=PREFIX+"schema_version",VERSION=1;
  const native=root.localStorage;
  const STORES={
-  daybook_subjects:"array",daybook_classes:"array",daybook_routine:"array",daybook_tasks:"array",
+  daybook_subjects:"strings",daybook_classes:"array",daybook_routine:"array",daybook_tasks:"array",
   daybook_sessions:"array",daybook_reminders:"array",daybook_goal:"number",daybook_settings:"object",
   daybook_focus:"object",daybook_schedule_v1:"schedule",daybook_academic_courses:"array",
   daybook_academic_assessments:"array",daybook_habits:"array",daybook_habit_checks:"object",
@@ -62,7 +62,8 @@
  function validValue(key,value){
   const type=STORES[key];
   if(value&&typeof value==="object"&&Object.prototype.hasOwnProperty.call(value,"__rawStorageValue"))return false;
-  if(type==="array")return Array.isArray(value);
+  if(type==="array")return Array.isArray(value)&&value.every(isObject);
+  if(type==="strings")return Array.isArray(value)&&value.every(item=>typeof item==="string");
   if(type==="object")return isObject(value);
   if(type==="number")return typeof value==="number"&&Number.isFinite(value)&&value>=1&&value<=100;
   if(type==="schedule")return isObject(value)&&[1,2,3].includes(Number(value.version))&&Array.isArray(value.events)&&Array.isArray(value.tasks)&&(value.exceptions===undefined||Array.isArray(value.exceptions));

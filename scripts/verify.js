@@ -751,5 +751,33 @@ console.log("Phase 7B.1 design system and application shell checks passed.");
  assert.equal(exactResult.cancelled,false);
  assert.equal(legacyStorage.getItem("daybook_subjects"),"[]","V4 import must intentionally replace a populated store with an empty store");
  assert.equal(legacyStorage.getItem("daybook_schema_version"),"1","V4 import must not overwrite protected schema metadata");
+
+ // V1 and V2 imports are partial migrations: represented values change; absent stores survive.
+ const legacyHarness=()=>{const map=new Map(),native={get length(){return map.size},key:i=>[...map.keys()][i]??null,getItem:k=>map.has(k)?map.get(k):null,setItem:(k,v)=>map.set(k,String(v)),removeItem:k=>map.delete(k)},win={localStorage:native};new Function("window","Blob",persistence)(win,class BlobMock{constructor(parts,options){this.parts=parts;this.type=options.type}});return {map,native,api:win.DaybookPersistence};};
+ const v1Harness=legacyHarness();
+ v1Harness.api.storage.setItem("daybook_subjects",JSON.stringify(["keep-v1"]));
+ v1Harness.api.storage.setItem("daybook_classes",JSON.stringify([{id:"keep-class"}]));
+ const v1Import={size:100,text:async()=>JSON.stringify({app:"Daybook",version:1,data:{subjects:["V1 subject"],tasks:[{id:"v1-task",title:"V1 task"}]}})};
+ await v1Harness.api.importFile(v1Import,()=>true);
+ assert.deepEqual(JSON.parse(v1Harness.api.storage.getItem("daybook_subjects")),["V1 subject"],"V1 must import represented legacy fields");
+ assert.deepEqual(JSON.parse(v1Harness.api.storage.getItem("daybook_classes")),[{id:"keep-class"}],"V1 must preserve stores absent from its format");
+ const v2Harness=legacyHarness();
+ v2Harness.api.storage.setItem("daybook_subjects",JSON.stringify(["keep-v2"]));
+ v2Harness.api.storage.setItem("daybook_classes",JSON.stringify([{id:"keep-v2-class"}]));
+ const v2Import={size:100,text:async()=>JSON.stringify({app:"Daybook",version:2,data:{tasks:[{id:"v2-task",title:"V2 task"}]},extensions:{habits:[{id:"h2",name:"Habit"}]}})};
+ await v2Harness.api.importFile(v2Import,()=>true);
+ assert.deepEqual(JSON.parse(v2Harness.api.storage.getItem("daybook_tasks")),[{id:"v2-task",title:"V2 task"}],"V2 must import represented legacy fields");
+ assert.deepEqual(JSON.parse(v2Harness.api.storage.getItem("daybook_habits")),[{id:"h2",name:"Habit"}],"V2 must import supported extensions");
+ assert.deepEqual(JSON.parse(v2Harness.api.storage.getItem("daybook_subjects")),["keep-v2"],"V2 must preserve absent stores");
+ assert.deepEqual(JSON.parse(v2Harness.api.storage.getItem("daybook_classes")),[{id:"keep-v2-class"}],"V2 must preserve other absent stores");
+ assert.throws(()=>validateBackup({app:"Daybook",version:2,data:{daybook_unknown:[]} }),/Unsupported legacy backup key|Unsupported legacy data key/,"V2 must reject unknown historical keys");
+ assert.throws(()=>validateBackup({app:"Daybook",version:1,data:{subjects:[1]}}),/Invalid legacy data/,"Subject store must contain strings only");
+ const v4Excluded=JSON.parse(v4blob.parts.join(""));
+ assert(!Object.prototype.hasOwnProperty.call(v4Excluded.data,"daybook_schema_version"),"V4 export must exclude schema metadata");
+ assert(!Object.prototype.hasOwnProperty.call(v4Excluded.data,"daybook_routineVersion"),"V4 export must exclude routine migration metadata");
+ assert(!Object.prototype.hasOwnProperty.call(v4Excluded.data,"daybook_prayer_cache_v1"),"V4 export must exclude prayer API cache");
+ assert(!Object.prototype.hasOwnProperty.call(v4Excluded.data,"daybook_write_journal_v1"),"V4 export must exclude recovery journal");
+ assert.throws(()=>validateBackup({...v4,data:{...v4.data,daybook_schema_version:1}}),/Unmanifested or unsupported data key/,"V4 must reject protected metadata smuggled into data");
+
  console.log("Phase 3.5.1 backup compatibility and replacement import tests passed.");
 })().catch(error=>{console.error(error);process.exitCode=1});
