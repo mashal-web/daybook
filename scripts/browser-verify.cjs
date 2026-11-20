@@ -40,7 +40,7 @@ const fs = require("node:fs");
     await page.locator("#eventEndDate").fill(today);
     await page.locator("#eventEndTime").fill("11:00");
     await page.locator("#form button.primary").click();
-    await page.getByText("Browser verification event").first().waitFor();
+    await page.locator("#scheduleAgenda").getByText("Browser verification event").waitFor();
     assert.ok(dialogEvents.every(event => event.type === "confirm" && event.message.startsWith("This event overlaps ")), "Only the expected event-overlap confirmation may be accepted");
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
     const agendaTextAfterCreate = await page.locator("#scheduleAgenda").innerText();
