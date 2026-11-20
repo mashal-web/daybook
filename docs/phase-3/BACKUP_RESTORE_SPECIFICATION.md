@@ -1,6 +1,6 @@
 # Daybook Backup and Restore Specification
 
-Status: **Implemented in Phase 3.5.1 for backup format v4 and explicit v1–v3 validation.** The journaled multi-key recovery and full restore UX remain separate Phase 3.5 work; this document does not claim those features are complete.
+Status: **V4 format and transactional restore implementation are present.** Automated regression/failure-injection and browser verification are wired into the Phase 3 branch CI. Guarantees below are limited to the tested localStorage behavior described here.
 
 ## Version 4 envelope
 
