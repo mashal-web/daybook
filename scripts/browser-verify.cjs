@@ -4,8 +4,9 @@ const fs = require("node:fs");
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
-  const page = await context.newPage();
+  // Block service workers so browser-context routing owns every network request.
+  // Playwright routing does not intercept requests fulfilled by an active service worker.
+  const context = await browser.newContext({ serviceWorkers: "block" });
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
@@ -13,12 +14,20 @@ const fs = require("node:fs");
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   page.on("pageerror", error => pageErrors.push(error.stack || error.message));
   page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
-  // Keep the browser suite deterministic and offline; prayer API behavior has its own unit fixtures.
-  await page.route("https://api.aladhan.com/v1/timings/**", route => route.fulfill({
+  // Register the API mock at context scope before creating/navigating the page.
+  // This catches fetches from every page and survives page reloads.
+  let prayerApiIntercepts = 0;
+  await context.route("**/v1/timings/**", async route => {
+    const url = new URL(route.request().url());
+    assert.equal(url.hostname, "api.aladhan.com", "Unexpected host matched prayer API route");
+    prayerApiIntercepts += 1;
+    await route.fulfill({
     status: 200,
     contentType: "application/json",
     body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
-  }));
+    });
+  });
+  const page = await context.newPage();
   page.on("dialog", async dialog => {
     const event = { type: dialog.type(), message: dialog.message() };
     dialogEvents.push(event);
@@ -28,6 +37,9 @@ const fs = require("node:fs");
   try {
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
     assert.match(await page.title(), /Daybook/);
+    await page.waitForFunction(() => window.DaybookPrayer?.getSettings);
+    await page.waitForTimeout(150);
+    assert.ok(prayerApiIntercepts > 0, "Expected at least one Aladhan API request to be intercepted by the context mock");
     await page.locator("#overview.active").waitFor();
     for (const asset of ["styles.css", "app.js", "scheduling.js", "persistence.js", "upgrade.js"]) {
       const response = await page.request.get("http://127.0.0.1:4173/" + asset);
@@ -238,7 +250,7 @@ const fs = require("node:fs");
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
-    const report = { status: "passed", browser: "Chromium", checks: 28, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
+    const report = { status: "passed", browser: "Chromium", checks: 29, prayerApiIntercepts, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
     fs.writeFileSync("playwright-results.json", JSON.stringify(report, null, 2));
     console.log("Playwright Chromium verification passed.");
     console.log(JSON.stringify(report, null, 2));
