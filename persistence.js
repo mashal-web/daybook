@@ -95,13 +95,16 @@
   const source={...file.data},entries={};
   if(version<=2){
    const allowed=new Set([...LEGACY,...EXTENSIONS]);
-   for(const key of Object.keys(source)){
-    if(!allowed.has(key))throw Error("Unsupported legacy backup key: "+key);
-    if(key==="routineVersion"){if(!Number.isInteger(source[key])||source[key]<0||source[key]>3)throw Error("Invalid legacy routine metadata");continue}
-    const target=PREFIX+key;
+   for(const [key,value] of Object.entries(source)){
+    if(key==="routineVersion"){if(!Number.isInteger(value)||value<0||value>3)throw Error("Invalid legacy routine metadata");continue}
+    if(key===SCHEMA){if(value!==1)throw Error("Invalid historical schema metadata");continue}
+    if(key==="daybook_routineVersion"){if(!Number.isInteger(value)||value<0||value>3)throw Error("Invalid historical routine metadata");continue}
+    if(key==="daybook_prayer_cache_v1"){if(!isObject(value))throw Error("Invalid historical prayer cache");continue}
+    const target=key.startsWith(PREFIX)?key:PREFIX+key;
+    if(!allowed.has(key)&&!Object.prototype.hasOwnProperty.call(STORES,target))throw Error("Unsupported legacy backup key: "+key);
     if(!Object.prototype.hasOwnProperty.call(STORES,target))throw Error("Unsupported legacy data key: "+key);
-    if(!validValue(target,source[key]))throw Error("Invalid legacy data: "+key);
-    entries[target]=JSON.stringify(source[key]);
+    if(!validValue(target,value))throw Error("Invalid legacy data: "+key);
+    entries[target]=JSON.stringify(value);
    }
    if(file.extensions!==undefined){
     if(!isObject(file.extensions))throw Error("Invalid legacy extensions");
