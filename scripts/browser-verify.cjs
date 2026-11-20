@@ -94,17 +94,33 @@ const fs = require("node:fs");
     assert.equal(canonicalState.task.notes,"Retain this task description");
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
     const backupCheck = await page.evaluate(async () => {
+      localStorage.setItem("daybook_routineVersion", "3");
+      localStorage.setItem("daybook_prayer_cache_v1", JSON.stringify({browserProtected:"keep"}));
+      const schemaBefore = localStorage.getItem("daybook_schema_version");
+      const routineBefore = localStorage.getItem("daybook_routineVersion");
+      const cacheBefore = localStorage.getItem("daybook_prayer_cache_v1");
       const blob = window.DaybookPersistence.exportFile();
       const text = await blob.text();
       const parsed = JSON.parse(text);
       const originalTasks = localStorage.getItem("daybook_tasks");
       localStorage.setItem("daybook_tasks", "[]");
       const result = await window.DaybookPersistence.importFile(new File([text], "daybook-backup.json", {type:"application/json"}), () => true);
-      return {valid: !!window.DaybookPersistence.validateBackup(parsed), restored: localStorage.getItem("daybook_tasks") === originalTasks, cancelled: result.cancelled};
+      const restored = localStorage.getItem("daybook_tasks") === originalTasks;
+      const cancelledBefore = localStorage.getItem("daybook_tasks");
+      const cancelled = await window.DaybookPersistence.importFile(new File([text], "daybook-cancel.json", {type:"application/json"}), () => false);
+      const cancelPreserved = localStorage.getItem("daybook_tasks") === cancelledBefore;
+      let invalidRejected = false;
+      try { await window.DaybookPersistence.importFile(new File([JSON.stringify({app:"Daybook",version:4,appId:"daybook",schemaVersion:1,sourceSchemaVersion:1,exportedAt:new Date().toISOString(),manifest:[],data:{}})], "invalid.json"), () => true); }
+      catch { invalidRejected = true; }
+      return {valid: !!window.DaybookPersistence.validateBackup(parsed), restored, cancelled: result.cancelled, cancelPreserved, cancelResult:cancelled.cancelled, invalidRejected, protectedPreserved:localStorage.getItem("daybook_schema_version")===schemaBefore&&localStorage.getItem("daybook_routineVersion")===routineBefore&&localStorage.getItem("daybook_prayer_cache_v1")===cacheBefore};
     });
     assert.equal(backupCheck.valid, true);
     assert.equal(backupCheck.restored, true, "Backup restore must recover task records");
     assert.equal(backupCheck.cancelled, false);
+    assert.equal(backupCheck.cancelResult, true);
+    assert.equal(backupCheck.cancelPreserved, true, "Cancellation must not change application data");
+    assert.equal(backupCheck.invalidRejected, true, "Invalid V4 backup must be rejected before writes");
+    assert.equal(backupCheck.protectedPreserved, true, "Restore must preserve protected metadata and cache keys");
     await page.reload({ waitUntil: "networkidle" });
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getTasks().some(x => x.title === "Browser persistence task")), true);
