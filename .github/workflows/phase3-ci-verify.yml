@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: daybook-phase3-ci-${{ github.ref }}
+  group: daybook-phase3-finalization-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
