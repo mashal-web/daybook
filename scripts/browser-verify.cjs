@@ -12,6 +12,11 @@ const fs = require("node:fs");
   // Keep app startup deterministic/offline; the test explicitly enables one real prayer refresh below.
   await context.addInitScript(() => {
     Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+    const nativeAddEventListener = window.addEventListener.bind(window);
+    window.addEventListener = (type, listener, options) => {
+      if (type === "online") return;
+      return nativeAddEventListener(type, listener, options);
+    };
   });
   const consoleErrors = [];
   const pageErrors = [];
@@ -60,6 +65,8 @@ const fs = require("node:fs");
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
     assert.match(await page.title(), /Daybook/);
     await page.waitForFunction(() => window.DaybookPrayer?.refresh);
+    assert.equal(await page.evaluate(() => navigator.onLine), false, "Browser app must start in deterministic offline mode");
+    assert.equal(prayerApiRequests, 0, "App startup must not issue uncontrolled prayer API requests");
     // Exercise the application's actual prayer refresh once, then keep later reloads offline.
     await page.evaluate(async () => {
       Object.defineProperty(navigator, "onLine", { configurable: true, get: () => true });
