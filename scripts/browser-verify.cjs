@@ -9,11 +9,6 @@ const fs = require("node:fs");
   // Block service workers so browser-context routing owns every network request.
   // Playwright routing does not intercept requests fulfilled by an active service worker.
   const context = await browser.newContext({ serviceWorkers: "block" });
-  await context.addInitScript(() => {
-    if (localStorage.getItem("pw_browser_offline") === "1") {
-      Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
-    }
-  });
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
@@ -67,12 +62,10 @@ const fs = require("node:fs");
     assert.equal(prayerApiFulfilled, prayerApiIntercepts, "The mock must fulfill every initial Aladhan request");
     assert.equal(prayerApiResponses, prayerApiIntercepts, "Chromium must receive each mocked Aladhan response");
     assert.equal(prayerApiFinished, prayerApiIntercepts, "Each initial mocked Aladhan request must finish before navigation");
-    // Prayer API behavior is verified above. Keep the rest of this UI suite offline so later
-    // intentional reloads cannot abort unrelated background refreshes.
-    await page.evaluate(() => {
-      localStorage.setItem("pw_browser_offline", "1");
-      Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
-    });
+    assert.equal(prayerApiFinished, prayerApiIntercepts, "Initial mocked prayer requests must finish before any test navigation");
+    // The real prayer endpoint has now been exercised and verified through the mock.
+    // Keep subsequent UI workflows offline to avoid unrelated background refreshes during intentional reloads.
+    await context.setOffline(true);
     await page.locator("#overview.active").waitFor();
     for (const asset of ["styles.css", "app.js", "scheduling.js", "persistence.js", "upgrade.js"]) {
       const response = await page.request.get("http://127.0.0.1:4173/" + asset);
