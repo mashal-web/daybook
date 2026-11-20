@@ -15,7 +15,11 @@ const fs = require("node:fs");
   const dialogEvents = [];
   // Register the API mock at context scope before creating/navigating the page.
   // This catches fetches from every page and survives page reloads.
+  let prayerApiRequests = 0;
   let prayerApiIntercepts = 0;
+  context.on("request", request => {
+    if (new URL(request.url()).hostname === "api.aladhan.com") prayerApiRequests += 1;
+  });
   await context.route("**/v1/timings/**", async route => {
     const url = new URL(route.request().url());
     assert.equal(url.hostname, "api.aladhan.com", "Unexpected host matched prayer API route");
@@ -152,7 +156,7 @@ const fs = require("node:fs");
     const chooserPromise = page.waitForEvent("filechooser");
     await page.locator("#settingsImport").click();
     const chooser = await chooserPromise;
-    const restoreNavigation = page.waitForNavigation({waitUntil:"load"});
+    const restoreNavigation = page.waitForNavigation({waitUntil:"networkidle"});
     await chooser.setFiles({name:"daybook-ui-restore.json",mimeType:"application/json",buffer:Buffer.from(uiBackupText)});
     await restoreNavigation;
     await page.locator("#overview.active").waitFor();
@@ -270,8 +274,9 @@ const fs = require("node:fs");
 
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
+    assert.equal(prayerApiRequests, prayerApiIntercepts, "Every Aladhan request must be handled by the deterministic context mock");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
-    const report = { status: "passed", browser: "Chromium", checks: 30, prayerApiIntercepts, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
+    const report = { status: "passed", browser: "Chromium", checks: 31, prayerApiRequests, prayerApiIntercepts, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
     fs.writeFileSync("playwright-results.json", JSON.stringify(report, null, 2));
     console.log("Playwright Chromium verification passed.");
     console.log(JSON.stringify(report, null, 2));
