@@ -17,23 +17,35 @@ const fs = require("node:fs");
   // This catches fetches from every page and survives page reloads.
   let prayerApiRequests = 0;
   let prayerApiIntercepts = 0;
+  let prayerApiFulfilled = 0;
+  let prayerApiResponses = 0;
+  let prayerApiFinished = 0;
+  const prayerApiRouteErrors = [];
   context.on("request", request => {
     if (new URL(request.url()).hostname === "api.aladhan.com") prayerApiRequests += 1;
   });
+  context.on("response", response => { if (new URL(response.url()).hostname === "api.aladhan.com") prayerApiResponses += 1; });
+  context.on("requestfinished", request => { if (new URL(request.url()).hostname === "api.aladhan.com") prayerApiFinished += 1; });
   await context.route("**/v1/timings/**", async route => {
     const url = new URL(route.request().url());
     assert.equal(url.hostname, "api.aladhan.com", "Unexpected host matched prayer API route");
     prayerApiIntercepts += 1;
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
-    });
+    try {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({code:200,status:"OK",data:{timings:{Fajr:"05:00",Dhuhr:"12:30",Asr:"15:30",Maghrib:"18:00",Isha:"20:00"},meta:{timezone:"Asia/Karachi"}}})
+      });
+      prayerApiFulfilled += 1;
+    } catch (error) {
+      prayerApiRouteErrors.push(String(error?.message || error));
+      throw error;
+    }
   });
   const page = await context.newPage();
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   page.on("pageerror", error => pageErrors.push(error.stack || error.message));
-  page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
+  page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "") + " [frame=" + request.frame().url() + "; page=" + page.url() + "]"));
   page.on("dialog", async dialog => {
     const event = { type: dialog.type(), message: dialog.message() };
     dialogEvents.push(event);
@@ -274,9 +286,11 @@ const fs = require("node:fs");
 
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
+    console.log("Prayer API lifecycle:", JSON.stringify({prayerApiRequests,prayerApiIntercepts,prayerApiFulfilled,prayerApiResponses,prayerApiFinished,prayerApiRouteErrors,failedPrayerRequests:failedRequests.filter(item=>item.includes("api.aladhan.com"))}));
     assert.equal(prayerApiRequests, prayerApiIntercepts, "Every Aladhan request must be handled by the deterministic context mock");
+    assert.equal(prayerApiFulfilled, prayerApiIntercepts, "Every intercepted Aladhan request must receive a mock response");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
-    const report = { status: "passed", browser: "Chromium", checks: 31, prayerApiRequests, prayerApiIntercepts, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
+    const report = { status: "passed", browser: "Chromium", checks: 32, prayerApiRequests, prayerApiIntercepts, prayerApiFulfilled, prayerApiResponses, prayerApiFinished, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
     fs.writeFileSync("playwright-results.json", JSON.stringify(report, null, 2));
     console.log("Playwright Chromium verification passed.");
     console.log(JSON.stringify(report, null, 2));
