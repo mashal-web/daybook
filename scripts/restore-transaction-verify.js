@@ -116,6 +116,37 @@ async function rejected(promise,pattern){await assert.rejects(promise,pattern)}
   assert.equal(fresh.map.has(JOURNAL),false);
  }
 
+ // Simulate a process termination after one store write: no catch/rollback runs.
+ // A newly evaluated persistence module must recover from the durable journal alone.
+ {
+  const seed=seedData(),before={},after={};
+  const keys=["daybook_subjects","daybook_tasks","daybook_classes"];
+  for(const key of keys){before[key]={present:Object.prototype.hasOwnProperty.call(seed,key),raw:seed[key]??null};after[key]={present:true,raw:JSON.stringify(key==="daybook_subjects"?["crash-new"]:key==="daybook_tasks"?[{id:"crash-new"}]:[])}}
+  const journal={format:"daybook-restore",version:2,operationId:"fresh-context-crash-test",state:"applying",keys,before,after};
+  const payload={...journal};const encoded=JSON.stringify(payload);let hash=2166136261;
+  for(let i=0;i<encoded.length;i++){hash^=encoded.charCodeAt(i);hash=Math.imul(hash,16777619)}
+  journal.checksum=(hash>>>0).toString(16).padStart(8,"0");
+  const crashed={...seed,daybook_subjects:after.daybook_subjects.raw,daybook_write_journal_v1:JSON.stringify(journal)};
+  const fresh=harness(crashed);
+  assert.equal(fresh.api.getHealth().recovered,true,"Fresh context must detect and recover an interrupted applying transaction");
+  for(const key of keys)assert.equal(fresh.map.get(key),seed[key]??null,"Fresh-context crash recovery must restore the exact prior key state");
+  assert.equal(fresh.map.has(JOURNAL),false);
+  const repeat=harness(Object.fromEntries(fresh.map));
+  assert.equal(repeat.api.getHealth().blocked,false);
+  assert.equal(repeat.api.getHealth().recovered,false,"Repeated startup after completed recovery must be idempotent");
+ }
+ // Previously absent keys are represented explicitly and restored as absent.
+ {
+  const h=harness({daybook_tasks:JSON.stringify([{id:"before"}])});
+  const blob=makeV4(h.api,{daybook_tasks:[{id:"after"}]});
+  await h.api.importFile(blob,()=>true);
+  const journal={format:"daybook-restore",version:2,operationId:"absent-key-recovery",state:"applying",keys:["daybook_tasks","daybook_focus"],before:{daybook_tasks:{present:true,raw:JSON.stringify([{id:"before"}])},daybook_focus:{present:false,raw:null}},after:{daybook_tasks:{present:true,raw:JSON.stringify([{id:"after"}])},daybook_focus:{present:true,raw:"{}"}}};
+  const payload={...journal};let hash=2166136261;const encoded=JSON.stringify(payload);for(let i=0;i<encoded.length;i++){hash^=encoded.charCodeAt(i);hash=Math.imul(hash,16777619)}journal.checksum=(hash>>>0).toString(16).padStart(8,"0");
+  h.map.set("daybook_focus","{}");h.map.set(JOURNAL,JSON.stringify(journal));
+  const fresh=harness(Object.fromEntries(h.map));
+  assert.equal(fresh.map.has("daybook_focus"),false,"Recovery must restore a previously absent key as absent");
+  assert.deepEqual(JSON.parse(fresh.map.get("daybook_tasks")),[{id:"before"}]);
+ }
  // Invalid journal blocks writes without changing application data.
  {
   const h=harness(seedData());h.map.set(JOURNAL,JSON.stringify({format:"daybook-restore",version:2,state:"applying",keys:["daybook_tasks"],before:{},after:{},checksum:"bad"}));
