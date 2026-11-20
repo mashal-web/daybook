@@ -9,7 +9,8 @@ A v4 export is JSON with these top-level fields:
 - `app: "Daybook"` and `appId: "daybook"`: application identity.
 - `version: 4`: backup-format version.
 - `exportedAt`: ISO-8601 export timestamp.
-- `schemaVersion: 1`: source application data-schema version.
+- `schemaVersion: 1`: v4 envelope schema revision.
+- `sourceSchemaVersion: 1`: source application data-schema version.
 - `manifest`: one entry for every key in the fixed allowlist.
 - `data`: values keyed by the exact storage key named in the manifest.
 
