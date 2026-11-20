@@ -279,7 +279,7 @@
    "",
    "This action overwrites current records on this device. Export a backup first.",
    "Continue with restore?"
-  ].filter(Boolean).join("\\n");
+  ].filter(Boolean).join("\n");
   if(typeof confirmFn!=="function"||!confirmFn(preview))return {cancelled:true,count,preview};
   apply(entries);return {cancelled:false,count,preview};
  }
