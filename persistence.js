@@ -103,6 +103,7 @@
     const target=key.startsWith(PREFIX)?key:PREFIX+key;
     if(!allowed.has(key)&&!Object.prototype.hasOwnProperty.call(STORES,target))throw Error("Unsupported legacy backup key: "+key);
     if(!Object.prototype.hasOwnProperty.call(STORES,target))throw Error("Unsupported legacy data key: "+key);
+    if(value&&typeof value==="object"&&Object.prototype.hasOwnProperty.call(value,"__rawStorageValue"))throw Error("Backup contains an unreadable record: "+key);
     if(!validValue(target,value))throw Error("Invalid legacy data: "+key);
     entries[target]=JSON.stringify(value);
    }
