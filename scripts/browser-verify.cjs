@@ -9,9 +9,16 @@ const fs = require("node:fs");
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
+  const dialogEvents = [];
   page.on("console", msg => { if (msg.type() === "error") consoleErrors.push(msg.text()); });
   page.on("pageerror", error => pageErrors.push(error.stack || error.message));
   page.on("requestfailed", request => failedRequests.push(request.url() + " " + (request.failure()?.errorText || "")));
+  page.on("dialog", async dialog => {
+    const event = { type: dialog.type(), message: dialog.message() };
+    dialogEvents.push(event);
+    if (dialog.type() === "confirm" && dialog.message().startsWith("This event overlaps ")) await dialog.accept();
+    else await dialog.dismiss();
+  });
   try {
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
     assert.match(await page.title(), /Daybook/);
@@ -34,6 +41,7 @@ const fs = require("node:fs");
     await page.locator("#eventEndTime").fill("11:00");
     await page.locator("#form button.primary").click();
     await page.getByText("Browser verification event").first().waitFor();
+    assert.ok(dialogEvents.every(event => event.type === "confirm" && event.message.startsWith("This event overlaps ")), "Only the expected event-overlap confirmation may be accepted");
     assert.equal(await page.evaluate(() => window.DaybookScheduleStore.getForDate(new Date()).some(x => x.title === "Browser verification event")), true);
     const agendaTextAfterCreate = await page.locator("#scheduleAgenda").innerText();
     assert.match(agendaTextAfterCreate, /Browser verification event/);
@@ -208,13 +216,13 @@ const fs = require("node:fs");
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
-    const report = { status: "passed", browser: "Chromium", checks: 28, backupCheck, scheduling, planner, consoleErrors, pageErrors, failedRequests };
+    const report = { status: "passed", browser: "Chromium", checks: 28, backupCheck, scheduling, planner, dialogEvents, consoleErrors, pageErrors, failedRequests };
     fs.writeFileSync("playwright-results.json", JSON.stringify(report, null, 2));
     console.log("Playwright Chromium verification passed.");
     console.log(JSON.stringify(report, null, 2));
   } catch (error) {
     await page.screenshot({ path: "playwright-failure.png", fullPage: true }).catch(() => {});
-    fs.writeFileSync("playwright-results.json", JSON.stringify({ status: "failed", browser: "Chromium", error: error.stack || error.message, consoleErrors, pageErrors, failedRequests }, null, 2));
+    fs.writeFileSync("playwright-results.json", JSON.stringify({ status: "failed", browser: "Chromium", error: error.stack || error.message, dialogEvents, consoleErrors, pageErrors, failedRequests }, null, 2));
     throw error;
   } finally {
     await context.close();
