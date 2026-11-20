@@ -726,3 +726,27 @@ assert(design.includes("PHASE 7B.1")&&design.includes("--surface-3:#292929")&&de
 assert(design.includes("@media(max-width:360px)")&&design.includes("@media(max-width:600px)")&&design.includes("@media(max-width:900px)"),"Phone and tablet breakpoints must exist");
 assert(app.includes("function openShellAction")&&app.includes("renderScheduleModes()"),"Workspace shortcuts must route to existing application features");
 console.log("Phase 7B.1 design system and application shell checks passed.");
+
+;(async()=>{
+ const fullV1=validateBackup({app:"Daybook",version:1,data:{subjects:["A"],classes:[],routine:[],tasks:[],sessions:[],reminders:[],goal:7,settings:{},routineVersion:3},extensions:{academic_courses:[],academic_assessments:[],habits:[],habit_checks:{},finance:{budget:0,transactions:[]}}});
+ assert.equal(Object.keys(fullV1).length,13,"Every supported V1 legacy and extension mapping must be recognized");
+ const legacyStorage=persistenceHarness.api.storage;
+ legacyStorage.setItem("daybook_subjects",JSON.stringify(["keep-current"]));
+ legacyStorage.setItem("daybook_routineVersion",JSON.stringify(3));
+ legacyStorage.setItem("daybook_schema_version",JSON.stringify(1));
+ const v3File={size:100,text:async()=>JSON.stringify({app:"Daybook",version:3,exportedAt:"2026-11-09T00:00:00.000Z",data:{daybook_tasks:[{id:"legacy-import",title:"Imported"}],daybook_schema_version:1,daybook_routineVersion:2,daybook_prayer_cache_v1:{cached:true}}})};
+ const legacyResult=await persistenceHarness.api.importFile(v3File,()=>true);
+ assert.equal(legacyResult.cancelled,false);
+ assert.deepEqual(JSON.parse(legacyStorage.getItem("daybook_subjects")),["keep-current"],"V3 import must preserve absent stores");
+ assert.equal(legacyStorage.getItem("daybook_routineVersion"),"3","V3 import must preserve routine metadata");
+ assert.equal(legacyStorage.getItem("daybook_schema_version"),"1","V3 import must preserve schema metadata");
+ const exact=JSON.parse(persistenceHarness.api.exportFile().parts.join(""));
+ exact.data.daybook_subjects=[];
+ exact.manifest.find(x=>x.key==="daybook_subjects").status="empty";
+ const exactFile={size:JSON.stringify(exact).length,text:async()=>JSON.stringify(exact)};
+ const exactResult=await persistenceHarness.api.importFile(exactFile,()=>true);
+ assert.equal(exactResult.cancelled,false);
+ assert.equal(legacyStorage.getItem("daybook_subjects"),"[]","V4 import must intentionally replace a populated store with an empty store");
+ assert.equal(legacyStorage.getItem("daybook_schema_version"),"1","V4 import must not overwrite protected schema metadata");
+ console.log("Phase 3.5.1 backup compatibility and replacement import tests passed.");
+})().catch(error=>{console.error(error);process.exitCode=1});
