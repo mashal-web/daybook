@@ -13,6 +13,17 @@ const fs = require("node:fs");
   await context.addInitScript(() => {
     Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
     window.__pwOnlineListenerSuppressed = false;
+    window.__pwApiFetchCalls = 0;
+    window.__pwApiFetchStacks = [];
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === "string" ? input : input?.url || "";
+      if (url.includes("api.aladhan.com")) {
+        window.__pwApiFetchCalls += 1;
+        if (window.__pwApiFetchStacks.length < 5) window.__pwApiFetchStacks.push(new Error("Aladhan fetch call").stack);
+      }
+      return nativeFetch(input, init);
+    };
     const nativeAddEventListener = EventTarget.prototype.addEventListener;
     EventTarget.prototype.addEventListener = function(type, listener, options) {
       if (this === window && type === "online") {
@@ -317,7 +328,8 @@ const fs = require("node:fs");
 
     assert.deepEqual(pageErrors, [], "Uncaught browser exceptions detected");
     assert.deepEqual(consoleErrors, [], "Browser console errors detected");
-    console.log("Prayer API lifecycle:", JSON.stringify({prayerApiRequests,prayerApiIntercepts,prayerApiFulfilled,prayerApiResponses,prayerApiFinished,prayerApiRouteErrors,failedPrayerRequests:failedRequests.filter(item=>item.includes("api.aladhan.com"))}));
+    const prayerFetchTrace = await page.evaluate(() => ({calls:window.__pwApiFetchCalls,stacks:window.__pwApiFetchStacks}));
+    console.log("Prayer API lifecycle:", JSON.stringify({prayerFetchTrace,prayerApiRequests,prayerApiIntercepts,prayerApiFulfilled,prayerApiResponses,prayerApiFinished,prayerApiRouteErrors,failedPrayerRequests:failedRequests.filter(item=>item.includes("api.aladhan.com"))}));
     assert.equal(prayerApiRequests, prayerApiIntercepts, "Every Aladhan request must be handled by the deterministic context mock");
     assert.equal(prayerApiFulfilled, prayerApiIntercepts, "Every intercepted Aladhan request must receive a mock response");
     assert.deepEqual(failedRequests, [], "Failed network requests detected");
