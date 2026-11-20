@@ -20,15 +20,83 @@
  };
  const LEGACY=["subjects","classes","routine","tasks","sessions","reminders","goal","settings","routineVersion"];
  const EXTENSIONS=["academic_courses","academic_assessments","habits","habit_checks","finance"];
- let healthy=true,recovered=false,blocked=false;
+ let healthy=true,recovered=false,blocked=false,recoveryError=null;
  function rawSet(key,value){native.setItem(key,value)}
+ function checksum(value){
+  let hash=2166136261;
+  for(let i=0;i<value.length;i++){hash^=value.charCodeAt(i);hash=Math.imul(hash,16777619)}
+  return (hash>>>0).toString(16).padStart(8,"0");
+ }
+ function journalPayload(j){const copy={...j};delete copy.checksum;return JSON.stringify(copy)}
+ function sealJournal(j){j.checksum=checksum(journalPayload(j));return j}
+ function validateJournal(j){
+  if(!isObject(j)||j.format!=="daybook-restore"||j.version!==2||typeof j.operationId!=="string"||!j.operationId||!["prepared","applying","committed"].includes(j.state)||!Array.isArray(j.keys)||!isObject(j.before)||!isObject(j.after)||typeof j.checksum!=="string")throw Error("Invalid recovery journal structure");
+  if(checksum(journalPayload(j))!==j.checksum)throw Error("Recovery journal integrity check failed");
+  const seen=new Set();
+  for(const key of j.keys){
+   if(!Object.prototype.hasOwnProperty.call(STORES,key)||seen.has(key))throw Error("Recovery journal contains an invalid key");
+   seen.add(key);
+   for(const section of [j.before,j.after]){
+    const item=section[key];
+    if(!isObject(item)||typeof item.present!=="boolean"||(item.present?typeof item.raw!=="string":item.raw!==null))throw Error("Recovery journal contains an incomplete storage snapshot");
+   }
+  }
+  if(Object.keys(j.before).length!==seen.size||Object.keys(j.after).length!==seen.size)throw Error("Recovery journal snapshot coverage is incomplete");
+  return j;
+ }
+ function persistJournal(j){
+  sealJournal(j);
+  const serialized=JSON.stringify(j);
+  rawSet(JOURNAL,serialized);
+  const readback=native.getItem(JOURNAL);
+  if(readback!==serialized)throw Error("Recovery journal read-back verification failed");
+  validateJournal(JSON.parse(readback));
+ }
+ function sameSnapshot(snapshot){
+  for(const key of Object.keys(snapshot)){
+   const item=snapshot[key],actual=native.getItem(key);
+   if(item.present?(actual!==item.raw):(actual!==null))return false;
+  }
+  return true;
+ }
+ function restoreSnapshot(snapshot){
+  for(const key of Object.keys(snapshot)){
+   const item=snapshot[key];
+   if(item.present)rawSet(key,item.raw);else native.removeItem(key);
+  }
+  if(!sameSnapshot(snapshot))throw Error("Recovery rollback verification failed");
+ }
+ function removeJournalVerified(){
+  native.removeItem(JOURNAL);
+  if(native.getItem(JOURNAL)!==null)throw Error("Recovery journal cleanup verification failed");
+ }
  function recover(){
-  let raw;try{raw=native.getItem(JOURNAL)}catch(e){healthy=false;blocked=true;return}
+  let raw;
+  try{raw=native.getItem(JOURNAL)}catch(e){healthy=false;blocked=true;return}
   if(!raw)return;
-  try{const j=JSON.parse(raw);if(!j||j.version!==1||!Array.isArray(j.changes))throw Error("Invalid recovery journal");
-   if(j.phase!=="committed")for(const c of j.changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}
-   native.removeItem(JOURNAL);recovered=true;
-  }catch(e){healthy=false;blocked=true}
+  try{
+   const parsed=JSON.parse(raw);
+   if(parsed&&parsed.version===1&&Array.isArray(parsed.changes)){
+    const seen=new Set();
+    for(const c of parsed.changes){
+     if(!isObject(c)||typeof c.key!=="string"||c.key===JOURNAL||seen.has(c.key)||(c.previous!==null&&typeof c.previous!=="string"))throw Error("Invalid legacy recovery journal");
+     seen.add(c.key);
+    }
+    if(parsed.phase!=="committed"){
+     for(const c of parsed.changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}
+    }
+    for(const c of parsed.changes)if(native.getItem(c.key)!==c.previous&&parsed.phase!=="committed")throw Error("Legacy recovery verification failed");
+    removeJournalVerified();recovered=true;return;
+   }
+   const j=validateJournal(parsed);
+   if(j.state==="committed"){
+    if(!sameSnapshot(j.after))throw Error("Committed restore does not match its verified replacement state");
+   }else{
+    restoreSnapshot(j.before);
+   }
+   removeJournalVerified();
+   recovered=true;
+  }catch(e){healthy=false;blocked=true;recoveryError=String(e&&e.message||e)}
  }
  try{recover()}catch(e){healthy=false;blocked=true}
  const storage={
@@ -134,10 +202,35 @@
   return Number(file.version)===4?validateV4(file):validateLegacy(file,Number(file.version));
  }
  function apply(entries){
-  const changes=Object.keys(entries).map(key=>({key,previous:native.getItem(key),next:entries[key]}));
-  const journal={version:1,phase:"pending",changes};
-  try{rawSet(JOURNAL,JSON.stringify(journal));for(const c of changes){rawSet(c.key,c.next);if(native.getItem(c.key)!==c.next)throw Error("Could not verify "+c.key)}journal.phase="committed";rawSet(JOURNAL,JSON.stringify(journal));native.removeItem(JOURNAL);healthy=true;return true}
-  catch(error){try{for(const c of changes){if(c.previous===null)native.removeItem(c.key);else rawSet(c.key,c.previous)}native.removeItem(JOURNAL)}catch(rollbackError){healthy=false;blocked=true}throw error}
+  if(blocked)throw Error("Restore is blocked because storage recovery needs attention");
+  if(native.getItem(JOURNAL)!==null)throw Error("An unresolved recovery journal already exists");
+  const keysToChange=Object.keys(entries);
+  if(!keysToChange.length)throw Error("Backup contains no supported stores");
+  for(const key of keysToChange)if(!Object.prototype.hasOwnProperty.call(STORES,key)||typeof entries[key]!=="string")throw Error("Restore plan contains an unsupported storage key");
+  const before={},after={};
+  for(const key of keysToChange){const previous=native.getItem(key);before[key]={present:previous!==null,raw:previous};after[key]={present:true,raw:entries[key]}}
+  const operationId=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+"-"+Math.random().toString(36).slice(2);
+  const journal={format:"daybook-restore",version:2,operationId,state:"prepared",keys:keysToChange,before,after};
+  let committed=false;
+  try{
+   persistJournal(journal);
+   journal.state="applying";persistJournal(journal);
+   for(const key of keysToChange)rawSet(key,after[key].raw);
+   if(!sameSnapshot(after))throw Error("Restore replacement read-back verification failed");
+   journal.state="committed";persistJournal(journal);committed=true;
+   removeJournalVerified();
+   healthy=true;blocked=false;recoveryError=null;
+   return true;
+  }catch(error){
+   if(committed)throw error;
+   try{
+    restoreSnapshot(before);
+    removeJournalVerified();
+   }catch(rollbackError){
+    healthy=false;blocked=true;recoveryError=String(rollbackError&&rollbackError.message||rollbackError);
+   }
+   throw error;
+  }
  }
  function exportFile(){
   const data=snapshot(),manifest=keys().map(key=>({key,status:isEmpty(key,data[key])?"empty":"populated"}));
@@ -153,5 +246,5 @@
   apply(entries);return {cancelled:false,count};
  }
  try{if(native.getItem(SCHEMA)===null)storage.setItem(SCHEMA,JSON.stringify(VERSION))}catch(e){healthy=false}
- root.DaybookPersistence={storage,snapshot,exportFile,importFile,validateBackup,getHealth:()=>({healthy,blocked,recovered,version:VERSION}),storageKeys:keys};
+ root.DaybookPersistence={storage,snapshot,exportFile,importFile,validateBackup,getHealth:()=>({healthy,blocked,recovered,version:VERSION,error:recoveryError}),storageKeys:keys};
 })(window);
