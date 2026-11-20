@@ -9,6 +9,10 @@ const fs = require("node:fs");
   // Block service workers so browser-context routing owns every network request.
   // Playwright routing does not intercept requests fulfilled by an active service worker.
   const context = await browser.newContext({ serviceWorkers: "block" });
+  // Keep app startup deterministic/offline; the test explicitly enables one real prayer refresh below.
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+  });
   const consoleErrors = [];
   const pageErrors = [];
   const failedRequests = [];
@@ -55,8 +59,14 @@ const fs = require("node:fs");
   try {
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
     assert.match(await page.title(), /Daybook/);
-    await page.waitForFunction(() => window.DaybookPrayer?.getSettings);
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => window.DaybookPrayer?.refresh);
+    // Exercise the application's actual prayer refresh once, then keep later reloads offline.
+    await page.evaluate(async () => {
+      Object.defineProperty(navigator, "onLine", { configurable: true, get: () => true });
+      await window.DaybookPrayer.refresh();
+      await new Promise(resolve => setTimeout(resolve, 100));
+      Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+    });
     assert.ok(prayerApiIntercepts > 0, "Expected at least one Aladhan API request to be intercepted by the context mock");
     assert.equal(prayerApiRequests, prayerApiIntercepts, "Every initial Aladhan request must be intercepted");
     assert.equal(prayerApiFulfilled, prayerApiIntercepts, "The mock must fulfill every initial Aladhan request");
@@ -64,8 +74,7 @@ const fs = require("node:fs");
     assert.equal(prayerApiFinished, prayerApiIntercepts, "Each initial mocked Aladhan request must finish before navigation");
     assert.equal(prayerApiFinished, prayerApiIntercepts, "Initial mocked prayer requests must finish before any test navigation");
     // The real prayer endpoint has now been exercised and verified through the mock.
-    // Keep subsequent UI workflows offline to avoid unrelated background refreshes during intentional reloads.
-    await context.setOffline(true);
+    // The init script keeps every subsequent app reload offline without taking the local app server offline.
     await page.locator("#overview.active").waitFor();
     for (const asset of ["styles.css", "app.js", "scheduling.js", "persistence.js", "upgrade.js"]) {
       const response = await page.request.get("http://127.0.0.1:4173/" + asset);
