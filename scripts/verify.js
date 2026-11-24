@@ -266,7 +266,7 @@ function smokeTestAppRuntime() {
   assert.doesNotThrow(() => new Function(...Object.keys(context), app)(...Object.values(context)), "app.js must initialize without browser runtime errors");
 
   const nav = elements.filter(element => element.classList.contains("nav"));
-  assert.equal(nav.length, 18, "Eight primary desktop workspaces, five supporting desktop tools and five compact navigation items should be present");
+  assert.equal(nav.length, 15, "Five primary desktop workspaces, five supporting desktop tools and five compact navigation items should be present");
   assert.equal(elements.filter(element => element.classList.contains("more-link")).length, 9, "More sheet should expose the four workspace shortcuts and all five supporting sections");
   nav.find(element => element.dataset.view === "tasks").click();
   assert.equal(byId.get("tasks").classList.contains("active"), true, "Tasks navigation should activate the Tasks view");
