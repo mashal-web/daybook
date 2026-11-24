@@ -1,0 +1,63 @@
+name: Graphite redesign final QA
+
+on:
+  push:
+    branches: [redesign/graphite-foundation]
+    paths:
+      - "index.html"
+      - "*.css"
+      - "app.js"
+      - "sw.js"
+      - "scripts/**"
+      - "package.json"
+      - ".github/workflows/redesign-verify.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daybook-graphite-redesign-qa
+  cancel-in-progress: true
+
+jobs:
+  web-and-pwa:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install project dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run regression and redesign structural checks
+        run: npm test
+      - name: Build distributable web and Android assets
+        run: npm run build
+      - name: Confirm redesign CSS is packaged
+        run: |
+          test -s www/graphite-shell.css
+          test -s www/graphite-workspaces.css
+          grep -q 'graphite-workspaces.css' www/index.html
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run real browser navigation and persistence suite
+        run: node scripts/browser-verify.cjs
+      - name: Run offline PWA and backup integrity suite
+        run: node scripts/pwa-offline-verify.cjs
+      - name: Upload QA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daybook-graphite-qa-results
+          path: |
+            playwright-results.json
+            playwright-failure.png
+            pwa-verification-report.json
+          if-no-files-found: warn
+          retention-days: 30

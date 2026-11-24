@@ -1,0 +1,100 @@
+/* Phase 3 — workspace composition and responsive product layouts */
+main{max-width:1480px;margin-inline:auto;width:100%;padding:clamp(20px,3vw,42px) clamp(16px,3.2vw,46px) 96px}
+main>header{position:sticky;top:0;z-index:12;background:var(--bg);padding:16px 0 18px;margin-bottom:26px}
+main>header h1{font-size:clamp(24px,2.6vw,34px);font-weight:650;letter-spacing:-.045em}
+.view{gap:22px}
+.intro,.planner-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:0 0 8px}
+.intro h2,.planner-heading h2{font-size:clamp(25px,2.7vw,35px);letter-spacing:-.045em;font-weight:650}
+.intro p.muted,.planner-heading p.muted{max-width:660px;line-height:1.65}
+.panel,.schedule-section,.home-overview,.home-next,.home-section,.home-focus,.home-insights,.home-quick-actions{
+ border-radius:12px!important;padding:clamp(16px,2vw,24px);margin:0 0 16px}
+.home-view{display:grid;gap:17px}
+.home-welcome{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:8px 0 2px}
+.home-welcome h2{font-size:clamp(24px,3vw,36px);font-weight:640;letter-spacing:-.045em;margin:5px 0 8px}
+.home-welcome .muted{max-width:540px;margin:0}
+.home-overview{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);align-items:center;gap:26px}
+.home-overview-heading h3,.home-section-head h3{font-size:18px;font-weight:620;letter-spacing:-.025em}
+.home-progress-line{margin-top:17px}
+.home-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.home-metric{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2)}
+.home-metric-icon{color:var(--muted)}
+.home-metric strong{font-size:20px;font-weight:650}
+.home-next{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:20px 22px;background:var(--surface-2);border:1px solid var(--line)}
+.home-next h3{font-size:clamp(18px,2vw,24px);font-weight:620;letter-spacing:-.025em}
+.home-next-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.home-next-time{font-size:23px;font-weight:650;font-variant-numeric:tabular-nums}
+.home-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.home-task-section .items,.home-schedule-section .items{gap:7px}
+.home-academic-section,.home-insights,.home-quick-actions{padding:16px 0!important;border:0!important;border-top:1px solid var(--line)!important;background:transparent!important}
+.home-quick-actions{display:flex;flex-wrap:wrap;gap:8px}
+.home-quick-actions>*{border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:10px 13px}
+#schedule .schedule-section{padding:clamp(15px,2.2vw,25px)}
+.schedule-section-head{align-items:flex-start;gap:18px}
+.schedule-actions{display:flex;flex-wrap:wrap;gap:8px}
+.week-controls{border:1px solid var(--line);background:var(--surface);border-radius:10px;box-shadow:none}
+.schedule-view-switch{border-radius:10px;background:var(--surface-2);border-color:var(--line)}
+.schedule-view-switch button[aria-pressed="true"]{background:var(--surface);border:1px solid var(--line)}
+.schedule-week-day,.agenda-row,.flexible-item,.schedule-session{border-radius:10px!important;background:var(--surface)!important;box-shadow:none!important}
+#tasks .task-tools{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 14px}
+#tasks .task-tools>input{max-width:360px}
+#tasks .filters{display:flex;flex-wrap:wrap;gap:5px}
+#tasks .filters button{border-radius:8px;box-shadow:none}
+#tasks .filters button.selected{background:var(--surface-2);color:var(--ink);border-color:var(--line)}
+#planner .planner-overview{gap:8px}
+#planner .planner-stat,#planner .planner-subject-card,#planner .planner-session,#planner .planner-chart-panel{border-radius:11px}
+#planner .planner-focus{border-radius:12px}
+#planner .planner-subject-grid{gap:8px}
+#analytics .stats article{background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:none}
+#analytics .columns{gap:12px}
+.upgrade-panel,.upgrade-stat,.upgrade-item,.habit-card,.budget-track{border-radius:11px!important;box-shadow:none!important}
+.upgrade-stats{gap:8px}
+.upgrade-stat{background:var(--surface);border:1px solid var(--line)}
+.upgrade-stat strong{color:var(--ink)}
+.live-tag{color:var(--muted);background:var(--surface-2);border-color:var(--line)}
+.mobile-nav{display:none}
+@media(max-width:900px){
+ main{padding:18px 16px 110px}
+ main>header{padding:12px 0 15px;margin-bottom:20px}
+ .mobile-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:40;padding:6px;gap:3px}
+ .mobile-nav .nav{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:5px 2px;font-size:10px}
+ .mobile-nav .nav-icon{font-size:18px}
+ .sidebar{display:none}
+ .home-overview{grid-template-columns:1fr;gap:15px}
+ .home-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .home-metric{justify-content:center;padding:10px 6px}
+ .home-metric small{font-size:9px}
+ .schedule-section-head{flex-direction:column}
+ .schedule-actions{width:100%}
+ .schedule-actions button{flex:1}
+}
+@media(max-width:600px){
+ .intro,.planner-heading{align-items:flex-start;flex-direction:column}
+ .intro>.primary,.planner-heading-actions{width:100%}
+ .planner-heading-actions{display:flex;flex-wrap:wrap}
+ .home-welcome{align-items:flex-start}
+ .home-welcome h2{font-size:25px}
+ .home-overview{padding:15px}
+ .home-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .home-metric{justify-content:flex-start;padding:10px}
+ .home-next{align-items:flex-start;padding:16px;gap:10px}
+ .home-next-side{max-width:38%}
+ .home-next-time{font-size:19px}
+ .home-section-head{align-items:flex-start}
+ .home-section-head .link{white-space:nowrap}
+ #tasks .task-tools{align-items:stretch;flex-direction:column}
+ #tasks .task-tools>input{max-width:none;width:100%}
+ #tasks .filters{overflow-x:auto;flex-wrap:nowrap}
+ #planner .planner-overview{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #planner .planner-focus{grid-template-columns:1fr}
+ #planner .planner-focus-controls{grid-template-columns:1fr auto}
+ #planner .planner-focus-buttons{grid-column:1/-1}
+ #planner .planner-subject-grid{grid-template-columns:1fr}
+ #planner .planner-progress-grid{grid-template-columns:1fr}
+ .upgrade-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .upgrade-columns{grid-template-columns:1fr}
+ .mobile-nav{left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom))}
+ .mobile-nav .nav{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .home-progress-track span,#planner .planner-goal-track span{transition:none!important}
+}
