@@ -707,3 +707,12 @@ const foundation = read("graphite-foundation.css");
 assert(html.includes('href="graphite-foundation.css"'), "Graphite foundation must load after workspace styles");
 assert(build.includes('"graphite-foundation.css"'), "Android build must package foundation stylesheet");
 assert(sw.includes('"./graphite-foundation.css"')&&sw.includes('daybook-v43'), "Offline cache must include foundation and use new version");
+
+const dashboardNav = read("dashboard-navigation.css");
+assert(html.includes('href="dashboard-navigation.css"'), "Dashboard/navigation stylesheet must load");
+assert(build.includes('"dashboard-navigation.css"') && sw.includes('"./dashboard-navigation.css"'), "Dashboard/navigation CSS must ship in Android and offline cache");
+assert(sw.includes('daybook-v44'), "Dashboard redesign must advance offline cache");
+assert(html.includes('id="todayClasses"')&&html.includes('id="priority"')&&html.includes('id="nextUpTitle"'), "Dashboard must retain real schedule, task priority and next-up data targets");
+assert(dashboardNav.includes('#homeWeeklyStudy{display:none')&&dashboardNav.includes('grid-template-columns:minmax(0,1.25fr)'), "Compact dashboard must omit study-hours card and adapt desktop layout");
+assert(dashboardNav.includes('.nav>span:not(.nav-icon)')&&html.includes('aria-label="Timetable"'), "Primary navigation must be icon-first with accessible destination labels");
+assert(dashboardNav.includes('env(safe-area-inset-bottom)')&&dashboardNav.includes(':focus-visible'), "Hybrid navigation must respect Android safe area and focus visibility");
