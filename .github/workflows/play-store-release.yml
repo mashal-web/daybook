@@ -86,19 +86,19 @@ jobs:
           for key in ("compileSdkVersion", "targetSdkVersion"):
               found = False
               for i, line in enumerate(lines):
-                  if re.match(r"^\\s*" + key + r"\\s*=", line):
-                      indent = re.match(r"^\\s*", line).group(0)
+                  if re.match(r"^\s*" + key + r"\s*=", line):
+                      indent = re.match(r"^\s*", line).group(0)
                       lines[i] = indent + key + " = 36"
                       found = True
                       break
               if not found:
                   raise SystemExit("Could not set " + key + " to API 36")
-          variables.write_text("\\n".join(lines) + "\\n")
+          variables.write_text("\n".join(lines) + "\n")
 
           root_gradle = Path("android/build.gradle")
           root_source = root_gradle.read_text()
           root_source, changed = re.subn(
-              r"com\\.android\\.tools\\.build:gradle:[0-9.]+",
+              r"com\.android\.tools\.build:gradle:[0-9.]+",
               "com.android.tools.build:gradle:8.9.1",
               root_source, count=1
           )
@@ -122,21 +122,21 @@ jobs:
           if "signingConfig signingConfigs.release" not in source:
               if marker not in source:
                   raise SystemExit("Could not find generated release buildType")
-              source = source.replace(marker, marker + "\\n            signingConfig signingConfigs.release", 1)
+              source = source.replace(marker, marker + "\n            signingConfig signingConfigs.release", 1)
           lines = source.splitlines()
           version_code_set = version_name_set = False
           for i, line in enumerate(lines):
-              if re.match(r"^\\s*versionCode\\s+", line):
-                  indent = re.match(r"^\\s*", line).group(0)
+              if re.match(r"^\s*versionCode\s+", line):
+                  indent = re.match(r"^\s*", line).group(0)
                   lines[i] = indent + "versionCode " + os.environ["VERSION_CODE"]
                   version_code_set = True
-              if re.match(r"^\\s*versionName\\s+", line):
-                  indent = re.match(r"^\\s*", line).group(0)
+              if re.match(r"^\s*versionName\s+", line):
+                  indent = re.match(r"^\s*", line).group(0)
                   lines[i] = indent + 'versionName "' + os.environ["VERSION_NAME"] + '"'
                   version_name_set = True
           if not version_code_set or not version_name_set:
               raise SystemExit("Could not set release versionCode/versionName")
-          gradle.write_text("\\n".join(lines) + "\\n")
+          gradle.write_text("\n".join(lines) + "\n")
           print("Configured SDK 36, AGP 8.9.1, release version and upload signing.")
           PY
       - name: Build signed Android App Bundle
