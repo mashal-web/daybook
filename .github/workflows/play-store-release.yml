@@ -61,6 +61,8 @@ jobs:
           npm test
       - name: Build Capacitor web assets
         run: npm run build
+      - name: Confirm privacy policy is packaged
+        run: test -s www/privacy-policy.html
       - name: Generate Android project and sync plugins
         run: |
           npx cap add android
