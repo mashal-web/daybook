@@ -702,3 +702,8 @@ assert(sw.includes('"./graphite-shell.css"')&&sw.includes('"./graphite-workspace
 const mobileNav=html.slice(html.indexOf('<nav class="mobile-nav"'),html.indexOf('</nav>',html.indexOf('<nav class="mobile-nav"'))+6);
 const mobileTargets=[...mobileNav.matchAll(/data-view=["']([^"']+)["']/g)].map(match=>match[1]);
 assert.deepEqual(mobileTargets,["overview","schedule","tasks","planner"],"Mobile primary destinations should be Today, Schedule, Tasks and Study; More remains the fifth control");
+
+const foundation = read("graphite-foundation.css");
+assert(html.includes('href="graphite-foundation.css"'), "Graphite foundation must load after workspace styles");
+assert(build.includes('"graphite-foundation.css"'), "Android build must package foundation stylesheet");
+assert(sw.includes('"./graphite-foundation.css"')&&sw.includes('daybook-v43'), "Offline cache must include foundation and use new version");
