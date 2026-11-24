@@ -80,42 +80,64 @@ jobs:
           python3 - <<'PY'
           import os, re
           from pathlib import Path
+
           variables = Path("android/variables.gradle")
-          source = variables.read_text()
+          lines = variables.read_text().splitlines()
           for key in ("compileSdkVersion", "targetSdkVersion"):
-              source, count = re.subn(r"(?m)(\\b" + key + r"\\s*=\\s*)\\d+", r"\\g<1>36", source, count=1)
-              if count != 1:
-                  raise SystemExit(f"Could not set {key}=36 in generated Capacitor variables.gradle")
-          variables.write_text(source)
+              found = False
+              for i, line in enumerate(lines):
+                  if re.match(r"^\\s*" + key + r"\\s*=", line):
+                      indent = re.match(r"^\\s*", line).group(0)
+                      lines[i] = indent + key + " = 36"
+                      found = True
+                      break
+              if not found:
+                  raise SystemExit("Could not set " + key + " to API 36")
+          variables.write_text("\\n".join(lines) + "\\n")
+
+          root_gradle = Path("android/build.gradle")
+          root_source = root_gradle.read_text()
+          root_source, changed = re.subn(
+              r"com\\.android\\.tools\\.build:gradle:[0-9.]+",
+              "com.android.tools.build:gradle:8.9.1",
+              root_source, count=1
+          )
+          if changed != 1:
+              raise SystemExit("Could not upgrade generated Android Gradle plugin to API-36-compatible 8.9.1")
+          root_gradle.write_text(root_source)
+
           gradle = Path("android/app/build.gradle")
           source = gradle.read_text()
           if "signingConfigs {" not in source:
               source = source.replace("android {", """android {
-    signingConfigs {
-        release {
-            storeFile file("daybook-upload.jks")
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias System.getenv("KEY_ALIAS")
-            keyPassword System.getenv("KEY_PASSWORD")
-        }
-    }""", 1)
-          release = re.search(r"(?s)(buildTypes\\s*\\{.*?release\\s*\\{)(.*?)(\\n\\s*\\})", source)
-          if not release:
-              raise SystemExit("Could not locate release buildType in generated Android Gradle file")
-          block = release.group(1) + release.group(2)
-          if "signingConfig" not in block:
-              block += "\\n            signingConfig signingConfigs.release"
-          source = source[:release.start()] + block + release.group(3) + source[release.end():]
-          gradle.write_text(source)
-          source = gradle.read_text()
-          source, count = re.subn(r"(?m)(\\bversionCode\\s+)\\d+", r"\\g<1>" + os.environ["VERSION_CODE"], source, count=1)
-          if count != 1:
-              raise SystemExit("Could not set Android versionCode")
-          source, count = re.subn(r'(?m)(\\bversionName\\s+)["\\'][^"\\']+["\\']', r'\\g<1>"' + os.environ["VERSION_NAME"] + '"', source, count=1)
-          if count != 1:
-              raise SystemExit("Could not set Android versionName")
-          gradle.write_text(source)
-          print("Release SDK 36, app version and signing configured.")
+              signingConfigs {
+                  release {
+                      storeFile file("daybook-upload.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }""", 1)
+          marker = "release {"
+          if "signingConfig signingConfigs.release" not in source:
+              if marker not in source:
+                  raise SystemExit("Could not find generated release buildType")
+              source = source.replace(marker, marker + "\\n            signingConfig signingConfigs.release", 1)
+          lines = source.splitlines()
+          version_code_set = version_name_set = False
+          for i, line in enumerate(lines):
+              if re.match(r"^\\s*versionCode\\s+", line):
+                  indent = re.match(r"^\\s*", line).group(0)
+                  lines[i] = indent + "versionCode " + os.environ["VERSION_CODE"]
+                  version_code_set = True
+              if re.match(r"^\\s*versionName\\s+", line):
+                  indent = re.match(r"^\\s*", line).group(0)
+                  lines[i] = indent + 'versionName "' + os.environ["VERSION_NAME"] + '"'
+                  version_name_set = True
+          if not version_code_set or not version_name_set:
+              raise SystemExit("Could not set release versionCode/versionName")
+          gradle.write_text("\\n".join(lines) + "\\n")
+          print("Configured SDK 36, AGP 8.9.1, release version and upload signing.")
           PY
       - name: Build signed Android App Bundle
         working-directory: android
