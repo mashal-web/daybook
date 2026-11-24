@@ -695,3 +695,10 @@ assert(design.includes("PHASE 7B.1")&&design.includes("--surface-3:#292929")&&de
 assert(design.includes("@media(max-width:360px)")&&design.includes("@media(max-width:600px)")&&design.includes("@media(max-width:900px)"),"Phone and tablet breakpoints must exist");
 assert(app.includes("function openShellAction")&&app.includes("renderScheduleModes()"),"Workspace shortcuts must route to existing application features");
 console.log("Phase 7B.1 design system and application shell checks passed.");
+
+assert(html.includes('href="graphite-shell.css"')&&html.includes('href="graphite-workspaces.css"'),"Graphite shell and workspace stylesheets must be linked");
+assert(build.includes('"graphite-shell.css"')&&build.includes('"graphite-workspaces.css"'),"Android and production builds must package the redesign stylesheets");
+assert(sw.includes('"./graphite-shell.css"')&&sw.includes('"./graphite-workspaces.css"'),"PWA offline cache must include the redesign stylesheets");
+const mobileNav=html.slice(html.indexOf('<nav class="mobile-nav"'),html.indexOf('</nav>',html.indexOf('<nav class="mobile-nav"'))+6);
+const mobileTargets=[...mobileNav.matchAll(/data-view=["']([^"']+)["']/g)].map(match=>match[1]);
+assert.deepEqual(mobileTargets,["overview","schedule","tasks","planner"],"Mobile primary destinations should be Today, Schedule, Tasks and Study; More remains the fifth control");
