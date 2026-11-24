@@ -19,6 +19,7 @@ on:
       - "package.json"
       - "capacitor.config.json"
       - "manifest.webmanifest"
+      - "privacy-policy.html"
       - "sw.js"
       - "icon.svg"
       - "icon-192.png"
@@ -71,7 +72,7 @@ jobs:
         run: npm run build
       - name: Verify packaged app files
         run: |
-          for file in index.html app.js native.js styles.css timetable-theme.css upgrade.css upgrade.js mobile-app.css design-system.css study-planner.css planning.css prayer-times.js flexible-activities.js manifest.webmanifest sw.js icon-192.png icon-512.png; do
+          for file in index.html app.js native.js styles.css timetable-theme.css upgrade.css upgrade.js mobile-app.css design-system.css study-planner.css planning.css prayer-times.js flexible-activities.js manifest.webmanifest privacy-policy.html sw.js icon-192.png icon-512.png; do
             test -s "www/$file" || { echo "Missing packaged asset: $file"; exit 1; }
           done
       - name: Add Android platform
