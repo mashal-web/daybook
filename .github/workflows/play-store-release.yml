@@ -105,6 +105,20 @@ jobs:
               source = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    ' + permission, source, count=1)
               manifest.write_text(source)
           PY
+      - name: Validate release version inputs
+        env:
+          VERSION_CODE: \${{ inputs.versionCode }}
+          VERSION_NAME: \${{ inputs.versionName }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          code = os.environ["VERSION_CODE"]
+          name = os.environ["VERSION_NAME"]
+          if not code.isdigit() or int(code) < 1:
+              raise SystemExit("versionCode must be a positive whole number")
+          if not re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,2}(?:[-+][A-Za-z0-9.-]+)?", name):
+              raise SystemExit("versionName must be a simple version string such as 1.0.0")
+          PY
       - name: Configure Play release SDK, version and signing
         env:
           VERSION_CODE: ${{ inputs.versionCode }}
