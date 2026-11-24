@@ -15,6 +15,27 @@ The repository includes a manual **Daybook Play Store AAB (signed release)** wor
 
 Google Play's current submission policy requires new apps and updates to target Android 16 (API 36) from 31 August 2026; see [official target API policy](https://support.google.com/googleplay/android-developer/answer/11926878). The workflow uses app ID `com.mashalweb.daybook`, sets compile/target SDK 36, runs repository regression tests, and checks that the AAB is a valid ZIP. A successful build is not a guarantee of Play policy approval or complete device QA.
 
+## Suggested Play Store listing copy
+
+**Title:** Daybook: Study & Planner
+
+**Short description:** Plan your routine, studies, tasks, habits and focus in one private workspace.
+
+**Full description:**
+
+Daybook helps you organize your day and build a consistent study routine.
+
+• Plan daily routines and weekly schedules
+• Organize assignments, deadlines and tasks
+• Track courses, study sessions and focus time
+• Build habits and review your progress
+• Manage a personal budget and expenses
+• View prayer times for your configured location
+• Set reminders and bedtime alerts
+• Export and restore your planner with JSON backups
+
+Your planner records stay on your device and are not automatically synced to a cloud account. Prayer-time calculations use the AlAdhan service when online. Keep a secure backup of important data.
+
 ## Store listing and policy checklist
 - Create/verify the Play Console developer account and app record; package name must match `com.mashalweb.daybook`.
 - Publish and verify the privacy policy URL: `https://mashal-web.github.io/daybook/privacy-policy.html`. This page is linked in the app's Settings.
