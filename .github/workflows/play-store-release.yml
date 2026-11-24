@@ -67,6 +67,44 @@ jobs:
         run: |
           npx cap add android
           npx cap sync android
+      - name: Apply Daybook launcher and notification icons
+        run: |
+          RES="android/app/src/main/res"
+          for density in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "$RES/mipmap-$density"
+            cp icon-192.png "$RES/mipmap-$density/ic_launcher.png"
+            cp icon-192.png "$RES/mipmap-$density/ic_launcher_round.png"
+            cp icon-512.png "$RES/mipmap-$density/ic_launcher_foreground.png"
+          done
+          mkdir -p "$RES/mipmap-anydpi-v26" "$RES/drawable"
+          for name in ic_launcher ic_launcher_round; do
+            cat > "$RES/mipmap-anydpi-v26/$name.xml" <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/black"/>
+              <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+          </adaptive-icon>
+          EOF
+          done
+          cat > "$RES/drawable/ic_stat_icon.xml" <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp" android:height="24dp"
+              android:viewportWidth="24" android:viewportHeight="24">
+              <path android:fillColor="#FFFFFFFF"
+                  android:pathData="M12,2L3,7v10l9,5 9,-5V7zM12,5.1l5.8,3.2L12,11.5 6.2,8.3zM5,10.2l5.5,3v5.3L5,15.4zM13.5,18.5v-5.3l5.5,-3v5.2z"/>
+          </vector>
+          EOF
+      - name: Declare user-controlled exact reminder permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          permission = '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />'
+          if permission not in source:
+              source = re.sub(r'(<manifest\b[^>]*>)', r'\1\n    ' + permission, source, count=1)
+              manifest.write_text(source)
+          PY
       - name: Configure Play release SDK, version and signing
         env:
           VERSION_CODE: ${{ inputs.versionCode }}
@@ -120,11 +158,14 @@ jobs:
                       keyPassword System.getenv("KEY_PASSWORD")
                   }
               }""", 1)
-          marker = "release {"
           if "signingConfig signingConfigs.release" not in source:
-              if marker not in source:
-                  raise SystemExit("Could not find generated release buildType")
-              source = source.replace(marker, marker + "\n            signingConfig signingConfigs.release", 1)
+              source, count = re.subn(
+                  r"(?s)(buildTypes\s*\{\s*release\s*\{)",
+                  r"\1\n            signingConfig signingConfigs.release",
+                  source, count=1
+              )
+              if count != 1:
+                  raise SystemExit("Could not inject signing config into release buildType")
           lines = source.splitlines()
           version_code_set = version_name_set = False
           for i, line in enumerate(lines):
