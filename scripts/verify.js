@@ -702,3 +702,12 @@ assert(sw.includes('"./graphite-shell.css"')&&sw.includes('"./graphite-workspace
 const mobileNav=html.slice(html.indexOf('<nav class="mobile-nav"'),html.indexOf('</nav>',html.indexOf('<nav class="mobile-nav"'))+6);
 const mobileTargets=[...mobileNav.matchAll(/data-view=["']([^"']+)["']/g)].map(match=>match[1]);
 assert.deepEqual(mobileTargets,["overview","schedule","tasks","planner"],"Mobile primary destinations should be Today, Schedule, Tasks and Study; More remains the fifth control");
+
+const foundation = read("graphite-foundation.css");
+assert(html.includes('href="graphite-foundation.css"'), "Adaptive graphite foundation must load after workspace styles");
+assert(build.includes('"graphite-foundation.css"'), "Android build must package the foundation stylesheet");
+assert(sw.includes('"./graphite-foundation.css"') && sw.includes('daybook-v43'), "PWA cache must version and include the foundation stylesheet");
+assert(foundation.includes('[data-theme="light"]') && foundation.includes('--accent:#b9c4ce') && foundation.includes('--accent:#596b7a'), "Adaptive graphite must provide adaptive neutral palettes with a restrained accent");
+assert(foundation.includes('--space-1:4px') && foundation.includes('--font-ui:-apple-system'), "Foundation must define reusable spacing and system typography tokens");
+assert(foundation.includes('input,select,textarea{font-size:16px}') && foundation.includes('env(safe-area-inset-bottom)'), "Mobile foundation must prevent input zoom and respect safe areas");
+assert(foundation.includes(':focus-visible') && foundation.includes('prefers-reduced-motion:reduce'), "Foundation must retain keyboard focus and reduced-motion support");

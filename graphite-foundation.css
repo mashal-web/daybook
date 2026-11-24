@@ -1,0 +1,34 @@
+/* Daybook Step 1 — adaptive graphite token foundation.
+   Loaded after legacy and graphite component styles; no screen/layout redesign. */
+:root,[data-theme="dark"]{
+ color-scheme:dark;
+ --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ --space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-8:32px;
+ --text-xs:11px;--text-sm:12px;--text-base:14px;--text-lg:17px;--text-xl:21px;
+ --bg:#101112;--bg-elevated:#151719;--surface:#191b1e;--surface-2:#202327;--surface-3:#292d32;
+ --ink:#f1f2f3;--muted:#a5abb2;--soft:#7d858d;--line:#30343a;
+ --accent:#b9c4ce;--accent-strong:#d5dde4;--accent-soft:rgba(185,196,206,.10);
+ --focus:#e4ebf1;--disabled:#747b82;
+ --radius-sm:9px;--radius:13px;--radius-lg:18px;
+ --shadow-sm:0 3px 12px rgba(0,0,0,.14);--shadow:0 8px 24px rgba(0,0,0,.18);
+}
+[data-theme="light"]{
+ color-scheme:light;
+ --bg:#f3f3f1;--bg-elevated:#fbfbfa;--surface:#fff;--surface-2:#f0f0ee;--surface-3:#e6e7e5;
+ --ink:#202124;--muted:#62666b;--soft:#7c8085;--line:#dedfdd;
+ --accent:#596b7a;--accent-strong:#3f5262;--accent-soft:rgba(89,107,122,.09);
+ --focus:#354b5b;--disabled:#a0a3a5;
+ --shadow-sm:0 3px 12px rgba(0,0,0,.04);--shadow:0 8px 24px rgba(0,0,0,.055);
+}
+html{font-family:var(--font-ui);background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font-family:var(--font-ui)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+@media(max-width:600px){
+ input,select,textarea{font-size:16px}
+ main{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
