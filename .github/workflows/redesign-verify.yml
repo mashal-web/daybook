@@ -46,6 +46,17 @@ jobs:
         run: |
           npm install --no-save --no-audit --no-fund playwright@1.56.1
           npx playwright install --with-deps chromium
+      - name: Start local web server for browser tests
+        run: |
+          npx --yes http-server . -p 4173 -s > /tmp/daybook-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/daybook-http.log
+          exit 1
       - name: Run real browser navigation and persistence suite
         run: node scripts/browser-verify.cjs
       - name: Run offline PWA and backup integrity suite
