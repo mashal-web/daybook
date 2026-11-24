@@ -107,8 +107,8 @@ jobs:
           PY
       - name: Validate release version inputs
         env:
-          VERSION_CODE: \${{ inputs.versionCode }}
-          VERSION_NAME: \${{ inputs.versionName }}
+          VERSION_CODE: ${{ inputs.versionCode }}
+          VERSION_NAME: ${{ inputs.versionName }}
         run: |
           python3 - <<'PY'
           import os, re
