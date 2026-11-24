@@ -4,7 +4,7 @@
 The repository includes a manual **Daybook Play Store AAB (signed release)** workflow. It creates a signed Android App Bundle for Play Console; it does not publish automatically.
 
 1. Create a dedicated Android **upload key** using Android Studio/keytool. Keep the keystore and passwords private and make a secure offline backup.
-2. Base64-encode the keystore file on a trusted computer (do not upload the raw keystore to the repository).
+2. Generate the upload key (example): `keytool -genkeypair -v -keystore daybook-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias daybook-upload`. Back up this file and password securely. Base64-encode it on a trusted computer (Linux: `base64 -w 0 daybook-upload.jks`; macOS: `base64 daybook-upload.jks`). Never commit the keystore or passwords.
 3. In GitHub → Settings → Secrets and variables → Actions, add:
    - `DAYBOOK_UPLOAD_KEYSTORE_BASE64`
    - `DAYBOOK_UPLOAD_KEYSTORE_PASSWORD`
@@ -13,7 +13,7 @@ The repository includes a manual **Daybook Play Store AAB (signed release)** wor
 4. Run Actions → Daybook Play Store AAB (signed release) → Run workflow. Set versionCode to a unique, increasing integer and versionName to the public version (e.g. 1.0.0).
 5. Download the workflow artifact, verify its SHA-256, and upload the `.aab` to Play Console.
 
-The workflow uses app ID `com.mashalweb.daybook`, sets compile/target SDK 36, runs repository regression tests, and checks that the AAB is a valid ZIP. A successful build is not a guarantee of Play policy approval or complete device QA.
+Google Play's current submission policy requires new apps and updates to target Android 16 (API 36) from 31 August 2026; see [official target API policy](https://support.google.com/googleplay/android-developer/answer/11926878). The workflow uses app ID `com.mashalweb.daybook`, sets compile/target SDK 36, runs repository regression tests, and checks that the AAB is a valid ZIP. A successful build is not a guarantee of Play policy approval or complete device QA.
 
 ## Store listing and policy checklist
 - Create/verify the Play Console developer account and app record; package name must match `com.mashalweb.daybook`.
